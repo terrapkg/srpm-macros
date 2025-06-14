@@ -4,13 +4,14 @@ buildroot=$1
 
 _includedir=$(rpm -E '%_includedir')
 _libdir=$(rpm -E '%_libdir')
-list() {
-	for f in $buildroot/$1; do
-		echo ${f#"$buildroot"}
-	done
-}
-list $_includedir/*
-list $_includedir/*
-list $_libdir/*.so
-list $_libdir/pkgconfig/*.pc
-list /usr/share/gir-1.0/*.gir
+
+for f in \
+	$buildroot/$_includedir/* \
+	$buildroot/$_libdir/*.so \
+	$buildroot/$_libdir/pkgconfig/*.pc \
+	$buildroot//usr/share/gir-1.0/*.gir \
+	; do
+	if grep -q '*' <<< "$f"; then continue; fi
+	if grep -q '/\.' <<< "$f"; then continue; fi
+	echo ${f#"$buildroot/"}
+done
