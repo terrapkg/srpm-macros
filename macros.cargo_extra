@@ -131,4 +131,5 @@ set -euo pipefail\
     %global __rustc $HOME/.cargo/bin/rustc      \
     %global __rustdoc $HOME/.cargo/bin/rustdoc  \
     rustup-init --default-toolchain nightly -y  \
-    . "$HOME/.cargo/env"
+    . "$HOME/.cargo/env"                        \
+    rustup override set nightly
