@@ -127,9 +127,9 @@ set -euo pipefail\
 )
 
 %rustup_nightly \
-    %global __cargo /usr/bin/env CARGO_HOME=.cargo RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' $HOME/.cargo/bin/cargo \
-    %global __rustc $HOME/.cargo/bin/rustc      \
-    %global __rustdoc $HOME/.cargo/bin/rustdoc  \
-    rustup-init --default-toolchain nightly -y  \
-    . "$HOME/.cargo/env"                        \
+    %global __cargo /usr/bin/env CARGO_HOME=.cargo RUSTFLAGS='%{build_rustflags}' .cargo/bin/cargo \
+    %global __rustc .cargo/bin/rustc                                                               \
+    %global __rustdoc .cargo/bin/rustdoc                                                           \
+    CARGO_HOME=.cargo rustup-init --default-toolchain nightly -y                                   \
+    . ".cargo/env"                                                                                 \
     rustup override set nightly
