@@ -1,5 +1,5 @@
-%goprep_online() goprep(z:ai:b:s:kervS:A) \
-%define gomodulesmode GO111MODULE=on      \
+%goprep_online(z:ai:b:s:kervS:A)     \
+%define gomodulesmode GO111MODULE=on \
 %{lua:
 local        fedora =  require "fedora.common"
 local       extract = (rpm.expand("%{-e}") == "")
