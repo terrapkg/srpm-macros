@@ -11,12 +11,9 @@
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM registry
 # -j: "JS." Needed for JS packages.
 # npm_prep -n nodepkgname
-%npm_prep(jn:) %{lua:
+%npm_prep(n:) %{lua:
    if opt.n then
      rpm.define("node_module " .. rpm.expand("%{-n*}"))
-   end
-   if opt.j then
-     rpm.define("_js " .. '.js')
    end
    local module = rpm.expand("%{?node_module}")
    if (module == '%{node_module}') or (module == '%node_module') or (module == '') then
@@ -34,7 +31,7 @@
    cmd = 'git clone -n --depth=1 --filter=tree:0 -q -j$(nproc) '
    if rpm.expand("%{?-f*}") == '' then
      error("Test folders/files not specified. Please specify them using the -f option.")
-   elseif string.sub(rpm.expand("%{-f*}"), 1, 1) ~= '/' then
+   elseif rpm.expand("%{-f*}"):find('/') and string.sub(rpm.expand("%{-f*}"), 1, 1) ~= '/' then
      error("Folders holding test files must start with '/'")
    else
      rpm.define("_nodetests " .. rpm.expand("%{-f*}"))
@@ -132,5 +129,9 @@
 # Only applicable if a test folder is provided from a source repo using fetch_node_tests
 %node_self_test()                                                    \
    for test in %{?_nodetests}; do                                    \
-     NODE_ENV=test bin/%{node_module}%{?_js} -R %{_nodetestdir}$test \
+     NODE_ENV=test bin/%{node_module} -R %{_nodetestdir}$test        \
    done
+
+# Generic NPM tests
+%npm_test()      \
+   %{__npm} test
