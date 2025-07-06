@@ -1,3 +1,35 @@
-%go_prep_online() (cd %{?1}%{!?1:.} && go mod download)
+%goprep_online() goprep(z:ai:b:s:kervS:A) \
+%define gomodulesmode GO111MODULE=on      \
+%{lua:
+local        fedora =  require "fedora.common"
+local       extract = (rpm.expand("%{-e}") == "")
+-- Use autosetup if either -A or -S is passed
+local     autosetup = (rpm.expand("%{-A}%{-S}") ~= "")
+local   installdeps = (rpm.expand("%{-r}") == "")
+local    processall = (rpm.expand("%{-a}") ~= "") and (rpm.expand("%{-z}") == "")
+local    setupflags =  rpm.expand("%{!-v:-q}")
+local autosetupflags = rpm.expand("%{-v} %{-S}")
+local  gomkdirflags =  rpm.expand("%{?-i} %{?-b} %{?-s} %{-k} %{-v}")
+local buildrequires = {}
+local function process(suffix)
+  local zsuffix = ""
+  if (suffix ~= "") and (suffix ~= nil) then
+        zsuffix = "-z " .. suffix .. " "
+  end
+  if extract then
+    setup = autosetup and ("%autosetup -N " .. autosetupflags) or ("%setup  " .. setupflags)
+    print(rpm.expand(setup .." %{?forgesetupargs" .. suffix .. "}\\n"))
+  end
+  print(  rpm.expand("%gomkdir " .. zsuffix .. gomkdirflags .. "\\n"))
+end
+-- Main loop
+if processall then
+  for _,s in pairs(fedora.getsuffixes("goipath")) do
+    process(s)
+  end
+else
+   process(rpm.expand("%{?-z*}"))
+end
+}
 
 %go_build_online() mkdir -p build/bin && go build -ldflags "-B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n') -s -w" -buildmode=pie -o %{?2}%{!?2:build/bin/%{?1}%{!?1:%name}} %{?1}%{!?1:.}
