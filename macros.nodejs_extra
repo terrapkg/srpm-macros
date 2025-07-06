@@ -104,7 +104,7 @@
 }                                                    \
 )
 
-## Below require nodejs-license-checker as a build dep
+## Below require js-license-checker as a build dep
 
 # Make this a macro so it can be called on its own for any reason
 %__npm_license_checker() /usr/bin/license-checker
