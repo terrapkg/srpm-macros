@@ -1,4 +1,4 @@
-## These macros REQUIRE that the macro node_module be defined or the module be passed to them
+## These macros REQUIRE that the macro npm_name be defined or the module be passed to them
 
 %__npm() %{lua:
    if rpm.expand('%["%{rpmversion}" < "4.20"]') == '1' then
@@ -9,22 +9,21 @@
 
 # For use in prep section
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM registry
-# -j: "JS." Needed for JS packages.
 # npm_prep -n nodepkgname
 %npm_prep(n:) %{lua:
    if opt.n then
-     rpm.define("node_module " .. rpm.expand("%{-n*}"))
+     rpm.define("npm_name " .. rpm.expand("%{-n*}"))
    end
-   local module = rpm.expand("%{?node_module}")
-   if (module == '%{node_module}') or (module == '%node_module') or (module == '') then
-     error("%node_module is not defined. Please define it using a global macro or with the -n flag.")
+   local module = rpm.expand("%{?npm_name}")
+   if (module == '%{npm_name}') or (module == '%npm_name') or (module == '') then
+     error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
    end}                                                     \
-   %{__npm} install -g %{node_module}@%{version} --prefix=. \
-   %setup -T -D -n lib/node_modules/%{node_module}
+   %{__npm} install -g %{npm_name}@%{version} --prefix=. \
+   %setup -T -D -n lib/npm_names/%{npm_name}
 
 # Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
 # -f: "Folders" or "files." Node test folders and files must be specified using the FULL PATH starting with '/'.
-# -u: "URL." This MUST be set if the URL used in the spec is not a clonable Git repository
+# -u: "URL." This MUST be set if the URL used in the spec is not automatically detectable as a clonable Git repository
 # URL MAY include ".git" when using -u flag
 # fetch_node_tests -f /tests /src/tests -u https://github.com/nodepkgdev/nodepkgname
 %fetch_node_tests(f:u:) %{lua:
@@ -58,10 +57,10 @@
 %npm_install_sitelib()                                                                         \
    (                                                                                           \
    set -euo pipefail                                                                           \
-   mkdir -p %{buildroot}%{nodejs_sitelib}/%{node_module}                                       \
+   mkdir -p %{buildroot}%{nodejs_sitelib}/%{npm_name}                                       \
    mkdir -p %{buildroot}%{_bindir}                                                             \
-   cp -r ./* -t %{buildroot}%{nodejs_sitelib}/%{node_module}                                   \
-   ln -sf %{nodejs_sitelib}/%{module}/bin/%{node_module} %{buildroot}%{_bindir}/%{node_module} \
+   cp -r ./* -t %{buildroot}%{nodejs_sitelib}/%{npm_name}                                   \
+   ln -sf %{nodejs_sitelib}/%{module}/bin/%{npm_name} %{buildroot}%{_bindir}/%{npm_name} \
 )
 
 # For architecture dependent packages
@@ -71,10 +70,10 @@
 %npm_install_sitearch()                                                                              \
    (                                                                                                 \
    set -euo pipefail                                                                                 \
-   mkdir -p %{buildroot}%{nodejs_sitearch}/%{node_module}                                            \
+   mkdir -p %{buildroot}%{nodejs_sitearch}/%{npm_name}                                            \
    mkdir -p %{buildroot}%{_bindir}                                                                   \
-   cp -r ./* -t %{buildroot}%{nodejs_sitearch}/%{node_module}                                        \
-   ln -sf %{nodejs_sitearch}/%{node_module}/bin/%{node_module} %{buildroot}%{_bindir}/%{node_module} \
+   cp -r ./* -t %{buildroot}%{nodejs_sitearch}/%{npm_name}                                        \
+   ln -sf %{nodejs_sitearch}/%{npm_name}/bin/%{npm_name} %{buildroot}%{_bindir}/%{npm_name} \
 )
 
 # Shorthand for npm_install_sitelib unless sitelib and sitearch diverge
@@ -127,9 +126,16 @@
    )
 
 # Only applicable if a test folder is provided from a source repo using fetch_node_tests
-%node_self_test()                                                    \
-   for test in %{?_nodetests}; do                                    \
-     NODE_ENV=test bin/%{node_module} -R %{_nodetestdir}$test        \
+# Please not that many NodeJS projects have test methods that cannot be covered by this macro such as ones that should be run by NodeJS itself
+# Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
+# -R: Direct duplicate of -R flag. Project dependent.
+# -v: Direct duplicate of -v flag. Project dependent.
+%node_self_test(Rv)                             \
+   for test in %{?_nodetests}; do               \
+     NODE_ENV=test bin/%{npm_name} %{shrink: \
+     %{-R:-R}                                   \
+     %{-v:-v}                                   \
+     } %{_nodetestdir}$test                     \
    done
 
 # Generic NPM tests
