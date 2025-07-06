@@ -50,7 +50,8 @@
    end}                                            \
    git switch -c v%{version} -q                    \
    git sparse-checkout set --no-cone %{_nodetests} \
-   git checkout -q
+   git checkout -q                                 \
+   cd ~-
 
 # Install package to sitelib. Should only be used for noarch packages.
 %npm_install_sitelib()                                                                         \
@@ -125,7 +126,11 @@
    )
 
 # Only applicable if a test folder is provided from a source repo using fetch_node_tests
-%node_self_test ()                                         \
-  for test in %{?_nodetests}; do                           \
-  NODE_ENV=test bin/%{node_module} -R %{_nodetestdir}$test \
-  done
+# -j: "JS." Needed for JS packages.
+%node_self_test(j) %{lua:
+   if opt.j then
+     rpm.define("_js " .. '.js')
+   end}                                                              \
+   for test in %{?_nodetests}; do                                    \
+     NODE_ENV=test bin/%{node_module}%{?_js} -R %{_nodetestdir}$test \
+   done

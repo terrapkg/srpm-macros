@@ -1,0 +1,10 @@
+## Macros for JS packages hosted with NPM
+
+%npm_install_js() \
+      (                                                                                   \
+   set -euo pipefail                                                                      \
+   mkdir -p %{buildroot}%{_jsdir}/%{node_module}                                          \
+   mkdir -p %{buildroot}%{_bindir}                                                        \
+   cp -r ./* -t %{buildroot}%{_jsdir}/%{node_module}                                      \
+   ln -sf %{_jsdir}/%{module}/bin/%{node_module}.js %{buildroot}%{_bindir}/%{node_module} \
+)
