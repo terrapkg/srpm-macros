@@ -17,7 +17,7 @@
    local module = rpm.expand("%{?npm_name}")
    if (module == '%{npm_name}') or (module == '%npm_name') or (module == '') then
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
-   end}                                                     \
+   end}                                                  \
    %{__npm} install -g %{npm_name}@%{version} --prefix=. \
    %setup -T -D -n lib/npm_names/%{npm_name}
 
@@ -54,12 +54,12 @@
    cd ~-
 
 # Install package to sitelib. Should only be used for noarch packages.
-%npm_install_sitelib()                                                                         \
-   (                                                                                           \
-   set -euo pipefail                                                                           \
-   mkdir -p %{buildroot}%{nodejs_sitelib}/%{npm_name}                                       \
-   mkdir -p %{buildroot}%{_bindir}                                                             \
-   cp -r ./* -t %{buildroot}%{nodejs_sitelib}/%{npm_name}                                   \
+%npm_install_sitelib()                                                                   \
+   (                                                                                     \
+   set -euo pipefail                                                                     \
+   mkdir -p %{buildroot}%{nodejs_sitelib}/%{npm_name}                                    \
+   mkdir -p %{buildroot}%{_bindir}                                                       \
+   cp -r ./* -t %{buildroot}%{nodejs_sitelib}/%{npm_name}                                \
    ln -sf %{nodejs_sitelib}/%{module}/bin/%{npm_name} %{buildroot}%{_bindir}/%{npm_name} \
 )
 
@@ -67,12 +67,12 @@
 # These are almost always modules written in C++
 # Reference: https://docs.fedoraproject.org/en-US/packaging-guidelines/Node.js
 # Note: This and nodejs_sitelib are currently the same directory but Fedora may change this in the future so this should still be used.
-%npm_install_sitearch()                                                                              \
-   (                                                                                                 \
-   set -euo pipefail                                                                                 \
-   mkdir -p %{buildroot}%{nodejs_sitearch}/%{npm_name}                                            \
-   mkdir -p %{buildroot}%{_bindir}                                                                   \
-   cp -r ./* -t %{buildroot}%{nodejs_sitearch}/%{npm_name}                                        \
+%npm_install_sitearch()                                                                     \
+   (                                                                                        \
+   set -euo pipefail                                                                        \
+   mkdir -p %{buildroot}%{nodejs_sitearch}/%{npm_name}                                      \
+   mkdir -p %{buildroot}%{_bindir}                                                          \
+   cp -r ./* -t %{buildroot}%{nodejs_sitearch}/%{npm_name}                                  \
    ln -sf %{nodejs_sitearch}/%{npm_name}/bin/%{npm_name} %{buildroot}%{_bindir}/%{npm_name} \
 )
 
@@ -130,12 +130,12 @@
 # Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
-%node_self_test(Rv)                             \
-   for test in %{?_nodetests}; do               \
+%node_self_test(Rv)                          \
+   for test in %{?_nodetests}; do            \
      NODE_ENV=test bin/%{npm_name} %{shrink: \
-     %{-R:-R}                                   \
-     %{-v:-v}                                   \
-     } %{_nodetestdir}$test                     \
+     %{-R:-R}                                \
+     %{-v:-v}                                \
+     } %{_nodetestdir}$test                  \
    done
 
 # Generic NPM tests
