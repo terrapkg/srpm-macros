@@ -9,10 +9,14 @@
 
 # For use in prep section
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM registry
+# -j: "JS." Needed for JS packages.
 # npm_prep -n nodepkgname
-%npm_prep(n:) %{lua:
+%npm_prep(jn:) %{lua:
    if opt.n then
      rpm.define("node_module " .. rpm.expand("%{-n*}"))
+   end
+   if opt.j then
+     rpm.define("_js " .. '.js')
    end
    local module = rpm.expand("%{?node_module}")
    if (module == '%{node_module}') or (module == '%node_module') or (module == '') then
@@ -126,11 +130,7 @@
    )
 
 # Only applicable if a test folder is provided from a source repo using fetch_node_tests
-# -j: "JS." Needed for JS packages.
-%node_self_test(j) %{lua:
-   if opt.j then
-     rpm.define("_js " .. '.js')
-   end}                                                              \
+%node_self_test()                                                    \
    for test in %{?_nodetests}; do                                    \
      NODE_ENV=test bin/%{node_module}%{?_js} -R %{_nodetestdir}$test \
    done
