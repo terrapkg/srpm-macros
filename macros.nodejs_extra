@@ -46,7 +46,7 @@
    elseif opt.u then
      print(cmd .. rpm.expand("%{-u*}") .. srcdir .. ' && cd ' .. srcdir)
    else
-     error("URL is not clonable and -u is not set. Please set a Git repository hosting the tests for this module using the -u option.")
+     error("URL could not be automatically identified as clonable and -u is not set. Please set a Git repository hosting the tests for this module using the -u option.")
    end}                                               \
    git switch -c v%{version} -q                       \
    git sparse-checkout set --no-cone %{_nodetests} -q \
