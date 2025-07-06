@@ -8,6 +8,8 @@
    end}
 
 # For use in prep section
+# -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM registry
+# npm_prep -n nodepkgname
 %npm_prep(n:) %{lua:
    if opt.n then
      rpm.define("node_module " .. rpm.expand("%{-n*}"))
@@ -15,50 +17,19 @@
    local module = rpm.expand("%{?node_module}")
    if (module == '%{node_module}') or (module == '%node_module') or (module == '') then
      error("%node_module is not defined. Please define it using a global macro or with the -n flag.")
-   end} \\\
+   end}                                                     \
    %{__npm} install -g %{node_module}@%{version} --prefix=. \
    %setup -T -D -n lib/node_modules/%{node_module}
 
-%npm_install()                                                                                 \
-   mkdir -p %{buildroot}%{nodejs_sitelib}/%{node_module}                                       \
-   mkdir -p %{buildroot}%{_bindir}                                                             \
-   cp -r ./* -t %{buildroot}%{nodejs_sitelib}/%{node_module}                                   \
-   ln -sf %{nodejs_sitelib}/%{module}/bin/%{node_module} %{buildroot}%{_bindir}/%{node_module}
-
-# For architecture dependent packages
-%npm_install_sitearch()                                                                              \
-   mkdir -p %{buildroot}%{nodejs_sitearch}/%{node_module}                                            \
-   mkdir -p %{buildroot}%{_bindir}                                                                   \
-   cp -r ./* -t %{buildroot}%{nodejs_sitearch}/%{node_module}                                        \
-   ln -sf %{nodejs_sitearch}/%{node_module}/bin/%{node_module} %{buildroot}%{_bindir}/%{node_module}
-
-# Best used in check section
-%npm_audit() \
-   %{__npm} audit --audit-level=low
-
-# Best used in prep section if check fails
-# -d can be used to check what it will do before running, especially if using -f
-# Reference: https://docs.npmjs.com/cli/v7/commands/npm-audit
-%npm_audit_fix(dfo:O:p) %{__npm} audit fix %{shrink: \
-   %{-d:--dry-run}                                   \
-   %{-f:--force}                                     \
-   %{-o:--omit=%{-o*}}                               \
-   %{-O:--only=%{-O*}}                               \
-   %{-p:--package-lock-only}                         \
-   %{nil}                                            \
-}
-
-# Requires nodejs-license-checker as a build dep
-%npm_license_summary() \
-   /usr/bin/license-checker --summary
-
-%npm_license() \
-   /usr/bin/license-checker | sed '/.*repository:.*/d;/.*publisher:.*/d;/.*email:.*/d;/.*url:.*/d;/.*path:.*/d;/.*licenseFile:.*/d;/.*noticeFile:.*/d'
-
+# Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
+# -f: "Folders" or "files." Node test folders and files must be specified using the FULL PATH starting with '/'.
+# -u: "URL." This MUST be set if the URL used in the spec is not a clonable Git repository
+# URL MAY include ".git" when using -u flag
+# fetch_node_tests -f /tests /src/tests -u https://github.com/nodepkgdev/nodepkgname
 %fetch_node_tests(f:u:) %{lua:
    cmd = 'git clone -n --depth=1 --filter=tree:0 -q -j$(nproc) '
    if rpm.expand("%{?-f*}") == '' then
-     error("Test folders not specified. Please specify them using the -f option.")
+     error("Test folders/files not specified. Please specify them using the -f option.")
    elseif string.sub(rpm.expand("%{-f*}"), 1, 1) ~= '/' then
      error("Folders holding test files must start with '/'")
    else
@@ -70,19 +41,91 @@
      srcdir = ' %{builddir}/sourcetests'
    end
    rpm.define("_nodetestdir " .. srcdir)
-   if rpm.expand("%{?url}"):find('git') and rpm.expand("%{?-u*}") == '' then
+   if (rpm.expand("%{?url}"):find('git') and rpm.expand("%{?-u*}") == '' then
      print(cmd .. rpm.expand("%{url}") .. ' && cd ' .. srcdir)
    elseif opt.u then
      print(cmd .. rpm.expand("%{-u*}") .. srcdir .. ' && cd ' .. srcdir)
    else
      error("URL is not clonable and -u is not set. Please set a Git repository hosting the tests for this module using the -u option.")
-   end}                                            \
-   git switch -c v%{version} -q                    \
-   git sparse-checkout set --no-cone %{_nodetests} \
+   end}                                               \
+   git switch -c v%{version} -q                       \
+   git sparse-checkout set --no-cone %{_nodetests} -q \
    git checkout -q
 
-# Only applicable if a test folder is provided from a source repo
-%node_self_test ()                                      \
-  for f in %{?_nodetests}; do                           \
-  NODE_ENV=test bin/%{node_module} -R %{_nodetestdir}$f \
+# Install package to sitelib. Should only be used for noarch packages.
+%npm_install_sitelib()                                                                         \
+   (                                                                                           \
+   set -euo pipefail                                                                           \
+   mkdir -p %{buildroot}%{nodejs_sitelib}/%{node_module}                                       \
+   mkdir -p %{buildroot}%{_bindir}                                                             \
+   cp -r ./* -t %{buildroot}%{nodejs_sitelib}/%{node_module}                                   \
+   ln -sf %{nodejs_sitelib}/%{module}/bin/%{node_module} %{buildroot}%{_bindir}/%{node_module} \
+)
+
+# For architecture dependent packages
+# These are almost always modules written in C++
+# Reference: https://docs.fedoraproject.org/en-US/packaging-guidelines/Node.js
+# Note: This and nodejs_sitelib are currently the same directory but Fedora may change this in the future so this should still be used.
+%npm_install_sitearch()                                                                              \
+   (                                                                                                 \
+   set -euo pipefail                                                                                 \
+   mkdir -p %{buildroot}%{nodejs_sitearch}/%{node_module}                                            \
+   mkdir -p %{buildroot}%{_bindir}                                                                   \
+   cp -r ./* -t %{buildroot}%{nodejs_sitearch}/%{node_module}                                        \
+   ln -sf %{nodejs_sitearch}/%{node_module}/bin/%{node_module} %{buildroot}%{_bindir}/%{node_module} \
+)
+
+# Shorthand for npm_install_sitelib unless sitelib and sitearch diverge
+%npm_install() %{npm_install_sitelib}
+
+# Best used in check section
+# This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
+%npm_audit()                        \
+   (                                \
+   set -euo pipefail                \
+   %{__npm} audit --audit-level=low \
+   )
+
+# Best used in prep section if check fails
+# -d can be used to check what it will do before running, especially if using -f
+# -f should ONLY be used if absolutely necessary and SHOULD be tested locally on the module first, as it will potentially break dependencies
+# Reference: https://docs.npmjs.com/cli/v7/commands/npm-audit
+%npm_audit_fix(dfo:O:p)                              \
+   (                                                 \
+   set -euo pipefail                                 \
+   %{__npm} audit fix %{shrink:                      \
+   %{-d:--dry-run}                                   \
+   %{-f:--force}                                     \
+   %{-o:--omit=%{-o*}}                               \
+   %{-O:--only=%{-O*}}                               \
+   %{-p:--package-lock-only}                         \
+   %{nil}                                            \
+}                                                    \
+)
+
+## Below require nodejs-license-checker as a build dep
+
+# Make this a macro so it can be called on its own for any reason
+%__npm_license_checker() /usr/bin/license-checker
+
+# Outputs a summary of the licenses used in the main package and bundled dependencies
+# Useful for filling out the License section
+%npm_license_summary()              \
+(                                   \
+set -euo pipefail                   \
+%{__npm_license_checker} --summary  \
+)
+
+# Outputs all used licenses and removes all irrelevent info, especially paths
+# Since this is a license file, the repository and publisher information have been removed, but they SHOULD ALWAYS be left in an unaltered state in the bundled module
+%npm_license()                                                                                                                                      \
+(                                                                                                                                                   \
+set -euo pipefail                                                                                                                                   \
+%{__npm_license_checker} | sed '/.*repository:.*/d;/.*publisher:.*/d;/.*email:.*/d;/.*url:.*/d;/.*path:.*/d;/.*licenseFile:.*/d;/.*noticeFile:.*/d' \
+)
+
+# Only applicable if a test folder is provided from a source repo using fetch_node_tests
+%node_self_test ()                                         \
+  for test in %{?_nodetests}; do                           \
+  NODE_ENV=test bin/%{node_module} -R %{_nodetestdir}$test \
   done
