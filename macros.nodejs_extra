@@ -22,10 +22,11 @@
    %setup -T -D -n lib/node_modules/%{npm_name}
 
 # Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
-# -f: "Folders" or "files." Node test folders and files must be specified using the FULL PATH starting with '/'.
+# -f: "Folders" or "files." Node test folders and files not in the root of the repository must be specified using the FULL PATH starting with '/'.
+# Files in the root of the repository need only their name
 # -u: "URL." This MUST be set if the URL used in the spec is not automatically detectable as a clonable Git repository
 # URL MAY include ".git" when using -u flag
-# fetch_node_tests -f /tests /src/tests -u https://github.com/nodepkgdev/nodepkgname
+# fetch_node_tests -f /tests .eslintrc.json -u https://github.com/nodepkgdev/nodepkgname
 %fetch_node_tests(f:u:) %{lua:
    cmd = 'git clone -n --depth=1 --filter=tree:0 -q -j$(nproc) '
    if rpm.expand("%{?-f*}") == '' then
