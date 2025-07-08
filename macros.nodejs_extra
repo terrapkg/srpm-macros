@@ -22,30 +22,37 @@
    %setup -T -D -n lib/node_modules/%{npm_name}
 
 # Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
-# -f: "Folders" or "files." Node test folders and files not in the root of the repository must be specified using the FULL PATH starting with '/'.
 # Files in the root of the repository need only their name
 # -u: "URL." This MUST be set if the URL used in the spec is not automatically detectable as a clonable Git repository
 # URL MAY include ".git" when using -u flag
-# fetch_node_tests -f /tests .eslintrc.json -u https://github.com/nodepkgdev/nodepkgname
-%fetch_node_tests(f:u:) %{lua:
+# fetch_node_tests -u https://github.com/nodepkgdev/nodepkgname /tests .eslintrc.json
+# Note that if tests
+%fetch_node_tests(u:) %{lua:
    cmd = 'git clone -n --depth=1 --filter=tree:0 -q -j$(nproc) '
-   if rpm.expand("%{?-f*}") == '' then
-     error("Test folders/files not specified. Please specify them using the -f option.")
-   elseif rpm.expand("%{-f*}"):find('/') and string.sub(rpm.expand("%{-f*}"), 1, 1) ~= '/' then
-     error("Folders holding test files must start with '/'")
+   if macros["1"] == null then
+     error("Test folders/files not specified. Please list them, separated by spaces.")
    else
-     rpm.define("_nodetests " .. rpm.expand("%{-f*}"))
+     for i, file in ipairs(arg) do
+       if file:find('/') and string.sub(file, 1, 1) ~= '/' then
+         error("Folders holding test files must start with '/'")
+       end
+     end
+      rpm.define("_nodetests " .. table.concat(arg, " "))
    end
    if rpm.expand('%["%{rpmversion}" < "4.20"]') == '1' then
      srcdir = ' %{_builddir}/sourcetests'
    else
-     srcdir = ' %{builddir}/sourcetests'
+     srcdir = '%{builddir}/sourcetests'
    end
    rpm.define("_nodetestdir " .. srcdir)
    if (rpm.expand("%{?url}"):find('git') or rpm.expand("%{?url}"):find('codeberg')) and rpm.expand("%{?-u*}") == '' then
      print(cmd .. rpm.expand("%{url}") .. ' && cd ' .. srcdir)
    elseif opt.u then
-     print(cmd .. rpm.expand("%{-u*}") .. srcdir .. ' && cd ' .. srcdir)
+     if not rpm.expand("%{-u*}"):find('://') and rpm.expand("%{-u*}"):find('.') then
+       error("-u argument is not a clonable URL. Please make sure it is in the format of 'https://github.com/repo/project'")
+     else
+       print(cmd .. rpm.expand("%{-u*} ") .. srcdir .. ' && cd ' .. srcdir)
+     end
    else
      error("URL could not be automatically identified as clonable and -u is not set. Please set a Git repository hosting the tests for this module using the -u option.")
    end}                                            \
@@ -131,12 +138,14 @@
 # Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
-%node_self_test(Rv)                          \
-   for test in %{?_nodetests}; do            \
-     NODE_ENV=test bin/%{npm_name} %{shrink: \
-     %{-R:-R}                                \
-     %{-v:-v}                                \
-     } %{_nodetestdir}$test                  \
+%node_self_test(Rv)                             \
+   for test in %{?_nodetests}; do               \
+      if [[ $test == ^/* ]]; then               \
+        NODE_ENV=test bin/%{npm_name} %{shrink: \
+        %{-R:-R}                                \
+        %{-v:-v}                                \
+        } %{_nodetestdir}$test                  \
+      fi
    done
 
 # Generic NPM tests
