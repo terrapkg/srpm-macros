@@ -6,5 +6,5 @@
    mkdir -p %{buildroot}%{_jsdir}/%{npm_name}                                       \
    mkdir -p %{buildroot}%{_bindir}                                                  \
    cp -r ./* -t %{buildroot}%{_jsdir}/%{npm_name}                                   \
-   ln -sf %{_jsdir}/%{module}/bin/%{npm_name}.js %{buildroot}%{_bindir}/%{npm_name} \
+   ln -sf %{_jsdir}/%{npm_name}/bin/%{npm_name}.js %{buildroot}%{_bindir}/%{npm_name} \
 )
