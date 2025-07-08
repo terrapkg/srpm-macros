@@ -1,6 +1,6 @@
 %goprep_online(z:ai:b:s:kervS:A)     \
-%define gomodulesmode GO111MODULE=on \
 %{lua:
+rpm.define("gomodulesmode " .. "GO111MODULE=on")
 local        fedora =  require "fedora.common"
 local       extract = (rpm.expand("%{-e}") == "")
 -- Use autosetup if either -A or -S is passed
