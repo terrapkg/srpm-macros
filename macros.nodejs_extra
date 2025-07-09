@@ -70,14 +70,12 @@
    if opt.a and rpm.expand("%{with js}") == '1' then
      error("'-a' cannot be used for JS packages.")
    elseif rpm.expand("%{with js}") == '1' and not opt.a then
-     if not posix.stat(prepbindir .. rpm.expand("%{npm_name}.js")) then
-       error("This is not a JS package. Please do not set %%jsmeta for this package.")
-     else
-       installdir = "%{buildroot}%{_jsdir}/%{npm_name}"
-       installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
+     installdir = "%{buildroot}%{_jsdir}/%{npm_name}"
+     installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
      end
    elseif opt.a then
-     if posix.stat(prepbindir .. rpm.expand("%{npm_name}.js")) then
+   -- Note: The below is a LIMITED check on if a package is a JS package to reduce macro runtime. jspkgcheck should be used for a better one.
+     if posix.stat(prepbindir .. " *.js") then
        error("This is a JS package. Please set %%jsmeta somewhere in the spec before the prep secion.")
      else
      elseif
@@ -85,7 +83,7 @@
        installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}%{?_js}")
      end
    else
-     if posix.stat(prepbindir .. rpm.expand("%{npm_name}.js")) then
+     if posix.stat(prepbindir .. " *.js") then
        error("This is a JS package. Please set %%jsmeta somewhere in the spec before the prep section.")
      else
        installdir = "%{buildroot}%{nodejs_sitelib}/%{npm_name}"
