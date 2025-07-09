@@ -76,7 +76,7 @@
    elseif opt.a then
    -- Note: The below is a LIMITED check on if a package is a JS package to reduce macro runtime. jspkgcheck should be used for a better one.
      if posix.stat(prepbindir .. " *.js") then
-       error("This is a JS package. Please set %%jsmeta somewhere in the spec before the prep secion.")
+       error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep secion.")
      else
      elseif
        installdir = "%{buildroot}%{nodejs_sitearch}/%{npm_name}"
@@ -84,7 +84,7 @@
      end
    else
      if posix.stat(prepbindir .. " *.js") then
-       error("This is a JS package. Please set %%jsmeta somewhere in the spec before the prep section.")
+       error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep section.")
      else
        installdir = "%{buildroot}%{nodejs_sitelib}/%{npm_name}"
        installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
