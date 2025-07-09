@@ -73,10 +73,11 @@
      installdir = "%{buildroot}%{_jsdir}/%{npm_name}"
        if not posix.stat(prepbindir .. " *.js") then
          installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}")
+         installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}")
        else
          installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
+         installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
        end
-     installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
      end
    elseif opt.a then
    -- Note: The below is a LIMITED check on if a package is a JS package to reduce macro runtime. jspkgcheck should be used for a better one.
