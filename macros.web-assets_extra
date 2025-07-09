@@ -1,10 +1,16 @@
 ## Macros for JS packages hosted with NPM
 
-%npm_install_js() \
-      (                                                                             \
-   set -euo pipefail                                                                \
-   mkdir -p %{buildroot}%{_jsdir}/%{npm_name}                                       \
-   mkdir -p %{buildroot}%{_bindir}                                                  \
-   cp -r ./* -t %{buildroot}%{_jsdir}/%{npm_name}                                   \
-   ln -sf %{_jsdir}/%{npm_name}/bin/%{npm_name}.js %{buildroot}%{_bindir}/%{npm_name} \
-)
+# Meta macro that sets up the build for a JS package
+%jsmeta()                           \
+   %bcond js 1                      \
+   %global _js .js                  \
+   BuildRequires:  web-assets-devel
+
+# Macro to check if a package is a JS package or not
+# MUST be used after npm_prep
+%jspkgcheck()                                                                                        \
+   if stat bin/*.js &>/dev/null; then                                                                \
+     echo "This is a JS package! Make sure %%jsmeta is set and the package prefix should be 'js-'"   \
+   else                                                                                              \
+     echo "This is not a JS package. Do not set %%jsmeta and the package prefix should be 'nodejs-'" \
+   fi

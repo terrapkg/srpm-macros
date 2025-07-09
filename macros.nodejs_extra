@@ -61,31 +61,46 @@
    git checkout -q                                 \
    cd ~-
 
-# Install package to sitelib. Should only be used for noarch packages.
-%npm_install_sitelib()                                                                   \
-   (                                                                                     \
-   set -euo pipefail                                                                     \
-   mkdir -p %{buildroot}%{nodejs_sitelib}/%{npm_name}                                    \
-   mkdir -p %{buildroot}%{_bindir}                                                       \
-   cp -r ./* -t %{buildroot}%{nodejs_sitelib}/%{npm_name}                                \
-   ln -sf %{nodejs_sitelib}/%{module}/bin/%{npm_name} %{buildroot}%{_bindir}/%{npm_name} \
-)
-
-# For architecture dependent packages
-# These are almost always modules written in C++
-# Reference: https://docs.fedoraproject.org/en-US/packaging-guidelines/Node.js
-# Note: This and nodejs_sitelib are currently the same directory but Fedora may change this in the future so this should still be used.
-%npm_install_sitearch()                                                                     \
-   (                                                                                        \
-   set -euo pipefail                                                                        \
-   mkdir -p %{buildroot}%{nodejs_sitearch}/%{npm_name}                                      \
-   mkdir -p %{buildroot}%{_bindir}                                                          \
-   cp -r ./* -t %{buildroot}%{nodejs_sitearch}/%{npm_name}                                  \
-   ln -sf %{nodejs_sitearch}/%{npm_name}/bin/%{npm_name} %{buildroot}%{_bindir}/%{npm_name} \
-)
-
-# Shorthand for npm_install_sitelib unless sitelib and sitearch diverge
-%npm_install() %{npm_install_sitelib}
+# Install package. Defaults to nodejs_sitelib unless jsmeta is set.
+# -a: "Arch." Install to sitearch instead. Currently unneeded as nodejs_sitelib and nodejs_sitearch are the same.
+# -s: "Symlink." Install bindir symlink as a different name than the npm_name.
+# TODO: Add READELF check for if -a is not set?
+%npm_install(as:) %{lua:
+   local prepbindir = rpm.expand("%{buildsubdir}/bin/")
+   if opt.a and rpm.expand("%{with js}") == '1' then
+     error("'-a' cannot be used for JS packages.")
+   elseif rpm.expand("%{with js}") == '1' and not opt.a then
+     if not posix.stat(prepbindir .. rpm.expand("%{npm_name}.js")) then
+       error("This is not a JS package. Please do not set %%jsmeta for this package.")
+     else
+       installdir = "%{buildroot}%{_jsdir}/%{npm_name}"
+       installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
+     end
+   elseif opt.a then
+     if posix.stat(prepbindir .. rpm.expand("%{npm_name}.js")) then
+       error("This is a JS package. Please set %%jsmeta somewhere in the spec before the prep secion.")
+     else
+     elseif
+       installdir = "%{buildroot}%{nodejs_sitearch}/%{npm_name}"
+       installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}%{?_js}")
+     end
+   else
+     if posix.stat(prepbindir .. rpm.expand("%{npm_name}.js")) then
+       error("This is a JS package. Please set %%jsmeta somewhere in the spec before the prep section.")
+     else
+       installdir = "%{buildroot}%{nodejs_sitelib}/%{npm_name}"
+       installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
+     end
+   end
+   bindir = rpm.expand("%{buildroot}%{_bindir}/")
+   rpm.execute('mkdir', '-p', installdir)
+   rpm.execute('mkdir', '-p', bindir)
+   print("cp -r ./* -t " .. installdir)
+   if opt.s then
+     posix.symlink(installbin, bindir .. rpm.expand("%{-s*}"))
+   else
+     posix.symlink(installbin, bindir .. rpm.expand("%{npm_name}"))
+   end}
 
 # Best used in check section
 # This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
@@ -138,13 +153,13 @@
 # Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
-%node_self_test(Rv)                             \
-   for test in %{?_nodetests}; do               \
-      if [[ $test == ^/* ]]; then               \
-        NODE_ENV=test bin/%{npm_name} %{shrink: \
-        %{-R:-R}                                \
-        %{-v:-v}                                \
-        } %{_nodetestdir}$test                  \
+%node_self_test(Rv)                                    \
+   for test in %{?_nodetests}; do                      \
+      if [[ $test == /* ]]; then                       \
+        NODE_ENV=test bin/%{npm_name}%{?_js} %{shrink: \
+        %{-R:-R}                                       \
+        %{-v:-v}                                       \
+        } %{_nodetestdir}$test                         \
       fi
    done
 
