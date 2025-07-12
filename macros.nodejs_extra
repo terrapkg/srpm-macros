@@ -15,7 +15,7 @@
      rpm.define("npm_name " .. rpm.expand("%{-n*}"))
    end
    local module = rpm.expand("%{?npm_name}")
-   if (module == '%{npm_name}') or (module == '%npm_name') or (module == '') then
+   if not rpm.isdefined("npm_name") then
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
    end}                                                  \
    %{__npm} install -g %{npm_name}@%{version} --prefix=. \
@@ -66,6 +66,11 @@
 # -s: "Symlink." Install bindir symlink as a different name than the npm_name.
 # TODO: Add READELF check for if -a is not set?
 %npm_install(as:) %{lua:
+   if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
+     error("Package has not been prepped! Please run %npm_prep first.")
+   else
+     module = rpm.expand("%{?npm_name}")
+   end
    prepbindir = rpm.expand("%{buildsubdir}/bin/")
    if opt.a and rpm.expand("%{with js}") == '1' then
      error("'-a' cannot be used for JS packages.")
@@ -76,7 +81,6 @@
        else
          installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
        end
-     end
    elseif opt.a then
    -- Note: The below is a LIMITED check on if a package is a JS package to reduce macro runtime. jspkgcheck should be used for a better one.
      if posix.stat(prepbindir .. " *.js") then
@@ -94,17 +98,17 @@
      end
    end
    bindir = rpm.expand("%{buildroot}%{_bindir}/")
-   rpm.execute('mkdir', '-p', installdir)
-   rpm.execute('mkdir', '-p', bindir)
-   print("cp -r ./* -t " .. installdir)
+   print("mkdir -p " .. installdir .. "\\n")
+   print("mkdir -p " .. bindir .. "\\n")
+   print("cp -r ./* -t " .. installdir .. "\\n")
    if opt.s then
-     if not rpm.expand("%{?node_bin_symlink}") == rpm.expand("%{-s*}") then
-       rpm.define("node_bin_symlink " .. rpm.expand("%{-s*}")
+     if rpm.expand("%{?node_bin_symlink}") ~= rpm.expand("%{-s*}") then
+       rpm.define("node_bin_symlink " .. rpm.expand("%{-s*}"))
      end
    else
-     rpm.define("node_bin_symlink " .. rpm.expand("%{npm_name}"))
+     rpm.define("node_bin_symlink " .. module)
    end
-   posix.symlink(installbin, bindir .. rpm.expand("%{node_bin_symlink}"))
+   print("ln -sf " .. installbin .. " " .. bindir .. rpm.expand("%{node_bin_symlink}"))
 }
 
 # Best used in check section
