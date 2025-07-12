@@ -66,16 +66,14 @@
 # -s: "Symlink." Install bindir symlink as a different name than the npm_name.
 # TODO: Add READELF check for if -a is not set?
 %npm_install(as:) %{lua:
-   local prepbindir = rpm.expand("%{buildsubdir}/bin/")
+   prepbindir = rpm.expand("%{buildsubdir}/bin/")
    if opt.a and rpm.expand("%{with js}") == '1' then
      error("'-a' cannot be used for JS packages.")
    elseif rpm.expand("%{with js}") == '1' and not opt.a then
-     installdir = "%{buildroot}%{_jsdir}/%{npm_name}"
+     installdir = rpm.expand("%{buildroot}%{_jsdir}/%{npm_name}")
        if not posix.stat(prepbindir .. " *.js") then
          installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}")
-         installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}")
        else
-         installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
          installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
        end
      end
@@ -84,16 +82,14 @@
      if posix.stat(prepbindir .. " *.js") then
        error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep secion.")
      else
-     elseif
-       installdir = "%{buildroot}%{nodejs_sitearch}/%{npm_name}"
-       if not posix.stat(prepbindir .. " *.js") then
-       installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}")
+       installdir = rpm.expand("%{buildroot}%{nodejs_sitearch}/%{npm_name}")
+       installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}%{?_js}")
      end
    else
      if posix.stat(prepbindir .. " *.js") then
        error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep section.")
      else
-       installdir = "%{buildroot}%{nodejs_sitelib}/%{npm_name}"
+       installdir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
        installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
      end
    end
@@ -102,10 +98,14 @@
    rpm.execute('mkdir', '-p', bindir)
    print("cp -r ./* -t " .. installdir)
    if opt.s then
-     posix.symlink(installbin, bindir .. rpm.expand("%{-s*}"))
+     if not rpm.expand("%{?node_bin_symlink}") == rpm.expand("%{-s*}") then
+       rpm.define("node_bin_symlink " .. rpm.expand("%{-s*}")
+     end
    else
-     posix.symlink(installbin, bindir .. rpm.expand("%{npm_name}"))
-   end}
+     rpm.define("node_bin_symlink " .. rpm.expand("%{npm_name}"))
+   end
+   posix.symlink(installbin, bindir .. rpm.expand("%{node_bin_symlink}"))
+}
 
 # Best used in check section
 # This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
@@ -158,13 +158,13 @@
 # Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
-%node_self_test(Rv)                                    \
-   for test in %{?_nodetests}; do                      \
-      if [[ $test == /* ]]; then                       \
-        NODE_ENV=test bin/%{npm_name}%{?_js} %{shrink: \
-        %{-R:-R}                                       \
-        %{-v:-v}                                       \
-        } %{_nodetestdir}$test                         \
+%node_self_test(Rv)                                                        \
+   for test in %{?_nodetests}; do                                          \
+      if [[ $test == /* ]]; then                                           \
+        NODE_ENV=test %{buildroot}%{_bindir}/%{node_bin_symlink} %{shrink: \
+        %{-R:-R}                                                           \
+        %{-v:-v}                                                           \
+        } %{_nodetestdir}$test                                             \
       fi
    done
 
