@@ -45,7 +45,7 @@
      srcdir = '%{builddir}/sourcetests'
    end
    rpm.define("_nodetestdir " .. srcdir)
-   if (rpm.expand("%{?url}"):find('git') or rpm.expand("%{?url}"):find('codeberg')) and rpm.expand("%{?-u*}") == '' then
+   if (rpm.expand("%{?url}"):find('git') or rpm.expand("%{?url}"):find('codeberg')) and not opt.u then
      print(cmd .. rpm.expand("%{url}") .. ' && cd ' .. srcdir)
    elseif opt.u then
      if not rpm.expand("%{-u*}"):find('://') and rpm.expand("%{-u*}"):find('.') then
