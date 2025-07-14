@@ -28,87 +28,80 @@
 # fetch_node_tests -u https://github.com/nodepkgdev/nodepkgname /tests .eslintrc.json
 # Note that if tests
 %fetch_node_tests(u:) %{lua:
-   cmd = 'git clone -n --depth=1 --filter=tree:0 -q -j$(nproc) '
-   if macros["1"] == null then
-     error("Test folders/files not specified. Please list them, separated by spaces.")
-   else
-     for i, file in ipairs(arg) do
-       if file:find('/') and string.sub(file, 1, 1) ~= '/' then
-         error("Folders holding test files must start with '/'")
-       end
-     end
-      rpm.define("_nodetests " .. table.concat(arg, " "))
-   end
-   if rpm.expand('%["%{rpmversion}" < "4.20"]') == '1' then
-     srcdir = ' %{_builddir}/sourcetests'
-   else
-     srcdir = '%{builddir}/sourcetests'
-   end
-   rpm.define("_nodetestdir " .. srcdir)
-   if (rpm.expand("%{?url}"):find('git') or rpm.expand("%{?url}"):find('codeberg')) and not opt.u then
-     print(cmd .. rpm.expand("%{url}") .. ' && cd ' .. srcdir)
-   elseif opt.u then
-     if not rpm.expand("%{-u*}"):find('://') and rpm.expand("%{-u*}"):find('.') then
-       error("-u argument is not a clonable URL. Please make sure it is in the format of 'https://github.com/repo/project'")
-     else
-       print(cmd .. rpm.expand("%{-u*} ") .. srcdir .. ' && cd ' .. srcdir)
-     end
-   else
-     error("URL could not be automatically identified as clonable and -u is not set. Please set a Git repository hosting the tests for this module using the -u option.")
-   end}                                            \
-   git switch -c v%{version} -q                    \
-   git sparse-checkout set --no-cone %{_nodetests} \
-   git checkout -q                                 \
-   cd ~-
+  cmd = 'git clone -n --depth=1 --filter=tree:0 -q -j$(nproc) '
+  if not arg[1] then error("Test folders/files not specified. Please list them, separated by spaces.") end
+  for i, file in ipairs(arg) do
+    if file:find('/') and string.sub(file, 1, 1) ~= '/' then
+      error("Folders holding test files must start with '/'")
+    end
+  end
+  macros["_nodetests"] = table.concat(arg, " ")
+  srcdir = (macros._builddir or macros.builddir) .. "/sourcetests"
+  macros["_nodetestdir"] = srcdir
+  if (rpm.expand("%{?url}"):find('git') or rpm.expand("%{?url}"):find('codeberg')) and not opt.u then
+    print(cmd .. macros["url"] .. ' && cd ' .. srcdir)
+  elseif opt.u then
+    if rpm.expand("%{-u*}"):find('://') and rpm.expand("%{-u*}"):find('.') then
+      print(cmd .. rpm.expand("%{-u*} ") .. srcdir .. ' && cd ' .. srcdir)
+    else
+      error("-u argument is not a clonable URL. Please make sure it is in the format of 'https://github.com/repo/project'")
+    end
+  else
+    error("URL could not be automatically identified as clonable and -u is not set. Please set a Git repository hosting the tests for this module using the -u option.")
+  end}                                            \
+  git switch -c v%{version} -q                    \
+  git sparse-checkout set --no-cone %{_nodetests} \
+  git checkout -q                                 \
+  cd ~-
 
 # Install package. Defaults to nodejs_sitelib unless jsmeta is set.
 # -a: "Arch." Install to sitearch instead. Currently unneeded as nodejs_sitelib and nodejs_sitearch are the same.
 # -s: "Symlink." Install bindir symlink as a different name than the npm_name.
 # TODO: Add READELF check for if -a is not set?
 %npm_install(as:) %{lua:
-   if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
-     error("Package has not been prepped! Please run %npm_prep first.")
-   else
-     module = rpm.expand("%{?npm_name}")
-   end
-   prepbindir = rpm.expand("%{buildsubdir}/bin/")
-   if opt.a and rpm.expand("%{with js}") == '1' then
-     error("'-a' cannot be used for JS packages.")
-   elseif rpm.expand("%{with js}") == '1' and not opt.a then
-     installdir = rpm.expand("%{buildroot}%{_jsdir}/%{npm_name}")
-       if not posix.stat(prepbindir .. " *.js") then
-         installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}")
-       else
-         installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
-       end
-   elseif opt.a then
-   -- Note: The below is a LIMITED check on if a package is a JS package to reduce macro runtime. jspkgcheck should be used for a better one.
-     if posix.stat(prepbindir .. " *.js") then
-       error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep secion.")
-     else
-       installdir = rpm.expand("%{buildroot}%{nodejs_sitearch}/%{npm_name}")
-       installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}%{?_js}")
-     end
-   else
-     if posix.stat(prepbindir .. " *.js") then
-       error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep section.")
-     else
-       installdir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
-       installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
-     end
-   end
-   bindir = rpm.expand("%{buildroot}%{_bindir}/")
-   print("mkdir -p " .. installdir .. "\\n")
-   print("mkdir -p " .. bindir .. "\\n")
-   print("cp -r ./* -t " .. installdir .. "\\n")
-   if opt.s then
-     if rpm.expand("%{?node_bin_symlink}") ~= rpm.expand("%{-s*}") then
-       rpm.define("node_bin_symlink " .. rpm.expand("%{-s*}"))
-     end
-   else
-     rpm.define("node_bin_symlink " .. module)
-   end
-   print("ln -sf " .. installbin .. " " .. bindir .. rpm.expand("%{node_bin_symlink}"))
+  if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
+    error("Package has not been prepped! Please run %npm_prep first.")
+  else
+    module = rpm.expand("%{?npm_name}")
+  end
+  prepbindir = rpm.expand("%{buildsubdir}/bin/")
+  if opt.a and rpm.expand("%{with js}") == '1' then
+    error("'-a' cannot be used for JS packages.")
+  elseif rpm.expand("%{with js}") == '1' and not opt.a then
+    installdir = rpm.expand("%{buildroot}%{_jsdir}/%{npm_name}")
+      if not posix.stat(prepbindir .. " *.js") then
+        installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}")
+      else
+        installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
+      end
+  elseif opt.a then
+  -- Note: The below is a LIMITED check on if a package is a JS package to reduce macro runtime. jspkgcheck should be used for a better one.
+    if posix.stat(prepbindir .. " *.js") then
+      error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep secion.")
+    else
+      installdir = rpm.expand("%{buildroot}%{nodejs_sitearch}/%{npm_name}")
+      installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}%{?_js}")
+    end
+  else
+    if posix.stat(prepbindir .. " *.js") then
+      error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep section.")
+    else
+      installdir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
+      installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
+    end
+  end
+  bindir = rpm.expand("%{buildroot}%{_bindir}/")
+  print("mkdir -p " .. installdir .. "\\n")
+  print("mkdir -p " .. bindir .. "\\n")
+  print("cp -r ./* -t " .. installdir .. "\\n")
+  if opt.s then
+    if rpm.expand("%{?node_bin_symlink}") ~= rpm.expand("%{-s*}") then
+      rpm.define("node_bin_symlink " .. rpm.expand("%{-s*}"))
+    end
+  else
+    rpm.define("node_bin_symlink " .. module)
+  end
+  print("ln -sf " .. installbin .. " " .. bindir .. macros["node_bin_symlink"])
 }
 
 # Best used in check section

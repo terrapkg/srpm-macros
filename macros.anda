@@ -5,23 +5,22 @@
 
 # git_clone [<repo_url>] [<ref>]
 %git_clone() %{lua:
-  local url = rpm.expand("%?1%{!?1:%url}")
-  if (url == '%url') or (url == '') then
-    error("%url is not defined")
-  end
-  local ref = rpm.expand("%?2%{!?2:%?commit%{!?commit:%version}}")
-  if (ref == '%version') or (branch == '') then
-    error("%version is not defined")
+  local url = macros["1"] or macros.url
+  if not url then error("%url is not defined") end
+  local ref = macros["2"] or macros.commit or macros.version
+  if not ref then error("%commit / %version is not defined") end
+  if (#ref ~= 40) and not (ref:find("%X")) then
+    error("Please provide the full commit sha")
   end
   local dir = (url:gsub("/(%.git)?$", "")):gsub("^.+/", ""):gsub("%.git", "")
   local command = 'git clone --recurse-submodules -q -j$(nproc) ' .. url
-  if (ref:len() == 40 or ref:len() == 7) and not(ref:find("%X")) then
-    command = command .. ' && cd ' .. dir .. ' && git checkout -q ' .. ref
+  if (ref:len() == 40) and not(ref:find("%X")) then
+    command = command .. ' --depth 1 --revision ' .. ref
   else
-    command = command .. ' --depth 1 -b ' .. ref .. ' && cd ' .. dir
+    command = command .. ' --depth 1 -b ' .. ref .. ' || ' .. command .. ' --depth 1 -b v' .. ref
   end
-  -- BUG: rpm.define() takes only 1 arg…???
-  rpm.define("buildsubdir " .. dir)
+  command = command .. ' && cd ' .. dir
+  macros.buildsubdir = dir
   print(command)
 }
 
@@ -39,13 +38,13 @@
 # cmd1 ...: the commands the completion files are for
 %pkg_completion(Bbefzn:) %{lua:
   local shells = {}
-  local pkg = rpm.expand("%{?-n:%{-n*}}%{!?-n:%name}")
+  local pkg = macros["-n*"] or macros["name"]
   local bins_num = tonumber(rpm.expand("%#"))
   local bins = {}
-  local evr = rpm.expand("%evr")
+  local evr = macros["evr"]
   
   for i = 1, bins_num do
-    bins[i] = rpm.expand("%"..i)
+    bins[i] = macros[i]
   end
   if bins_num == 0 then
     bins[1] = pkg

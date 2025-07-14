@@ -23,13 +23,13 @@
 %zig_build_target(cr:s) %{lua:
    if opt.c then
     if rpm.expand("%{?1}"):find("%w") then
-     rpm.define("_zig_cpu " .. rpm.expand("%{1}"))
+     macros["_zig_cpu"] = arg[1]
     else
-     rpm.define("_zig_cpu " .. rpm.expand("%{_target_cpu}"))
+     macros["_zig_cpu"] = macros["_target_cpu"]
     end
    end
    if opt.r then
-    rpm.define("_zig_release_mode " .. rpm.expand("%{?-r:%{-r*}}"))
+    macros["_zig_release_mode"] = macros["-r*"]
    end
    if opt.s then
     rpm.undefine("_zig_system_integration")
