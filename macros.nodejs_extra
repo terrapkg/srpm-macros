@@ -1,11 +1,6 @@
 ## These macros REQUIRE that the macro npm_name be defined or the module be passed to them
 
-%__npm() %{lua:
-   if rpm.expand('%["%{rpmversion}" < "4.20"]') == '1' then
-     print("/usr/bin/env NPM_CONFIG_USERCONFIG=%{_builddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{_builddir}/npmrc NPM_CONFIG_CACHE=%{_builddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{_builddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{_builddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null /usr/bin/npm")
-   else
-     print("/usr/bin/env NPM_CONFIG_USERCONFIG=%{builddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{builddir}/npmrc NPM_CONFIG_CACHE=%{builddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{builddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{builddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null /usr/bin/npm")
-   end}
+%__npm /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null /usr/bin/npm
 
 # For use in prep section
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM registry
@@ -36,7 +31,7 @@
     end
   end
   macros["_nodetests"] = table.concat(arg, " ")
-  srcdir = (macros._builddir or macros.builddir) .. "/sourcetests"
+  srcdir = macros["rpmbuilddir"] .. "/sourcetests"
   macros["_nodetestdir"] = srcdir
   if (rpm.expand("%{?url}"):find('git') or rpm.expand("%{?url}"):find('codeberg')) and not opt.u then
     print(cmd .. macros["url"] .. ' && cd ' .. srcdir)

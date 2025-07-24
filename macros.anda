@@ -26,6 +26,8 @@
 
 %evr %{?epoch:%{epoch}:}%{version}-%{release}
 
+%rpmbuilddir %{?builddir}%{?!builddir:%{_builddir}}
+
 %elvish_completions_dir %_datadir/elvish/lib/completions
 
 # pkg_completion -Bbefz -n pkgname cmd1 cmd2 ...
