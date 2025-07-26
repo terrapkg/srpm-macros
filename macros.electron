@@ -1,4 +1,7 @@
+%electron_arches %{x86_64} %{ix86} aarch64 armv7l armv7hl armv7hnl
+
 # Note: This does NOT automatically pull Bun/PNPM/Yarn. Those must be specified, this meta macro only sets the bare minimum that is consistently needed for Electron builds.
+# nodejs-packaging is REQUIRED if using NodeJS macros
 %electronmeta()                                                  \
 %global __provides_exclude ^((libffmpeg[.]so.*)|(lib.*\\.so.*))$ \
 %{lua:
@@ -27,41 +30,53 @@
 BuildRequires: desktop-file-utils                                \
 BuildRequires: gcc                                               \
 BuildRequires: gcc-c++                                           \
-BuildRequires: git                                               \
+BuildRequires: git-core                                          \
 BuildRequires: make                                              \
 BuildRequires: nodejs                                            \
 BuildRequires: nodejs-npm                                        \
-BuildRequires: python3
+BuildRequires: python3                                           \
+BuildSuggests: nodejs-packaging                                  \
+ExclusiveArch: %{electron_arches}
 
 # While Bun itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
 %__bun /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null BUN_HOME=%{rpmbuilddir}/.bun /usr/bin/bun
 
-# NPM is usually NOT how Electron projects are built and almost any other build system is preferrable
-# -e: "Extra." Extra project-specific arguments to run in between NPM install and the actual build.
-# -v: "Vite." Run electron-vite builds.
-%npm_build(ev)                                                                               \
-%{__npm} install                                                                             \
+# NPM is usually NOT how Electron projects are built and almost any other build system is preferrable. NPM because of NPM's limitations the -r or -e flags MUST be used.
+# -c: "CI." Boolean to use npm ci instead of npm install. Needed for some packages.
+# -e: "Exec." Execute commands though NPM directly.
+# -r: "Run." Project-specific scripts to run.
+%npm_build(cer:)                                                                                                                       \
+%{__npm} %{!?-c:install}%{?-c:ci} --no-audit                                                                                           \
+%{!?-e:%{!?-r:%{error:Due to limitations with NPM commands MUST be passed to npm exec or npm run directly using the -e or -r flags.}}} \
 %{lua:
   if opt.e then
+    print("HOME=" .. macros["rpmbuilddir"] .. " %{__npm} exec")
     for i, cmd in ipairs(arg) do
-      print("%{__npm} run " .. cmd .. "\\n")
+      print(" " .. cmd)
     end
-  end}                                                                                       \
-%{-v:HOME=%{rpmbuilddir} %{__npm} run electron-vite build}                                   \
-HOME=%{rpmbuilddir} %{__npm} run electron-builder --linux --%{_electron_cpu} --publish=never
+    print("\\n")
+  end}                                                                                                                                  \
+%{-r:HOME=%{rpmbuilddir} %{__npm} run %{-r*}}
 
-# -e: "Extra." Extra project-specific arguments to run in between Bun install and the actual build.
+# While Bun itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
+%__bun /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null BUN_HOME=%{rpmbuilddir}/.bun /usr/bin/bun
+
+# -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder/Electron Vite commands.
+# -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds
-%bun_build(ev)                                                                           \
-%{__bun} install                                                                         \
+%bun_build(er:v)                                                                               \
+%{__bun} install                                                                               \
 %{lua:
   if opt.e then
+    print(macros["__bun"])
     for i, cmd in ipairs(arg) do
-      print("%{__bun} run " .. cmd .. "\\n")
+      print(" " .. cmd)
     end
-  end}                                                                                   \
-%{-v:HOME=%{rpmbuilddir} %{__bun} electron-vite build}                                   \
-HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --publish=never
+    print("\\n")
+  end}                                                                                         \
+%{-r:%{__bun} run %{-r*}}                                                                      \
+%{-v:HOME=%{rpmbuilddir} %{__bun} electron-vite build}                                         \
+HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --dir --publish=never
 
 # ONLY use if PNPM is not usable from the repos for some reason
 %vendor_pnpm()                                                                    \
@@ -71,61 +86,71 @@ HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --publi
 # While PNPM itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
 %__pnpm NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null PNPM_HOME=%{rpmbuilddir}/pnpm %{?with_vendored_pnpm:%{rpmbuilddir}/pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
 
-# -e: "Extra." Extra project-specific arguments to run in between PNPM install and the actual build.
+# -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder/Electron Vite commands.
+# -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%pnpm_build(ev)                                                                           \
-%{__pnpm} install                                                                         \
+%pnpm_build(er:v)                                                                              \
+%{__pnpm} install                                                                              \
 %{lua:
   if opt.e then
+    print(macros["__pnpm"])
     for i, cmd in ipairs(arg) do
-      print("%{__pnpm} run " .. cmd .. "\\n")
+      print(" " .. cmd)
     end
-  end}                                                                                    \
-%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                   \
-HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never
+    print("\\n")
+  end}                                                                                         \
+%{-r:%{__pnpm} run %{-r*}}                                                                     \
+%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                        \
+HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir --publish=never
 
 # While Yarn itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
 %__yarn NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null YARN_CACHE_FOLDER=%{rpmbuilddir}/yarn /usr/bin/yarn
 
-# -e: "Extra." Extra project-specific arguments to run in between Yarn install and the actual build.
+# -e: "Exec." Execute commands though Yarn directly. Not recommended for Electron Builder/Electron Vite commands.
+# -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%yarn_build(ev)                                                                           \
-%{__yarn} install                                                                         \
+%yarn_build(er:v)                                                                              \
+%{__yarn} install                                                                              \
 %{lua:
   if opt.e then
+    print(macros["__yarn"])
     for i, cmd in ipairs(arg) do
-      print("%{__yarn} run " .. cmd .. "\\n")
+      print(" " .. cmd)
     end
-  end}                                                                                    \
-%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                   \
-HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never
+    print("\\n")
+  end}                                                                                         \
+%{-r:%{__yarn} run %{-r*}}                                                                     \
+%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                        \
+HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --dir --publish=never
 
 # If no alternative names are provided via flag everything fals back to the name set by the spec
 # -b: "Binary." Name of the actual executable file.
 # -d: "Directory." Choose a different name for the install directory in /usr/share
 # -D: "Desktop file." Handle automatic installation of .desktop file.
-# -E: "Enable features." For use with desktop file install.
-# -O: "Ozone platform." For use with desktop file install
+# -E: "Enable features." For use with desktop file install. Comma separated.
+# -F: Additional flags. Examples: no-sandbox disable-gpu-sandbox
+# -O: "Ozone platform." For use with desktop file install. Default is "auto." Some programs MUST fall back to X11 for various reasons. Example: %%electron_install -O OR %%electron_install -Ox11
 # -U:  Set %u or %U in the desktop file.
 # -i: "Icons." Choose a different name to install the icon files under.
 # -l: "Licenses." Use this if you want to collect all extra licenses into a directory called bundled_licenses automatically to package them via RPM. DOES NOT include build dep licenses.
 # -s: "Symlink." Name of the symlink to the executable.
 # -S: Additional symlink to the binary. ONLY do this if a program has two common names, i.e, Heroic being called both "heroic" and "heroic-games-launcher"
-%electron_install(b:d:DE:i:lOs:S:U:) %{lua:
+%electron_install(b:d:DE:Fi:lO::s:S:U:) %{lua:
    local bin = macros["-b*"] or macros["name"]
    local dir = macros["-d*"] or macros["name"]
    local link = macros["-s*"] or macros["name"]
    local arch = macros["_electron_cpu"]
+   print("mkdir -p " .. rpm.expand("%{buildroot}%{_datadir}/") .. dir .. "\\n")
    -- Wildcards for linux-*unpacked CANNOT be used because Electron projects can build multiple architectures at once!
    if arch ~= 'x64' then
-     print("cp -pr dist/linux-" .. arch .. "-unpacked/* -t %{buildroot}%{_datadir}/" .. dir .. "\\n")
+     print("cp -pr dist/linux-" .. arch .. "-unpacked/* -t " .. rpm.expand("%{buildroot}%{_datadir}/") .. dir .. "\\n")
    else
-     print("cp -pr dist/linux-unpacked/* -t %{buildroot}%{_datadir}/" .. dir .. "\\n")
+     print("cp -pr dist/linux-unpacked/* -t " .. rpm.expand("%{buildroot}%{_datadir}/") .. dir .. "\\n")
    end
-   print("mkdir -p %{buildroot}%{_bindir}\\n")
-   print("ln -sf %{_datadir}/" .. dir .. "/" .. bin .. " %{buildroot}%{_bindir}/" .. link .. "\\n")
+   print("mkdir -p " .. rpm.expand("%{buildroot}%{_bindir}") .. "\\n")
+   print("ln -sf " .. rpm.expand("%{_datadir}/") .. dir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
    if opt.S then
-     print("ln -sf %{_datadir}/" .. dir .. "/" .. bin .. " %{buildroot}%{_bindir}/" .. macros["-S*"] .. "\\n")
+     print("ln -sf " .. rpm.expand("%{_datadir}/") .. dir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")
    end
    if opt.D then
    -- Wildcards cannot be used here for similar reasons.
@@ -136,7 +161,14 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publ
      elseif arch == 'x64' then
        print("dist/*x86_64.AppImage --appimage-extract '*.desktop'\\n")
      end
-   print("desktop-file-install --set-key=Exec --set-value=\\"%{_datadir}" .. "/" .. dir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O: --ozone-platform-hint=auto}")  .. rpm.expand("%{?-U: %{-U*}}") .. "\\"" .. " squashfs-root/*.desktop")
+   if opt.F then
+     if not arg[1] then
+       error("Extra flags not supplied.")
+     else
+       macros["desktop_file_args"] = table.concat(arg, " --")
+     end
+   end
+   print("desktop-file-install --set-key=Exec --set-value=\\"" .. rpm.expand("%{_datadir}") .. "/" .. dir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
    end}                                                                                                                            \
 %{?-l:export LICENSE_DIR=bundled_licenses && mkdir $LICENSE_DIR}                                                                   \
 %{?-l:mv $(find . -iname "*LICENSE*" -not -path "." -and -not -path "./node_modules/*" -and -not -path "./public/*" -and -not -name "$LICENSE_DIR" -and -not -path "$LICENSE_DIR") -t $LICENSE_DIR}                                                                                                   \
