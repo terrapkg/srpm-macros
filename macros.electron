@@ -1,5 +1,9 @@
 %electron_arches %{x86_64} %{ix86} aarch64 armv7l armv7hl armv7hnl
 
+## NOTE: Best for pure Electron programs. Programs using other components, such as Rust, will often include this license combination.
+# The SOURCE LICENSE of Electron is MIT. However, as it uses Chromium code, the Chromium license comes bundled with it and all Electron apps.
+%electron_license (MIT AND Apache-2.0)
+
 # Note: This does NOT automatically pull Bun/PNPM/Yarn. Those must be specified, this meta macro only sets the bare minimum that is consistently needed for Electron builds.
 # nodejs-packaging is REQUIRED if using NodeJS macros
 %electronmeta()                                                  \
