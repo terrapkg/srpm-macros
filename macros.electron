@@ -82,9 +82,6 @@ Provides:      bundled(ffmpeg)                                                  
 Provides:      bundled(vulkan-loader)                                                                                 \
 ExclusiveArch: %{electron_arches}
 
-# While Bun itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__bun /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null BUN_HOME=%{rpmbuilddir}/.bun /usr/bin/bun
-
 # NPM is usually NOT how Electron projects are built and almost any other build system is preferrable. NPM because of NPM's limitations the -r or -e flags MUST be used.
 # -c: "CI." Boolean to use npm ci instead of npm install. Needed for some packages.
 # -e: "Exec." Execute commands though NPM directly.
@@ -103,7 +100,7 @@ ExclusiveArch: %{electron_arches}
 %{-r:HOME=%{rpmbuilddir} %{__npm} run %{-r*}}
 
 # While Bun itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__bun /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null BUN_HOME=%{rpmbuilddir}/.bun /usr/bin/bun
+%__bun /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js BUN_HOME=%{rpmbuilddir}/.bun /usr/bin/bun
 
 # -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder/Electron Vite commands.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
@@ -122,13 +119,16 @@ ExclusiveArch: %{electron_arches}
 %{-v:HOME=%{rpmbuilddir} %{__bun} electron-vite build}                                         \
 HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --dir --publish=never
 
+# ONLY use if package uses bundled Node dependencies. Node package must be specified.
+%bun_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__bun} audit
+
 # ONLY use if PNPM is not usable from the repos for some reason
 %vendor_pnpm()                                                                    \
    PNPM_HOME=%{rpmbuilddir}/pnpm curl -fsSL https://get.pnpm.io/install.sh | sh - \
    %bcond vendored_pnpm 1
 
 # While PNPM itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__pnpm NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null PNPM_HOME=%{rpmbuilddir}/pnpm %{?with_vendored_pnpm:%{rpmbuilddir}/pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
+%__pnpm /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js PNPM_HOME=%{rpmbuilddir}/pnpm %{?with_vendored_pnpm:%{rpmbuilddir}/pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
 
 # -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder/Electron Vite commands.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
@@ -147,8 +147,15 @@ HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --dir -
 %{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                         \
 HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir --publish=never
 
+# ONLY use if package uses bundled Node dependencies. Node package must be specified.
+%pnpm_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit
+
+# Fix dependencies using PNPM.
+# WARNING: Does NOT support all the options NPM audit fix does. It may be preferable to use that instead as this will also fix build dependencies.
+%pnpm_audit_fix() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit --fix
+
 # While Yarn itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__yarn NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null YARN_CACHE_FOLDER=%{rpmbuilddir}/yarn /usr/bin/yarn
+%__yarn /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js YARN_CACHE_FOLDER=%{rpmbuilddir}/yarn /usr/bin/yarn
 
 # -e: "Exec." Execute commands though Yarn directly. Not recommended for Electron Builder/Electron Vite commands.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
@@ -166,6 +173,9 @@ HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir 
 %{-r:%{__yarn} run %{-r*}}                                                                      \
 %{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                         \
 HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --dir --publish=never
+
+# ONLY use if package uses bundled Node dependencies. Node package must be specified.
+%yarn_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__yarn} audit
 
 # If no alternative names are provided via flag everything fals back to the name set by the spec
 # -b: "Binary." Name of the actual executable file.
