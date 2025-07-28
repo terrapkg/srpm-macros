@@ -16,7 +16,7 @@
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
    end}                                                  \
    %{__npm} install -g %{npm_name}@%{version} --prefix=. \
-   %setup -T -D -n lib/node_modules/%{npm_name}          
+   %setup -T -D -n lib/node_modules/%{npm_name}
 
 # Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
 # Files in the root of the repository need only their name
