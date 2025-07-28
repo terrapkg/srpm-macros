@@ -154,6 +154,10 @@ HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir 
 # WARNING: Does NOT support all the options NPM audit fix does. It may be preferable to use that instead as this will also fix build dependencies.
 %pnpm_audit_fix() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit --fix
 
+# Approve dependency scripts if needed.
+# -g: Direct duplicate of "-g" (global).
+%pnpm_approve_builds(g) %{__pnpm} approve-builds %{-g:-g}
+
 # While Yarn itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
 %__yarn /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js YARN_CACHE_FOLDER=%{rpmbuilddir}/yarn /usr/bin/yarn
 
