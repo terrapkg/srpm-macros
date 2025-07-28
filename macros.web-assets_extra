@@ -11,7 +11,9 @@
 # -f: Fail if package is a JS package. Useful for failfast checks.
 # -F: Fail if package IS NOT a JS package. Useful for failfast checks.
 %jspkgcheck(fF) \
-   %{!?buildsubdir:%{!?_buildsubdir:%{error:This check can only be run after running %%npm_prep.}}}  \
+   %{shrink:
+   %{!?npm_name:%{error:This check can only be run after running %%npm_prep.}}
+   %{!?buildsubdir:%{!?_buildsubdir:%{error:This check can only be run after running %%npm_prep.}}}} \
    %{-f:%{-F:%{error:Can't specify both -f and -F}}}                                                 \
    if stat $(find . -name "*.js" -type f -and -not -path "./node_modules/*") &>/dev/null; then       \
      echo "This is a JS package! Make sure %%jsmeta is set and the package prefix should be 'js-'"   \
