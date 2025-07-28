@@ -1,6 +1,8 @@
 ## These macros REQUIRE that the macro npm_name be defined or the module be passed to them
 
-%__npm /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js /usr/bin/npm
+%__npm /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js /usr/bin/npm
+
+%__npx /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js /usr/bin/npx
 
 # For use in prep section
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM registry
@@ -14,7 +16,7 @@
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
    end}                                                  \
    %{__npm} install -g %{npm_name}@%{version} --prefix=. \
-   %setup -T -D -n lib/node_modules/%{npm_name}
+   %setup -T -D -n lib/node_modules/%{npm_name}          
 
 # Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
 # Files in the root of the repository need only their name
