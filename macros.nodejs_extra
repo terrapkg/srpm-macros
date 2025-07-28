@@ -1,10 +1,18 @@
 ## These macros REQUIRE that the macro npm_name be defined or the module be passed to them
 
-%__npm /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js /usr/bin/npm
+# Common env vars to be used for all NPM and descendents' macros
+%npm_common_vars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js
 
-%__npx /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js /usr/bin/npx
+# Build flags for NPM so they can be called independently if needed for any reason
+%npm_buildflags --userconfig=%{rpmbuilddir}/.npmrc --globalconfig=%{rpmbuilddir}/npmrc --cache=%{rpmbuilddir}/.npm --loglevel=error --fund=false --update-notifier=false --init-module=%{rpmbuilddir}/.npm-init.js
+
+%__npm /usr/bin/env %{npm_common_vars} /usr/bin/npm
+
+# NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with npm_buildflags set for consistent behavior.
+%__npx /usr/bin/env %{npm_common_vars} /usr/bin/npx
 
 # For use in prep section
+# WARNING: Do NOT use in the prep section of projects using NPM that are not NodeJS packages!
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM registry
 # npm_prep -n nodepkgname
 %npm_prep(n:) %{lua:
@@ -23,7 +31,6 @@
 # -u: "URL." This MUST be set if the URL used in the spec is not automatically detectable as a clonable Git repository
 # URL MAY include ".git" when using -u flag
 # fetch_node_tests -u https://github.com/nodepkgdev/nodepkgname /tests .eslintrc.json
-# Note that if tests
 %fetch_node_tests(u:) %{lua:
   cmd = 'git clone -n --depth=1 --filter=tree:0 -q -j$(nproc) '
   if not arg[1] then error("Test folders/files not specified. Please list them, separated by spaces.") end
@@ -93,6 +100,7 @@
   print("mkdir -p " .. bindir .. "\\n")
   print("cp -r ./* -t " .. installdir .. "\\n")
     if rpm.expand("%{with js}") == '1' then
+    -- Symlink to the regular node_modules install dir for regular behavior
       print("mkdir -p " .. moduledir .. "\\n")
       print("ln -sf " .. installdir .. " " .. moduledir .. "\\n")
     end
