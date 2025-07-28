@@ -1,13 +1,41 @@
+%rpmbuilddir %{?builddir}%{?!builddir:%{_builddir}}
+
+# Evaluation macro to expand later and a bcond for if Electron is bundled or not for meta/license macros so they can be used for Electron itself
+# with_bundled_electron alone does not work because the name macro is defined in the spec itself
+%is_electron_bundled() %bcond bundled_electron %["%{name}" != "electron"]
+
 %electron_arches %{x86_64} %{ix86} aarch64 armv7l armv7hl armv7hnl
 
-## NOTE: Best for pure Electron programs. Programs using other components, such as Rust, will often include this license combination.
-# The SOURCE LICENSE of Electron is MIT. However, as it uses Chromium code, the Chromium license comes bundled with it and all Electron apps.
-%electron_license (MIT AND Apache-2.0)
+## NOTE: Best for pure Electron programs. If packages use binaries not made with Electron Builder, when using this Macro care must be taken to not cause overlapping licenses.
+# The SOURCE LICENSE of Electron is MIT. However, as it uses Chromium code, the Chromium license comes bundled with it and all Electron apps. Electron ALSO bundles FFmpeg and code from vulkan-loader.
+# REMEMBER to add the license of the app itself if it is not covered here!
+## In order, the bundled licenses:
+# vulkan-loader: Apache-2.0
+# FFmpeg: LGPL-3.0-or-later
+# Electron itself: MIT
+# Bundled Electron: MIT AND (BSD-3-Clause AND LGPL-2.1-or-later AND Apache-2.0 AND IJG AND MIT AND GPL-2.0-or-later AND ISC AND OpenSSL AND (MPL-1.1 OR GPL-2.0-only OR LGPL-2.0-only))
+# Chromium: BSD-3-Clause AND LGPL-2.1-or-later AND Apache-2.0 AND IJG AND MIT AND GPL-2.0-or-later AND ISC AND OpenSSL AND (MPL-1.1 OR GPL-2.0-only OR LGPL-2.0-only)
+%electron_license %{is_electron_bundled}%{?with_bundled_electron:%{shrink:
+Apache-2.0
+AND
+LGPL-3.0-or-later
+AND
+MIT
+AND
+(MIT AND (BSD-3-Clause AND LGPL-2.1-or-later AND Apache-2.0 AND IJG AND MIT AND GPL-2.0-or-later AND ISC AND OpenSSL AND (MPL-1.1 OR GPL-2.0-only OR LGPL-2.0-only)))}}%{!?with_bundled_electron:%{shrink:
+Apache-2.0
+AND
+LGPL-3.0-or-later
+AND
+MIT
+AND
+(BSD-3-Clause AND LGPL-2.1-or-later AND Apache-2.0 AND IJG AND MIT AND GPL-2.0-or-later AND ISC AND OpenSSL AND (MPL-1.1 OR GPL-2.0-only OR LGPL-2.0-only))}}
 
-# Note: This does NOT automatically pull Bun/PNPM/Yarn. Those must be specified, this meta macro only sets the bare minimum that is consistently needed for Electron builds.
+## Note: This does NOT automatically pull Bun/PNPM/Yarn or any other build dependencies. Those must be specified, this meta macro only sets the bare minimum that is consistently needed for Electron builds.
 # nodejs-packaging is REQUIRED if using NodeJS macros
-%electronmeta()                                                  \
-%global __provides_exclude ^((libffmpeg[.]so.*)|(lib.*\\.so.*))$ \
+# Package requirements are only the requirements for Electron itself. Electron apps may have additional requirements.
+%electronmeta()                                                                                                       \
+%global __provides_exclude ^((libffmpeg[.]so.*)|(lib.*\\.so.*))$                                                      \
 %{lua:
   if not macros["_target_cpu"]:find('aarch64') and not macros["_target_cpu"]:find('armv7') then
     for arch in string.gmatch(macros["x86_64"], "%S+") do
@@ -30,17 +58,32 @@
     macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*\\\\x86-64*\\\\.so.*)|(.*\\\\aarch64*\\\\so.*))$'
     macros["_electron_cpu"] = 'armv7l'
     print("BuildRequires: zlib-ng-compat-devel")
-  end}                                                           \
-BuildRequires: desktop-file-utils                                \
-BuildRequires: gcc                                               \
-BuildRequires: gcc-c++                                           \
-BuildRequires: git-core                                          \
-BuildRequires: make                                              \
-BuildRequires: nodejs                                            \
-BuildRequires: nodejs-npm                                        \
-BuildRequires: python3                                           \
-BuildSuggests: nodejs-packaging                                  \
+  end}                                                                                                                \
+%{is_electron_bundled}%{?with_bundled_electron:%{expand:BuildRequires: desktop-file-utils
+BuildRequires: gcc
+BuildRequires: gcc-c++
+BuildRequires: git-core
+BuildRequires: make
+BuildRequires: nodejs
+BuildRequires: nodejs-npm
+BuildRequires: python3}}                                                                                              \
+Requires:      at-spi2-core                                                                                           \
+Requires:      c-ares                                                                                                 \
+Requires:      gtk3%{!?with_bundled_electron:%{expand:
+Requires:      minizip}}                                                                                              \
+Requires:      libnotify                                                                                              \
+Requires:      (libuuid or libuuid1)                                                                                  \
+Requires:      libnotify                                                                                              \
+Requires:      libXScrnSaver                                                                                          \
+Requires:      (libXtst or libXtst6)                                                                                  \
+Requires:      nss                                                                                                    \
+Requires:      re2                                                                                                    \
+Requires:      xdg-utils                                                                                              \
+%{?with_bundled_electron:Provides:      bundled(electron)}%{!?with_bundled_electron:Provides:      bundled(chromium)} \
+Provides:      bundled(ffmpeg)                                                                                        \
+Provides:      bundled(vulkan-loader)                                                                                 \
 ExclusiveArch: %{electron_arches}
+
 
 # While Bun itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
 %__bun /usr/bin/env NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_INIT.MODULE=%{rpmbuilddir}/.npm-init.js NPM_CONFIG_LOGS_DIR=null BUN_HOME=%{rpmbuilddir}/.bun /usr/bin/bun
@@ -54,7 +97,7 @@ ExclusiveArch: %{electron_arches}
 %{!?-e:%{!?-r:%{error:Due to limitations with NPM commands MUST be passed to npm exec or npm run directly using the -e or -r flags.}}} \
 %{lua:
   if opt.e then
-    print("HOME=" .. macros["rpmbuilddir"] .. " %{__npm} exec")
+    print("HOME=" .. macros["rpmbuilddir"] .. " " .. macros["__npm"] .. " exec")
     for i, cmd in ipairs(arg) do
       print(" " .. cmd)
     end
@@ -93,8 +136,8 @@ HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --dir -
 # -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder/Electron Vite commands.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%pnpm_build(er:v)                                                                              \
-%{__pnpm} install                                                                              \
+%pnpm_build(er:v)                                                                               \
+%{__pnpm} install                                                                               \
 %{lua:
   if opt.e then
     print(macros["__pnpm"])
@@ -102,9 +145,9 @@ HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --dir -
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                         \
-%{-r:%{__pnpm} run %{-r*}}                                                                     \
-%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                        \
+  end}                                                                                          \
+%{-r:%{__pnpm} run %{-r*}}                                                                      \
+%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                         \
 HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir --publish=never
 
 # While Yarn itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
@@ -113,8 +156,8 @@ HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir 
 # -e: "Exec." Execute commands though Yarn directly. Not recommended for Electron Builder/Electron Vite commands.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%yarn_build(er:v)                                                                              \
-%{__yarn} install                                                                              \
+%yarn_build(er:v)                                                                               \
+%{__yarn} install                                                                               \
 %{lua:
   if opt.e then
     print(macros["__yarn"])
@@ -122,9 +165,9 @@ HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir 
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                         \
-%{-r:%{__yarn} run %{-r*}}                                                                     \
-%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                        \
+  end}                                                                                          \
+%{-r:%{__yarn} run %{-r*}}                                                                      \
+%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                         \
 HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --dir --publish=never
 
 # If no alternative names are provided via flag everything fals back to the name set by the spec
@@ -142,19 +185,20 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --dir 
 %electron_install(b:d:DE:Fi:lO::s:S:U:) %{lua:
    local bin = macros["-b*"] or macros["name"]
    local dir = macros["-d*"] or macros["name"]
+   local installdir = macros["_libdir"] .. "/" .. dir
    local link = macros["-s*"] or macros["name"]
    local arch = macros["_electron_cpu"]
-   print("mkdir -p " .. rpm.expand("%{buildroot}%{_datadir}/") .. dir .. "\\n")
+   print("mkdir -p " .. rpm.expand("%{buildroot}") .. installdir .. "\\n")
    -- Wildcards for linux-*unpacked CANNOT be used because Electron projects can build multiple architectures at once!
    if arch ~= 'x64' then
-     print("cp -pr dist/linux-" .. arch .. "-unpacked/* -t " .. rpm.expand("%{buildroot}%{_datadir}/") .. dir .. "\\n")
+     print("cp -pr dist/linux-" .. arch .. "-unpacked/* -t " .. installdir .. "\\n")
    else
-     print("cp -pr dist/linux-unpacked/* -t " .. rpm.expand("%{buildroot}%{_datadir}/") .. dir .. "\\n")
+     print("cp -pr dist/linux-unpacked/* -t " .. rpm.expand("%{buildroot}") .. installdir .. "\\n")
    end
    print("mkdir -p " .. rpm.expand("%{buildroot}%{_bindir}") .. "\\n")
-   print("ln -sf " .. rpm.expand("%{_datadir}/") .. dir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
+   print("ln -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
    if opt.S then
-     print("ln -sf " .. rpm.expand("%{_datadir}/") .. dir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")
+     print("ln -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")
    end
    if opt.D then
    -- Wildcards cannot be used here for similar reasons.
@@ -172,7 +216,7 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --dir 
        macros["desktop_file_args"] = table.concat(arg, " --")
      end
    end
-   print("desktop-file-install --set-key=Exec --set-value=\\"" .. rpm.expand("%{_datadir}") .. "/" .. dir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
+   print("desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
    end}                                                                                                                            \
 %{?-l:export LICENSE_DIR=bundled_licenses && mkdir $LICENSE_DIR}                                                                   \
 %{?-l:mv $(find . -iname "*LICENSE*" -not -path "." -and -not -path "./node_modules/*" -and -not -path "./public/*" -and -not -name "$LICENSE_DIR" -and -not -path "$LICENSE_DIR") -t $LICENSE_DIR}                                                                                                   \
