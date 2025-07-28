@@ -62,6 +62,7 @@
     module = rpm.expand("%{?npm_name}")
   end
   prepbindir = rpm.expand("%{buildsubdir}/bin/")
+  moduledir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
   if opt.a and rpm.expand("%{with js}") == '1' then
     error("'-a' cannot be used for JS packages.")
   elseif rpm.expand("%{with js}") == '1' and not opt.a then
@@ -83,7 +84,7 @@
     if posix.stat(prepbindir .. " *.js") then
       error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep section.")
     else
-      installdir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
+      installdir = moduledir
       installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
     end
   end
@@ -91,6 +92,10 @@
   print("mkdir -p " .. installdir .. "\\n")
   print("mkdir -p " .. bindir .. "\\n")
   print("cp -r ./* -t " .. installdir .. "\\n")
+    if rpm.expand("%{with js}") == '1' then
+      print("mkdir -p " .. moduledir .. "\\n")
+      print("ln -sf " .. installdir .. " " .. moduledir .. "\\n")
+    end
   if opt.s then
     if rpm.expand("%{?node_bin_symlink}") ~= rpm.expand("%{-s*}") then
       rpm.define("node_bin_symlink " .. rpm.expand("%{-s*}"))
