@@ -102,7 +102,7 @@
     if rpm.expand("%{with js}") == '1' then
     -- Symlink to the regular node_modules install dir for regular behavior
       print("mkdir -p " .. moduledir .. "\\n")
-      print("ln -sf " .. installdir .. " " .. moduledir .. "\\n")
+      print("ln -sf " .. rpm.expand("%{_jsdir}/%{npm_name} ") .. moduledir .. "\\n")
     end
   if opt.s then
     if rpm.expand("%{?node_bin_symlink}") ~= rpm.expand("%{-s*}") then
