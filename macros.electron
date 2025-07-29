@@ -239,14 +239,14 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --dir 
      end
    end
    print("desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
-   end}                                                                                                                                                                                       \
-%{?-l:export LICENSE_DIR=bundled_licenses && mkdir $LICENSE_DIR}                                                                                                                              \
-%{?-l:find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./public/*" ! -name "$LICENSE_DIR" ! -path "./$LICENSE_DIR/*" -exec cp -p -t "$LICENSE_DIR" {} +}                                                                                                 \
-%{__install} -Dm644 dist/.icon-set/icon_*16.png %{buildroot}%{_iconsdir}/hicolor/16x16/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
-%{__install} -Dm644 dist/.icon-set/icon_*32.png %{buildroot}%{_iconsdir}/hicolor/32x32/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
-%{__install} -Dm644 dist/.icon-set/icon_*48.png %{buildroot}%{_iconsdir}/hicolor/48x48/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
-%{__install} -Dm644 dist/.icon-set/icon_*64.png %{buildroot}%{_iconsdir}/hicolor/64x64/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
-%{__install} -Dm644 dist/.icon-set/icon_*128.png %{buildroot}%{_iconsdir}/hicolor/128x128/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                               \
-%{__install} -Dm644 dist/.icon-set/icon_*256.png %{buildroot}%{_iconsdir}/hicolor/256x256/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                               \
-%{__install} -Dm644 dist/.icon-set/icon_*512.png %{buildroot}%{_iconsdir}/hicolor/512x512/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                               \
+   end}                                                                                                                                                                                          \
+%{?-l:export LICENSE_DIR=bundled_licenses && mkdir $LICENSE_DIR}                                                                                                                                 \
+%{?-l:find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./public/*" ! -name "$LICENSE_DIR" ! -path "./$LICENSE_DIR/*" -exec cp -p -t "$LICENSE_DIR" {} +} \
+%{__install} -Dm644 dist/.icon-set/icon_*16.png %{buildroot}%{_iconsdir}/hicolor/16x16/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \
+%{__install} -Dm644 dist/.icon-set/icon_*32.png %{buildroot}%{_iconsdir}/hicolor/32x32/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \
+%{__install} -Dm644 dist/.icon-set/icon_*48.png %{buildroot}%{_iconsdir}/hicolor/48x48/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \
+%{__install} -Dm644 dist/.icon-set/icon_*64.png %{buildroot}%{_iconsdir}/hicolor/64x64/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \
+%{__install} -Dm644 dist/.icon-set/icon_*128.png %{buildroot}%{_iconsdir}/hicolor/128x128/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
+%{__install} -Dm644 dist/.icon-set/icon_*256.png %{buildroot}%{_iconsdir}/hicolor/256x256/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
+%{__install} -Dm644 dist/.icon-set/icon_*512.png %{buildroot}%{_iconsdir}/hicolor/512x512/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
 %{__install} -Dm644 dist/.icon-set/icon_*1024.png %{buildroot}%{_iconsdir}/hicolor/1024x1024/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png
