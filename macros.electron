@@ -100,7 +100,7 @@ ExclusiveArch: %{electron_arches}
 %{-r:HOME=%{rpmbuilddir} %{__npm} run %{-r*}}
 
 # While Bun itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__bun /usr/bin/env %{npm_common_vars} BUN_HOME=%{rpmbuilddir}/.bun /usr/bin/bun
+%__bun /usr/bin/env %{npm_common_vars} BUN_HOME=%{rpmbuilddir}/.bun BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 /usr/bin/bun
 
 # -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder/Electron Vite commands.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
