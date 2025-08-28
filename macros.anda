@@ -130,7 +130,7 @@
   rpm.define("__spec_install_post ".."%{__anda_develfiles}%{quote:"..__spec_install_post.."}")
 }
 
-%__anda_develfiles (%_anda_srpm_macros_dir/find-develinfo.sh %buildroot > anda-develfiles.list)
+%__anda_develfiles %_anda_srpm_macros_dir/find-develinfo.sh %buildroot > anda-develfiles.list
 
 
 # pkg_static -n %name-static -N %name
