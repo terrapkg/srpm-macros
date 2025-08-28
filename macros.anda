@@ -119,7 +119,7 @@
   print("developing applications that use "..main..".\\n\\n")
   print("%files -n "..name.." -f anda-develfiles.list\\n")
   local __spec_install_post = rpm.expand("%macrobody __spec_install_post")
-  rpm.define("__spec_install_post ".."%{__anda_develfiles}%{quote:"..__spec_install_post.."}")
+  rpm.define("__spec_install_post ".."%{__anda_develfiles}\\n%{quote:"..__spec_install_post.."}")
 }
 
 # files_devel -n %name-libs
@@ -127,7 +127,7 @@
   local name = rpm.expand("%{?-n:%{-n*}}%{!?-n:%name-devel}")
   print("%files -n "..name.." -f anda-develfiles.list\\n")
   local __spec_install_post = rpm.expand("%macrobody __spec_install_post")
-  rpm.define("__spec_install_post ".."%{__anda_develfiles}%{quote:"..__spec_install_post.."}")
+  rpm.define("__spec_install_post ".."%{__anda_develfiles}\\n%{quote:"..__spec_install_post.."}")
 }
 
 %__anda_develfiles %_anda_srpm_macros_dir/find-develinfo.sh %buildroot > anda-develfiles.list
@@ -144,7 +144,7 @@
   print("Static library files for "..name..".\\n\\n")
   print("%files -n "..name.." -f anda-staticfiles.list\\n")
   local __spec_install_post = rpm.expand("%macrobody __spec_install_post")
-  rpm.define("__spec_install_post ".."%{__anda_staticfiles}%{quote:"..__spec_install_post.."}")
+  rpm.define("__spec_install_post ".."%{__anda_staticfiles}\\n%{quote:"..__spec_install_post.."}")
 }
 
 # files_static -n %name-libs
@@ -152,7 +152,7 @@
   local name = rpm.expand("%{?-n:%{-n*}}%{!?-n:%name-static}")
   print("%files -n "..name.." -f anda-staticfiles.list\\n")
   local __spec_install_post = rpm.expand("%macrobody __spec_install_post")
-  rpm.define("__spec_install_post ".."%{__anda_staticfiles}%{quote:"..__spec_install_post.."}")
+  rpm.define("__spec_install_post ".."%{__anda_staticfiles}\\n%{quote:"..__spec_install_post.."}")
 }
 
 %__anda_staticfiles %_anda_srpm_macros_dir/find-staticinfo.sh %buildroot > anda-staticfiles.list
@@ -169,7 +169,7 @@
   print("Runtime library files for "..name..".\\n\\n")
   print("%files -n "..name.." -f anda-libsfiles.list\\n")
   local __spec_install_post = rpm.expand("%macrobody __spec_install_post")
-  rpm.define("__spec_install_post ".."%{__anda_libsfiles}%{quote:"..__spec_install_post.."}")
+  rpm.define("__spec_install_post ".."%{__anda_libsfiles}\\n%{quote:"..__spec_install_post.."}")
 }
 
 # files_libs -n %name-libs
@@ -177,7 +177,7 @@
   local name = rpm.expand("%{?-n:%{-n*}}%{!?-n:%name-libs}")
   print("%files -n "..name.." -f anda-libsfiles.list\\n")
   local __spec_install_post = rpm.expand("%macrobody __spec_install_post")
-  rpm.define("__spec_install_post ".."%{__anda_libsfiles}%{quote:"..__spec_install_post.."}")
+  rpm.define("__spec_install_post ".."%{__anda_libsfiles}\\n%{quote:"..__spec_install_post.."}")
 }
 
 %__anda_libsfiles %_anda_srpm_macros_dir/find-libsinfo.sh %buildroot > anda-libsfiles.list
