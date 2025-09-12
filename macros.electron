@@ -99,14 +99,14 @@ ExclusiveArch: %{electron_arches}
   end}                                                                                                                                  \
 %{-r:HOME=%{rpmbuilddir} %{__npm} run %{-r*}}
 
-# While Bun itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__bun /usr/bin/env %{npm_common_vars} BUN_HOME=%{rpmbuilddir}/.bun BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 /usr/bin/bun
-
 # -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder/Electron Vite commands.
+# -F: "Frozen lockfile." Build with a frozen lockfile.
+# -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds
-%bun_build(er:v)                                                                               \
-%{__bun} install                                                                               \
+%bun_build(eFNr:v)                                                                             \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                  \
+%{__bun} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                             \
 %{lua:
   if opt.e then
     print(macros["__bun"])
@@ -119,27 +119,14 @@ ExclusiveArch: %{electron_arches}
 %{-v:HOME=%{rpmbuilddir} %{__bun} electron-vite build}                                         \
 HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --dir --publish=never
 
-# For use in check section
-# ONLY use if package uses bundled Node dependencies.
-# NOTE: Technically Bun audit is a wrapper for NPM audit, however it unfortunately lacks the ability to FIX vulnerabilities
-# There is no timeline for this being implemented, but there is a tracking issue: https://github.com/oven-sh/bun/issues/20238
-# For now, you need to fix vulnerabilities, please see npm_audit_fix
-# NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%bun_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__bun} audit
-
-# ONLY use if PNPM is not usable from the repos for some reason
-%vendor_pnpm()                                                                    \
-   PNPM_HOME=%{rpmbuilddir}/pnpm curl -fsSL https://get.pnpm.io/install.sh | sh - \
-   %bcond vendored_pnpm 1
-
-# While PNPM itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__pnpm /usr/bin/env %{npm_common_vars} PNPM_HOME=%{rpmbuilddir}/pnpm %{?with_vendored_pnpm:%{rpmbuilddir}/pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
-
 # -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder/Electron Vite commands.
+# -F: "Frozen lockfile." Build with a frozen lockfile.
+# -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%pnpm_build(er:v)                                                                               \
-%{__pnpm} install                                                                               \
+%pnpm_build(eFNr:v)                                                                              \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                    \
+%{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                              \
 %{lua:
   if opt.e then
     print(macros["__pnpm"])
@@ -152,27 +139,14 @@ HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --dir -
 %{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                         \
 HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir --publish=never
 
-# For use in check section
-# ONLY use if package uses bundled Node dependencies.
-# NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%pnpm_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit
-
-# Fix dependencies using PNPM.
-# WARNING: Does NOT support all the options NPM audit fix does. It may be preferable to use that instead as this will also fix build dependencies.
-%pnpm_audit_fix() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit --fix
-
-# Approve dependency scripts if needed.
-# -g: Direct duplicate of "-g" (global).
-%pnpm_approve_builds(g) %{__pnpm} approve-builds %{-g:-g}
-
-# While Yarn itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__yarn /usr/bin/env %{npm_common_vars} YARN_CACHE_FOLDER=%{rpmbuilddir}/yarn /usr/bin/yarn
-
 # -e: "Exec." Execute commands though Yarn directly. Not recommended for Electron Builder/Electron Vite commands.
+# -F: "Frozen lockfile." Build with a frozen lockfile.
+# -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%yarn_build(er:v)                                                                               \
-%{__yarn} install                                                                               \
+%yarn_build(eFNr:v)                                                                             \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                   \
+%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                             \
 %{lua:
   if opt.e then
     print(macros["__yarn"])
@@ -184,13 +158,6 @@ HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir 
 %{-r:%{__yarn} run %{-r*}}                                                                      \
 %{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                         \
 HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --dir --publish=never
-
-# For use in check section
-# ONLY use if package uses bundled Node dependencies.
-# Unfortunately, like Bun, Yarn lacks a built in way to fix vulnerabilities.
-# If you need to fix vulnerabilities, please see npm_audit_fix
-# NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%yarn_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__yarn} audit
 
 # If no alternative names are provided via flag everything fals back to the name set by the spec
 # -b: "Binary." Name of the actual executable file.

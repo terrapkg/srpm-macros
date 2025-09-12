@@ -1,10 +1,10 @@
 ## Macros for JS packages hosted with NPM
 
 # Meta macro that sets up the build for a JS package
-%jsmeta()                           \
-   %bcond js 1                      \
-   %global _js .js                  \
-   BuildRequires:  web-assets-devel
+%jsmeta()                        \
+%bcond js 1                      \
+%global _js .js                  \
+BuildRequires:  web-assets-devel
 
 # Macro to check if a package is a JS package or not
 # MUST be used after npm_prep
