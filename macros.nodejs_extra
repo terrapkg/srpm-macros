@@ -17,7 +17,7 @@ NVM_DIR=%{nvm_dir} curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3
 . "%{nvm_dir}/nvm.sh"                                                                                          \
 . "%{nvm_dir}/bash_completion"                                                                                 \
 nvm install %{?-v*}                                                                                            \
-%global __nodejs %{nvm_dir}/versions/node/v%{?-v*}*/bin/node                                                   \
+%global __nodejs %{nvm_dir}/versions/node/v*/bin/node                                                          \
 %bcond vendored_nodejs 1
 
 %__npm /usr/bin/env %{npm_common_vars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
