@@ -33,6 +33,7 @@ AND
 # nodejs-packaging is REQUIRED if using NodeJS macros
 # Package requirements are only the requirements for Electron itself. Electron apps may have additional requirements.
 %electronmeta()                                                                                                       \
+%global debug_package %{nil}                                                                                          \
 %global __provides_exclude ^((libffmpeg[.]so.*)|(lib.*\\.so.*))$                                                      \
 %{lua:
   if not macros["_target_cpu"]:find('aarch64') and not macros["_target_cpu"]:find('armv7') then
