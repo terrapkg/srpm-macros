@@ -6,17 +6,33 @@
 # Build flags for NPM so they can be called independently if needed for any reason
 %npm_buildflags --userconfig=%{rpmbuilddir}/.npmrc --globalconfig=%{rpmbuilddir}/npmrc --cache=%{rpmbuilddir}/.npm --loglevel=error --fund=false --update-notifier=false --init-module=%{rpmbuilddir}/.npm-init.js
 
-%__npm /usr/bin/env %{npm_common_vars} /usr/bin/npm
+# Only used if vendoring NodeJS
+%nvm_dir %{rpmbuilddir}/.nvm
+
+# ONLY use if NodeJS is not usable from the repos for some reason (such as needing non-LTS NodeJS)
+# -v: "Version." The version of NodeJS to install. Required flag.
+%vendor_nodejs(v:)                                                                                             \
+%{!?-v*:%{error:NodeJS version to install required to be passed using the -v flag.}}                           \
+NVM_DIR=%{nvm_dir} curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash &>/dev/null \
+. "%{nvm_dir}/nvm.sh"                                                                                          \
+. "%{nvm_dir}/bash_completion"                                                                                 \
+nvm install %{?-v*}                                                                                            \
+%global __nodejs %{nvm_dir}/versions/node/v%{?-v*}*/bin/node                                                   \
+%bcond vendored_nodejs 1
+
+%__npm /usr/bin/env %{npm_common_vars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
 
 # NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with npm_buildflags set for consistent behavior.
-%__npx /usr/bin/env %{npm_common_vars} /usr/bin/npx
+%__npx /usr/bin/env %{npm_common_vars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
 
 # While Bun itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
 %__bun /usr/bin/env %{npm_common_vars} BUN_HOME=%{rpmbuilddir}/.bun BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 /usr/bin/bun
 
 # ONLY use if PNPM is not usable from the repos for some reason
-%vendor_pnpm()                                                                 \
+# -v "Version." Choose a specific version of PNPM to vendor
+%vendor_pnpm(v)                                                                \
 PNPM_HOME=%{rpmbuilddir}/pnpm curl -fsSL https://get.pnpm.io/install.sh | sh - \
+%{?-v:%{rpmbuilddir}/pnpm/pnpm env use --global %{-v*}}                        \ 
 %bcond vendored_pnpm 1
 
 # While PNPM itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
