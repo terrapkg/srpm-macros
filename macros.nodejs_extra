@@ -11,9 +11,12 @@
 # -v: "Version." The version of NodeJS to install. Required flag.
 %vendor_nodejs(v:)                                                                                             \
 %{!?-v*:%{error:NodeJS version to install required to be passed using the -v flag.}}                           \
-NVM_DIR=%{nvm_dir} curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash &>/dev/null \
-. "%{nvm_dir}/nvm.sh"                                                                                          \
-. "%{nvm_dir}/bash_completion"                                                                                 \
+touch "$HOME/.bash_profile" &>/dev/null                                                                        \
+export NVM_DIR="%{nvm_dir}"                                                                                    \
+mkdir -p "$NVM_DIR"                                                                                            \
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash &>/dev/null                    \
+source "$NVM_DIR/nvm.sh" &>/dev/null                                                                           \
+source "$NVM_DIR/bash_completion" &>/dev/null                                                                  \
 nvm install %{?-v*}                                                                                            \
 %global __nodejs %{nvm_dir}/versions/node/v*/bin/node                                                          \
 %bcond vendored_nodejs 1
