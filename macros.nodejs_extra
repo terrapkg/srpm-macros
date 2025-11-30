@@ -80,7 +80,12 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
    end}                                                         \
    %{__npm} install -g %{npm_name}@%{version} --prefix="$(pwd)" \
-   %setup -T -D -n lib/node_modules/%{npm_name}
+   %setup -T -D -n lib/node_modules/%{npm_name}                 \
+   %{lua:
+   prepbindir = os.getenv("PWD") .. "/bin/"
+   if posix.stat(prepbindir .. rpm.expand("%{npm_name}") .. ".js") then
+    rpm.define("_js .js")
+   end}
 
 ## Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
 ## Files in the root of the repository need only their name
@@ -124,42 +129,18 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
   else
     module = rpm.expand("%{?npm_name}")
   end
-  prepbindir = os.getenv("PWD") .. "/bin/"
   moduledir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
-  if opt.a and rpm.expand("%{with js}") == '1' then
-    error("'-a' cannot be used for JS packages.")
-  elseif rpm.expand("%{with js}") == '1' and not opt.a then
-    installdir = rpm.expand("%{buildroot}%{_jsdir}/%{npm_name}")
-      if not posix.stat(prepbindir .. " *.js") then
-        installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}")
-      else
-        installbin = rpm.expand("%{_jsdir}/%{npm_name}/bin/%{npm_name}%{?_js}")
-      end
-  elseif opt.a then
-  -- Note: The below is a LIMITED check on if a package is a JS package to reduce macro runtime. jspkgcheck should be used for a better one.
-    if posix.stat(prepbindir .. " *.js") then
-      error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep secion.")
-    else
-      installdir = rpm.expand("%{buildroot}%{nodejs_sitearch}/%{npm_name}")
-      installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}%{?_js}")
-    end
+  if opt.a then
+    installdir = rpm.expand("%{buildroot}%{nodejs_sitearch}/%{npm_name}")
+    installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}%{?_js}")
   else
-    if posix.stat(prepbindir .. " *.js") then
-      error("This is a JS package. Please set %jsmeta somewhere in the spec before the prep section.")
-    else
-      installdir = moduledir
-      installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
-    end
+    installdir = moduledir
+    installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
   end
   bindir = rpm.expand("%{buildroot}%{_bindir}/")
   print("mkdir -p " .. installdir .. "\\n")
   print("mkdir -p " .. bindir .. "\\n")
   print("cp -r ./* -t " .. installdir .. "\\n")
-    if rpm.expand("%{with js}") == '1' then
-    -- Symlink to the regular node_modules install dir for regular behavior
-      print("mkdir -p " .. moduledir .. "\\n")
-      print("ln -sf " .. rpm.expand("%{_jsdir}/%{npm_name} ") .. moduledir .. "\\n")
-    end
   if opt.s then
     if rpm.expand("%{?node_bin_symlink}") ~= rpm.expand("%{-s*}") then
       rpm.define("node_bin_symlink " .. rpm.expand("%{-s*}"))
