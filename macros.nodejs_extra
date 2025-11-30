@@ -119,7 +119,7 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
   git checkout -q                                 \
   cd ~-
 
-## Install package. Defaults to %%nodejs_sitelib.
+## Install package to %%nodejs_sitelib or %%nodejs_sitearch.
 # -s: "Symlink." Install bindir symlink as a different name than the %%npm_name.
 %npm_install(s:) %{lua:
   if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
