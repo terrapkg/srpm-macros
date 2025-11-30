@@ -120,8 +120,7 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
   cd ~-
 
 ## Install package. Defaults to %%nodejs_sitelib.
-# -a: "Arch." Install to sitearch instead. Currently unneeded as %%nodejs_sitelib and %%nodejs_sitearch are the same.
-# -s: "Symlink." Install bindir symlink as a different name than the npm_name.
+# -s: "Symlink." Install bindir symlink as a different name than the %%npm_name.
 %npm_install(s:) %{lua:
   if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
     error("Package has not been prepped! Please run %npm_prep first.")
