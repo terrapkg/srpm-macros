@@ -32,7 +32,8 @@ AND
 ## Note: This does NOT automatically pull Bun/PNPM/Yarn or any other build dependencies. Those must be specified, this meta macro only sets the bare minimum that is consistently needed for Electron builds.
 # nodejs-packaging is REQUIRED if using NodeJS macros
 # Package requirements are only the requirements for Electron itself. Electron apps may have additional requirements.
-%electronmeta()                                                                                                       \
+# -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
+%electronmeta(a)                                                                                                      \
 %global debug_package %{nil}                                                                                          \
 %global __provides_exclude ^((libffmpeg[.]so.*)|(lib.*\\.so.*))$                                                      \
 %{lua:
@@ -65,12 +66,13 @@ BuildRequires: git-core
 BuildRequires: make
 BuildRequires: nodejs
 BuildRequires: nodejs-npm
-BuildRequires: python3}}                                                                                              \
+BuildRequires: python3
+%{?-a:BuildRequires: nodejs-packaging}
+%{?-a:BuildRequires: typescript}}}                                                                                    \
 Requires:      at-spi2-core                                                                                           \
 Requires:      c-ares                                                                                                 \
 Requires:      gtk3%{!?with_bundled_electron:%{expand:
 Requires:      minizip}}                                                                                              \
-Requires:      libnotify                                                                                              \
 Requires:      (libuuid or libuuid1)                                                                                  \
 Requires:      libnotify                                                                                              \
 Requires:      libXScrnSaver                                                                                          \
@@ -101,13 +103,15 @@ ExclusiveArch: %{electron_arches}
 %{-r:HOME=%{rpmbuilddir} %{__npm} run %{-r*}}
 
 # -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder/Electron Vite commands.
-# -F: "Frozen lockfile." Build with a frozen lockfile.
-# -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
+# -F: "Force." Always request the latest versions from the registry and reinstall all dependenices
+# -N: "No save." Do not create a lockfile. Prevents any possible freezing.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
+# -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it)
 # -v: "Vite." Run electron-vite builds
-%bun_build(eFNr:v)                                                                             \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                  \
-%{__bun} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                             \
+%bun_build(eFNRr:v)                                                                             \
+%{-R:%{warn:Removing bun.lock. This is not recommended unless absolutely necessary.}}           \
+%{-R:rm -f bun.lock}                                                                            \
+%{__bun} install %{-F:--force} %{-N:--no-save}                                                  \
 %{lua:
   if opt.e then
     print(macros["__bun"])
@@ -117,17 +121,17 @@ ExclusiveArch: %{electron_arches}
     print("\\n")
   end}                                                                                         \
 %{-r:%{__bun} run %{-r*}}                                                                      \
-%{-v:HOME=%{rpmbuilddir} %{__bun} electron-vite build}                                         \
-HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --dir --publish=never
+%{-v:HOME=%{rpmbuilddir} %{__bun} node_modules/electron-vite/bin/electron-vite.js build}       \
+HOME=%{rpmbuilddir} %{__bun} node_modules/electron-builder/cli.js --linux --%{_electron_cpu} --publish=never
 
 # -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder/Electron Vite commands.
 # -F: "Frozen lockfile." Build with a frozen lockfile.
 # -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%pnpm_build(eFNr:v)                                                                              \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                    \
-%{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                              \
+%pnpm_build(eFNr:v)                                                                       \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                             \
+%{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                       \
 %{lua:
   if opt.e then
     print(macros["__pnpm"])
@@ -135,19 +139,19 @@ HOME=%{rpmbuilddir} %{__bun} electron-builder --linux --%{_electron_cpu} --dir -
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                          \
-%{-r:%{__pnpm} run %{-r*}}                                                                      \
-%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                         \
-HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir --publish=never
+  end}                                                                                    \
+%{-r:%{__pnpm} run %{-r*}}                                                                \
+%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                   \
+HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never
 
 # -e: "Exec." Execute commands though Yarn directly. Not recommended for Electron Builder/Electron Vite commands.
 # -F: "Frozen lockfile." Build with a frozen lockfile.
 # -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%yarn_build(eFNr:v)                                                                             \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                   \
-%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                             \
+%yarn_build(eFNr:v)                                                                       \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                             \
+%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                              \
 %{lua:
   if opt.e then
     print(macros["__yarn"])
@@ -155,10 +159,10 @@ HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --dir 
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                          \
-%{-r:%{__yarn} run %{-r*}}                                                                      \
-%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                         \
-HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --dir --publish=never
+  end}                                                                                    \
+%{-r:%{__yarn} run %{-r*}}                                                                \
+%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                   \
+HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never
 
 # If no alternative names are provided via flag everything fals back to the name set by the spec
 # -b: "Binary." Name of the actual executable file.

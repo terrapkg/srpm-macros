@@ -1,5 +1,3 @@
-## These macros REQUIRE that the macro npm_name be defined or the module be passed to them
-
 # Common env vars to be used for all NPM and descendents' macros
 %npm_common_vars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js
 
@@ -39,10 +37,27 @@ PNPM_HOME=%{rpmbuilddir}/pnpm curl -fsSL https://get.pnpm.io/install.sh | sh - \
 %bcond vendored_pnpm 1
 
 # While PNPM itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__pnpm /usr/bin/env %{npm_common_vars} PNPM_HOME=%{rpmbuilddir}/pnpm %{?with_vendored_pnpm:%{rpmbuilddir}/pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
+%__pnpm /usr/bin/env %{npm_common_vars} PNPM_HOME=%{rpmbuilddir}/.pnpm %{?with_vendored_pnpm:%{rpmbuilddir}/pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
 
 # While Yarn itself doesn't use NPM env vars directly, some NodeJS build deps such as Electron Builder do
-%__yarn /usr/bin/env %{npm_common_vars} YARN_CACHE_FOLDER=%{rpmbuilddir}/yarn /usr/bin/yarn
+%__yarn /usr/bin/env %{npm_common_vars} YARN_CACHE_FOLDER=%{rpmbuilddir}/.yarn /usr/bin/yarn
+
+# Export NodeJS related build flags globally if necessary for any reason.
+%set_node_envvars() \
+NPM_CONFIG_USERCONFIG="%{rpmbuilddir}/.npmrc" ; export NPM_CONFIG_USERCONFIG ; \
+NPM_CONFIG_GLOBALCONFIG="%{rpmbuilddir}/npmrc" ; export NPM_CONFIG_GLOBALCONFIG ; \
+NPM_CONFIG_CACHE="%{rpmbuilddir}/.npm" ; export NPM_CONFIG_CACHE ; \
+NPM_CONFIG_LOGLEVEL="error" ; export NPM_CONFIG_LOGLEVEL ; \
+NPM_CONFIG_FUND="false" ; export NPM_CONFIG_FUND ; \
+NPM_CONFIG_UPDATE_NOTIFIER="false" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \
+NO_UPDATE_NOTIFIER="1" ; export NO_UPDATE_NOTIFIER ; \
+NPM_CONFIG_INIT_MODULE="%{rpmbuilddir}/.npm-init.js" ; export NPM_CONFIG_INIT_MODULE ; \
+BUN_HOME="%{rpmbuilddir}/.bun" ; export BUN_HOME ; \
+BUN_RUNTIME_TRANSPILER_CACHE_PATH="0" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
+PNPM_HOME="%{rpmbuilddir}/.pnpm" ; export PNPM_HOME ; \
+YARN_CACHE_FOLDER="%{rpmbuilddir}/.yarn" ; export YARN_CACHE_FOLDER
+
+## These macros REQUIRE that the macro npm_name be defined or the module be passed to them
 
 # For use in prep section
 # WARNING: Do NOT use in the prep section of projects using NPM that are not NodeJS packages!
@@ -55,8 +70,8 @@ PNPM_HOME=%{rpmbuilddir}/pnpm curl -fsSL https://get.pnpm.io/install.sh | sh - \
    local module = rpm.expand("%{?npm_name}")
    if not rpm.isdefined("npm_name") then
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
-   end}                                                  \
-   %{__npm} install -g %{npm_name}@%{version} --prefix=. \
+   end}                                                       \
+   %{__npm} install -g %{npm_name}@%{version} --prefix=$(pwd) \
    %setup -T -D -n lib/node_modules/%{npm_name}
 
 # Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
@@ -101,7 +116,7 @@ PNPM_HOME=%{rpmbuilddir}/pnpm curl -fsSL https://get.pnpm.io/install.sh | sh - \
   else
     module = rpm.expand("%{?npm_name}")
   end
-  prepbindir = rpm.expand("%{buildsubdir}/bin/")
+  prepbindir = os.getenv("PWD") .. "/bin/"
   moduledir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
   if opt.a and rpm.expand("%{with js}") == '1' then
     error("'-a' cannot be used for JS packages.")

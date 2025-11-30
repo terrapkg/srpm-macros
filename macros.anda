@@ -13,7 +13,7 @@
     error("Please provide the full commit sha")
   end
   local dir = (url:gsub("/(%.git)?$", "")):gsub("^.+/", ""):gsub("%.git", "")
-  local command = 'git clone --recurse-submodules -q -j$(nproc) ' .. url
+  local command = 'git clone -c advice.detachedHead=false --recurse-submodules -q -j$(nproc) ' .. url
   if (ref:len() == 40) and not(ref:find("%X")) then
     command = command .. ' --depth 1 --revision ' .. ref
   else
