@@ -127,12 +127,11 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
   else
     module = rpm.expand("%{?npm_name}")
   end
-  moduledir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
   if not macros["_target_cpu"] == "noarch" then
     installdir = rpm.expand("%{buildroot}%{nodejs_sitearch}/%{npm_name}")
     installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}%{?_js}")
   else
-    installdir = moduledir
+    installdir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
     installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
   end
   bindir = rpm.expand("%{buildroot}%{_bindir}/")
