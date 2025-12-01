@@ -15,22 +15,9 @@
 %vendor_nodejs(v:)                                                                                             \
 %{!?-v*:%{error:NodeJS version to install required to be passed using the -v flag.}}                           \
 touch "$HOME/.bash_profile" &>/dev/null                                                                        \
-export NVM_DIR="%{nvm_dir}"                                                                                    \
-mkdir -p "$NVM_DIR"                                                                                            \
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash &>/dev/null                    \
-source "$NVM_DIR/nvm.sh" &>/dev/null                                                                           \
-source "$NVM_DIR/bash_completion" &>/dev/null                                                                  \
-nvm install %{?-v*}                                                                                            \
+%{__nvm} install %{?-v*}                                                                                       \
 %global __nodejs %{nvm_dir}/versions/node/v*/bin/node                                                          \
 %bcond vendored_nodejs 1
-
-%__npm /usr/bin/env %{npm_common_vars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
-
-## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_buildflags set for consistent behavior.
-%__npx /usr/bin/env %{npm_common_vars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
-
-## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to NodeJS), some Node module build deps such as Electron Builder do
-%__bun /usr/bin/env %{npm_common_vars} BUN_HOME=%{rpmbuilddir}/.bun BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 /usr/bin/bun
 
 ## ONLY use if PNPM is not usable from the repos for some reason
 # -v "Version." Choose a specific version of PNPM to vendor
@@ -39,6 +26,17 @@ export PNPM_HOME="%{rpmbuilddir}/.pnpm"                  \
 curl -fsSL https://get.pnpm.io/install.sh | sh -         \
 %{?-v:%{rpmbuilddir}/.pnpm/pnpm env use --global %{-v*}} \
 %bcond vendored_pnpm 1
+
+%__npm /usr/bin/env %{npm_common_vars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
+
+## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_buildflags set for consistent behavior.
+%__npx /usr/bin/env %{npm_common_vars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
+
+## Macro to make sure system installed NVM uses the correct directory when used in %%vendor_nodejs.
+%__nvm /usr/bin/env NVM_DIR=%{nvm_dir} /usr/bin/nvm
+
+## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to NodeJS), some Node module build deps such as Electron Builder do
+%__bun /usr/bin/env %{npm_common_vars} BUN_HOME=%{rpmbuilddir}/.bun BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 /usr/bin/bun
 
 ## While PNPM itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
 %__pnpm /usr/bin/env %{npm_common_vars} PNPM_HOME=%{rpmbuilddir}/.pnpm %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
@@ -62,7 +60,7 @@ NPM_CONFIG_INIT_MODULE="%{rpmbuilddir}/.npm-init.js" ; export NPM_CONFIG_INIT_MO
 BUN_HOME="%{rpmbuilddir}/.bun" ; export BUN_HOME ; \
 BUN_RUNTIME_TRANSPILER_CACHE_PATH="0" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
 PNPM_HOME="%{rpmbuilddir}/.pnpm" ; export PNPM_HOME ; \
-YARN_CACHE_FOLDER="%{rpmbuilddir}/.yarn" ; export YARN_CACHE_FOLDER \
+YARN_CACHE_FOLDER="%{rpmbuilddir}/.yarn" ; export YARN_CACHE_FOLDER ; \
 NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
 
 ## These macros REQUIRE that the macro %%npm_name be defined or the module be passed to them
