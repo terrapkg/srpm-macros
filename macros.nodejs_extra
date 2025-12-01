@@ -10,23 +10,6 @@
 ## Only used if vendoring NodeJS
 %nvm_dir %{rpmbuilddir}/.nvm
 
-## ONLY use if NodeJS is not usable from the repos for some reason (such as needing non-LTS NodeJS)
-# -v: "Version." The version of NodeJS to install. Required flag.
-%vendor_nodejs(v:)                                                                                             \
-%{!?-v*:%{error:NodeJS version to install required to be passed using the -v flag.}}                           \
-touch "$HOME/.bash_profile" &>/dev/null                                                                        \
-%{__nvm} install %{?-v*}                                                                                       \
-%global __nodejs %{nvm_dir}/versions/node/v*/bin/node                                                          \
-%bcond vendored_nodejs 1
-
-## ONLY use if PNPM is not usable from the repos for some reason
-# -v "Version." Choose a specific version of PNPM to vendor
-%vendor_pnpm(v:)
-export PNPM_HOME="%{rpmbuilddir}/.pnpm"                  \
-curl -fsSL https://get.pnpm.io/install.sh | sh -         \
-%{?-v:%{rpmbuilddir}/.pnpm/pnpm env use --global %{-v*}} \
-%bcond vendored_pnpm 1
-
 %__npm /usr/bin/env %{npm_common_vars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
 
 ## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_buildflags set for consistent behavior.
@@ -43,6 +26,23 @@ curl -fsSL https://get.pnpm.io/install.sh | sh -         \
 
 ## While Yarn itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
 %__yarn /usr/bin/env %{npm_common_vars} YARN_CACHE_FOLDER=%{rpmbuilddir}/.yarn /usr/bin/yarn
+
+## ONLY use if NodeJS is not usable from the repos for some reason (such as needing non-LTS NodeJS)
+# -v: "Version." The version of NodeJS to install. Required flag.
+%vendor_nodejs(v:)                                                                                             \
+%{!?-v*:%{error:NodeJS version to install required to be passed using the -v flag.}}                           \
+touch "$HOME/.bash_profile" &>/dev/null                                                                        \
+%{__nvm} install %{?-v*}                                                                                       \
+%global __nodejs %{nvm_dir}/versions/node/v*/bin/node                                                          \
+%bcond vendored_nodejs 1
+
+## ONLY use if PNPM is not usable from the repos for some reason
+# -v "Version." Choose a specific version of PNPM to vendor
+%vendor_pnpm(v:)
+export PNPM_HOME="%{rpmbuilddir}/.pnpm"                  \
+curl -fsSL https://get.pnpm.io/install.sh | sh -         \
+%{?-v:%{rpmbuilddir}/.pnpm/pnpm env use --global %{-v*}} \
+%bcond vendored_pnpm 1
 
 ## Export Node module related build flags globally if necessary for any reason.
 ## Based on Fedora's %%set_build_flags and can be used the same way or in combination with it.
