@@ -204,14 +204,14 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publ
    print(rpm.expand("%{__mkdir} -p %{buildroot}") .. installdir .. "\\n")
    -- Wildcards for linux-*unpacked CANNOT be used because Electron projects can build multiple architectures at once!
    if arch ~= 'x64' then
-     print("cp -pr dist/linux-" .. arch .. "-unpacked/* -t " .. installdir .. "\\n")
+     print(macros["__cp"] .. " -pr dist/linux-" .. arch .. "-unpacked/* -t " .. installdir .. "\\n")
    else
      print(rpm.expand("%{__cp} -pr dist/linux-unpacked/* -t %{buildroot}") .. installdir .. "\\n")
    end
    print(rpm.expand("%{__mkdir} -p %{buildroot}%{_bindir}") .. "\\n")
-   print("ln -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
+   print(macros["__ln"] .. " -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
    if opt.S then
-     print("ln -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")
+     print(macros["__ln"] .. " -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")
    end
    if opt.D then
    -- Wildcards cannot be used here for similar reasons.
@@ -229,9 +229,9 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publ
        macros["desktop_file_args"] = table.concat(arg, " --")
      end
    end
-   print("desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
+   print("/usr/bin/desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
    end}                                                                                                                                                                                          \
-%{?-l:export BUNDLED_LICENSE_DIR=bundled_licenses && %{__mkdir} $BUNDLED_LICENSE_DIR}                                                                                                                                 \
+%{?-l:export BUNDLED_LICENSE_DIR="$(pwd)/bundled_licenses" && %{__mkdir} -p "$BUNDLED_LICENSE_DIR"}                                                                                                                                 \
 %{?-l:find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +} \
 %{__install} -Dm644 dist/.icon-set/icon_*16.png %{buildroot}%{_iconsdir}/hicolor/16x16/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \
 %{__install} -Dm644 dist/.icon-set/icon_*32.png %{buildroot}%{_iconsdir}/hicolor/32x32/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \

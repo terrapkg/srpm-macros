@@ -48,11 +48,11 @@ touch "$HOME/.bash_profile" &>/dev/null                                         
 nvm install %{?-v*}                                                                  \
 %{lua:
 if #macros["-v*"] < 3 then
-  rpm.define("__nodejs %{nvm_dir}/versions/node/v" .. macros["-v*"] .. "*/bin/node")
-  rpm.define("vendored_node_path %{nvm_dir}/versions/node/v" .. macros["-v*"] .. "*/bin")
+  rpm.define("__nodejs " .. rpm.expand("%{nvm_dir}/versions/node/v%{-v*}") .. "*/bin/node")
+  rpm.define("vendored_node_path " .. rpm.expand("%{nvm_dir}/versions/node/v%{-v*}") .. "*/bin")
 else
-  rpm.define("__nodejs %{nvm_dir}/versions/node/v" .. macros["-v*"] .. "/bin/node")
-  rpm.define("vendored_node_path %{nvm_dir}/versions/node/v" .. macros["-v*"] .. "/bin")
+  rpm.define("__nodejs " .. rpm.expand("%{nvm_dir}/versions/node/v%{-v*}") .. "/bin/node")
+  rpm.define("vendored_node_path " .. rpm.expand("%{nvm_dir}/versions/node/v%{-v*}") .. "/bin")
 end}                                                                                 \
 %bcond vendored_nodejs 1
 
@@ -111,7 +111,7 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
 # -u: "URL." This MUST be set if the URL used in the spec is not automatically detectable as a clonable Git repository
 # %%fetch_node_tests -u https://github.com/nodepkgdev/nodepkgname /tests .eslintrc.json
 %fetch_node_tests(u:) %{lua:
-  cmd = 'git clone -n --depth=1 --filter=tree:0 -q -j$(nproc) '
+  cmd = macros["__git"] .. ' clone -n --depth=1 --filter=tree:0 -q -j$(nproc) '
   if not arg[1] then error("Test folders/files not specified. Please list them, separated by spaces.") end
   for i, file in ipairs(arg) do
     if file:find('/') and string.sub(file, 1, 1) ~= '/' then
@@ -131,10 +131,10 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
     end
   else
     error("URL could not be automatically identified as clonable and -u is not set. Please set a Git repository hosting the tests for this module using the -u option.")
-  end}                                            \
-  git switch -c v%{version} -q                    \
-  git sparse-checkout set --no-cone %{_nodetests} \
-  git checkout -q                                 \
+  end}                                                 \
+  %{__git} switch -c v%{version} -q                    \
+  %{__git} sparse-checkout set --no-cone %{_nodetests} \
+  %{__git} checkout -q                                 \
   cd ~-
 
 ## Install package to %%nodejs_sitelib or %%nodejs_sitearch.
@@ -153,9 +153,9 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
     installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
   end
   bindir = rpm.expand("%{buildroot}%{_bindir}/")
-  print("mkdir -p " .. installdir .. "\\n")
-  print("mkdir -p " .. bindir .. "\\n")
-  print("cp -r ./* -t " .. installdir .. "\\n")
+  print(macros["__mkdir"] .. " -p " .. installdir .. "\\n")
+  print(macros["__mkdir"] .. " -p " .. bindir .. "\\n")
+  print(macros["__cp"] .. " -r ./* -t " .. installdir .. "\\n")
   if opt.s then
     if rpm.expand("%{?node_bin_symlink}") ~= rpm.expand("%{-s*}") then
       rpm.define("node_bin_symlink " .. rpm.expand("%{-s*}"))
@@ -163,7 +163,7 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
   else
     rpm.define("node_bin_symlink " .. module)
   end
-  print("ln -sf " .. installbin .. " " .. bindir .. macros["node_bin_symlink"])
+  print(macros["__ln"] .. " -sf " .. installbin .. " " .. bindir .. macros["node_bin_symlink"])
 }
 
 ## Best used in check section
