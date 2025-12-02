@@ -118,7 +118,7 @@ ExclusiveArch: %{electron_arches}
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
 # -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder/Electron Vite commands.
-# -F: "Force." Always request the latest versions from the registry and reinstall all dependenices
+# -F: "Force." Always request the latest versions from the NPM Registry and reinstall all dependenices
 # -N: "No save." Do not create a lockfile. Prevents freezing dependencies.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it)

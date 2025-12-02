@@ -25,7 +25,7 @@
 ## Call NPM with our build env vars
 %__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
 
-## Remotely execute a Node module from the NPM registry with NPM
+## Remotely execute a Node module from the NPM Registry with NPM
 ## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_buildflags set for consistent behavior.
 %__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
 
@@ -41,13 +41,13 @@
 ## Call PNPM with our build env vars
 %__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
 
-## Remotely execute a Node module from the NPM registry with PNPM
+## Remotely execute a Node module from the NPM Registry with PNPM
 %__pnpx /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
 
 ## Call Yarn with our build env vars
 %__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
 
-## Remotely execute a Node module from the NPM registry with Yarn
+## Remotely execute a Node module from the NPM Registry with Yarn
 ## NOTE: Yarn DLX (Yarn's equivalent to NPX, PNPX, and Bunx) only exists in Yarn Berry!
 ## If you need to use this feature, make sure you use BuildRequires: yarnpkg-berry
 %__yarn_dlx %{__yarn} dlx
@@ -99,7 +99,7 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
 
 ## For use in prep section
 ## WARNING: Do NOT use in the prep section of projects using NPM that are not NodeJS packages!
-# -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM registry
+# -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM Registry
 # %%npm_prep -n nodepkgname
 %npm_prep(n:) %{lua:
    if opt.n then
