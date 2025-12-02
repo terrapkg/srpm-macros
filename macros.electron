@@ -201,14 +201,14 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publ
    local installdir = macros["_libdir"] .. "/" .. dir
    local link = macros["-s*"] or macros["name"]
    local arch = macros["_electron_cpu"]
-   print("mkdir -p " .. rpm.expand("%{buildroot}") .. installdir .. "\\n")
+   print(rpm.expand("%{__mkdir} -p %{buildroot}") .. installdir .. "\\n")
    -- Wildcards for linux-*unpacked CANNOT be used because Electron projects can build multiple architectures at once!
    if arch ~= 'x64' then
      print("cp -pr dist/linux-" .. arch .. "-unpacked/* -t " .. installdir .. "\\n")
    else
-     print("cp -pr dist/linux-unpacked/* -t " .. rpm.expand("%{buildroot}") .. installdir .. "\\n")
+     print(rpm.expand("%{__cp} -pr dist/linux-unpacked/* -t %{buildroot}") .. installdir .. "\\n")
    end
-   print("mkdir -p " .. rpm.expand("%{buildroot}%{_bindir}") .. "\\n")
+   print(rpm.expand("%{__mkdir} -p %{buildroot}%{_bindir}") .. "\\n")
    print("ln -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
    if opt.S then
      print("ln -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")

@@ -5,13 +5,13 @@
 %npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_COLOR=always NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js
 
 ## Common env vars for Bun
-%bun_common_envvars BUN_HOME=%{rpmbuilddir}/.bun BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
+%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{rpmbuilddir}/.bun BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
 
 ## Common env vars for PNPM
-%pnpm_common_envvars PNPM_HOME=%{rpmbuilddir}/.pnpm
+%pnpm_common_envvars %{npm_common_envvars} PNPM_HOME=%{rpmbuilddir}/.pnpm
 
 ## Common env vars for Yarn
-%yarn_common_envvars YARN_CACHE_FOLDER=%{rpmbuilddir}/.yarn
+%yarn_common_envvars %{npm_common_envvars} YARN_CACHE_FOLDER=%{rpmbuilddir}/.yarn
 
 ## Build flags for NPM so they can be called independently to force our build config.
 %npm_buildflags --userconfig=%{rpmbuilddir}/.npmrc --globalconfig=%{rpmbuilddir}/npmrc --cache=%{rpmbuilddir}/.npm --loglevel=error --fund=false --update-notifier=false --color=always --init-module=%{rpmbuilddir}/.npm-init.js
@@ -19,26 +19,26 @@
 ## Only used if vendoring NodeJS
 %nvm_dir %{rpmbuilddir}/.nvm
 
-%__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
+%__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
 
 ## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_buildflags set for consistent behavior.
-%__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{nvm_dir}/versions/node/v*/bin/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
+%__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
 
 ## Macro to make sure system installed NVM uses the correct directory when used in %%vendor_nodejs.
 %__nvm /usr/bin/env NVM_DIR=%{nvm_dir} /usr/bin/nvm
 
 ## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to NodeJS), some Node module build deps such as Electron Builder do
-%__bun /usr/bin/env %{npm_common_envvars} %{bun_common_envvars} /usr/bin/bun
+%__bun /usr/bin/env %{bun_common_envvars} /usr/bin/bun
 
-%__bunx /usr/bin/env %{npm_common_envvars} %{bun_common_envvars} /usr/bin/bunx
+%__bunx /usr/bin/env %{bun_common_envvars} /usr/bin/bunx
 
 ## While PNPM itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
-%__pnpm /usr/bin/env %{npm_common_envvars} %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
+%__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
 
-%__pnpx usr/bin/env %{npm_common_envvars} %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
+%__pnpx usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
 
 ## While Yarn itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
-%__yarn /usr/bin/env %{npm_common_envvars} %{yarn_common_envvars} /usr/bin/yarn
+%__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
 
 ## ONLY use if NodeJS is not usable from the repos for some reason (such as needing non-LTS NodeJS)
 # -v: "Version." The version of NodeJS to install. Required flag.
@@ -49,23 +49,25 @@ nvm install %{?-v*}                                                             
 %{lua:
 if #macros["-v*"] < 3 then
   rpm.define("__nodejs %{nvm_dir}/versions/node/v" .. macros["-v*"] .. "*/bin/node")
+  rpm.define("vendored_node_path %{nvm_dir}/versions/node/v" .. macros["-v*"] .. "*/bin")
 else
   rpm.define("__nodejs %{nvm_dir}/versions/node/v" .. macros["-v*"] .. "/bin/node")
+  rpm.define("vendored_node_path %{nvm_dir}/versions/node/v" .. macros["-v*"] .. "/bin")
 end}                                                                                 \
 %bcond vendored_nodejs 1
 
 ## ONLY use if PNPM is not usable from the repos for some reason
 # -v "Version." Choose a specific version of PNPM to vendor
 %vendor_pnpm(v:)
-export PNPM_HOME="%{rpmbuilddir}/.pnpm"                  \
-curl -fsSL https://get.pnpm.io/install.sh | sh -         \
-%{?-v:%{rpmbuilddir}/.pnpm/pnpm env use --global %{-v*}} \
+export PNPM_HOME="%{rpmbuilddir}/.pnpm"                      \
+curl -fsSL https://get.pnpm.io/install.sh | sh - &>/dev/null \
+%{?-v:%{rpmbuilddir}/.pnpm/pnpm env use --global %{-v*}}     \
 %bcond vendored_pnpm 1
 
 ## Export Node module related build flags globally if necessary for any reason.
 ## Based on Fedora's %%set_build_flags and can be used the same way or in combination with it.
 ## Also creates a variable that can be called for our NPM build flags, similar to how Fedora supplies buildflags in both variables and macros.
-%set_nodejs_build_flags \
+%set_node_build_flags \
 NPM_CONFIG_USERCONFIG="%{rpmbuilddir}/.npmrc" ; export NPM_CONFIG_USERCONFIG ; \
 NPM_CONFIG_GLOBALCONFIG="%{rpmbuilddir}/npmrc" ; export NPM_CONFIG_GLOBALCONFIG ; \
 NPM_CONFIG_CACHE="%{rpmbuilddir}/.npm" ; export NPM_CONFIG_CACHE ; \
