@@ -123,10 +123,10 @@ ExclusiveArch: %{electron_arches}
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it)
 # -v: "Vite." Run Electron Vite builds
-%bun_build(eFNRr:v)                                                                             \
-%{-R:%{warn:Removing bun.lock. This is not recommended unless absolutely necessary.}}           \
-%{-R:%{__rm} -f bun.lock}                                                                       \
-%{__bun} install %{-F:--force} %{-N:--no-save}                                                  \
+%bun_build(eFNRr:v)                                                                       \
+%{-R:%{warn:Removing bun.lock. This is not recommended unless absolutely necessary.}}     \
+%{-R:%{__rm} -f bun.lock}                                                                 \
+%{__bun} install %{-F:--force} %{-N:--no-save}                                            \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__bun} exec"))
@@ -134,10 +134,10 @@ ExclusiveArch: %{electron_arches}
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                     \
-%{-r:%{__bun} run %{-r*}}                                                                  \
-%{-v:HOME=%{rpmbuilddir} %{__bun} x electron-vite build}                                   \
-HOME=%{rpmbuilddir} %{__bun} x electron-builder --linux --%{_electron_cpu} --publish=never
+  end}                                                                                    \
+%{-r:%{__bun} run %{-r*}}                                                                 \
+%{-v:HOME=%{rpmbuilddir} %{__bunx} electron-vite build}                                   \
+HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
 # -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder/Electron Vite commands. Usually, the actual "exec" part of the command is optional. However, this macro calls it explicitly.
