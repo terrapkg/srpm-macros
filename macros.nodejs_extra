@@ -5,12 +5,15 @@
 %npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_COLOR=always NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js
 
 ## Common env vars for Bun
+## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to NodeJS), some Node module build deps such as Electron Builder do
 %bun_common_envvars %{npm_common_envvars} BUN_HOME=%{rpmbuilddir}/.bun BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
 
 ## Common env vars for PNPM
+## While PNPM itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
 %pnpm_common_envvars %{npm_common_envvars} PNPM_HOME=%{rpmbuilddir}/.pnpm
 
 ## Common env vars for Yarn
+## While Yarn itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
 %yarn_common_envvars %{npm_common_envvars} YARN_CACHE_FOLDER=%{rpmbuilddir}/.yarn
 
 ## Build flags for NPM so they can be called independently to force our build config.
@@ -19,26 +22,35 @@
 ## Only used if vendoring NodeJS
 %nvm_dir %{rpmbuilddir}/.nvm
 
+## Call NPM with our build env vars
 %__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
 
+## Remotely execute a Node module from the NPM registry with NPM
 ## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_buildflags set for consistent behavior.
 %__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
 
 ## Macro to make sure system installed NVM uses the correct directory when used in %%vendor_nodejs.
 %__nvm /usr/bin/env NVM_DIR=%{nvm_dir} /usr/bin/nvm
 
-## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to NodeJS), some Node module build deps such as Electron Builder do
+## Call Bun with our build env vars
 %__bun /usr/bin/env %{bun_common_envvars} /usr/bin/bun
 
+## Execute a Node module in the Bun build environment (installing it if it isn't present)
 %__bunx /usr/bin/env %{bun_common_envvars} /usr/bin/bunx
 
-## While PNPM itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
+## Call PNPM with our build env vars
 %__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
 
-%__pnpx usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
+## Remotely execute a Node module from the NPM registry with PNPM
+%__pnpx /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
 
-## While Yarn itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
+## Call Yarn with our build env vars
 %__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
+
+## Remotely execute a Node module from the NPM registry with Yarn
+## NOTE: Yarn DLX (Yarn's equivalent to NPX, PNPX, and Bunx) only exists in Yarn Berry!
+## If you need to use this feature, make sure you use BuildRequires: yarnpkg-berry
+%__yarn_dlx %{__yarn} dlx
 
 ## ONLY use if NodeJS is not usable from the repos for some reason (such as needing non-LTS NodeJS)
 # -v: "Version." The version of NodeJS to install. Required flag.
