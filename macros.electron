@@ -209,9 +209,9 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publ
      print(rpm.expand("%{__cp} -pr dist/linux-unpacked/* -t %{buildroot}") .. installdir .. "\\n")
    end
    print(rpm.expand("%{__mkdir} -p %{buildroot}%{_bindir}") .. "\\n")
-   print(macros["__ln"] .. " -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
+   print(macros["__ln_s"] .. "f " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
    if opt.S then
-     print(macros["__ln"] .. " -sf " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")
+     print(macros["__ln_s"] .. "f " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")
    end
    if opt.D then
    -- Wildcards cannot be used here for similar reasons.

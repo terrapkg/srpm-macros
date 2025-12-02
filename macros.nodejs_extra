@@ -163,7 +163,7 @@ NPMFLAGS="%{npm_buildflags}" ; export NPMFLAGS
   else
     rpm.define("node_bin_symlink " .. module)
   end
-  print(macros["__ln"] .. " -sf " .. installbin .. " " .. bindir .. macros["node_bin_symlink"])
+  print(macros["__ln_s"] .. "f " .. installbin .. " " .. bindir .. macros["node_bin_symlink"])
 }
 
 ## Best used in check section
