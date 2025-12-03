@@ -93,7 +93,7 @@ BUN_HOME="%{rpmbuilddir}/.bun" ; export BUN_HOME ; \
 BUN_RUNTIME_TRANSPILER_CACHE_PATH="0" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
 PNPM_HOME="%{rpmbuilddir}/.pnpm" ; export PNPM_HOME ; \
 YARN_CACHE_FOLDER="%{rpmbuilddir}/.yarn" ; export YARN_CACHE_FOLDER ; \
-NPMFLAGS="${NPMFLAGS-%{npm_buildflags} }" ; export NPMFLAGS
+NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 
 ## These macros REQUIRE that the macro %%npm_name be defined or the module be passed to them
 
