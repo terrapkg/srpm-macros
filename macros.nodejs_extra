@@ -71,9 +71,9 @@ end}                                                                            
 ## ONLY use if PNPM is not usable from the repos for some reason
 # -v "Version." Choose a specific version of PNPM to vendor
 %vendor_pnpm(v:)
-export PNPM_HOME="%{rpmbuilddir}/.pnpm"                      \
-curl -fsSL https://get.pnpm.io/install.sh | sh - &>/dev/null \
-%{?-v:%{rpmbuilddir}/.pnpm/pnpm env use --global %{-v*}}     \
+export PNPM_HOME="%{rpmbuilddir}/.pnpm"                          \
+curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
+%{?-v:%{rpmbuilddir}/.pnpm/pnpm env use --global %{-v*}}         \
 %bcond vendored_pnpm 1
 
 ## Export Node module related build flags globally if necessary for any reason.
