@@ -123,7 +123,7 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 # -u: "URL." This MUST be set if the URL used in the spec is not automatically detectable as a clonable Git repository
 # %%fetch_node_tests -u https://github.com/nodepkgdev/nodepkgname /tests .eslintrc.json
 %fetch_node_tests(u:) %{lua:
-  cmd = rpm.expand("%{__git} clone -n --depth=1 --filter=tree:0 -q %{_smp_mflags} ")
+  cmd = rpm.expand("%{__git} clone -n --depth=1 --filter=tree:0 -q %{?_smp_mflags} ")
   if not arg[1] then error("Test folders/files not specified. Please list them, separated by spaces.") end
   for i, file in ipairs(arg) do
     if file:find('/') and string.sub(file, 1, 1) ~= '/' then
