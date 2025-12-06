@@ -112,8 +112,7 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
    %{__npm} install -g %{npm_name}@%{version} --prefix="$(pwd)" \
    %setup -T -D -n lib/node_modules/%{npm_name}                 \
    %{lua:
-   prepbindir = os.getenv("PWD") .. "/bin/"
-   if posix.stat(prepbindir .. rpm.expand("%{npm_name}") .. ".js") then
+   if posix.stat("./bin/".. rpm.expand("%{npm_name}") .. ".js") then
     rpm.define("_js .js")
    end}
 
