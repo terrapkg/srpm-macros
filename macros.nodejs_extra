@@ -148,6 +148,11 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 %npm_install(s:) %{lua:
   if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
     error("Package has not been prepped! Please run %npm_prep first.")
+  end
+  if opt.s then
+    rpm.define("node_bin_symlink %{-s*}")
+  else
+    rpm.define("node_bin_symlink %{npm_name}")
   end}                                                         \
 if stat ./bin/%{npm_name}.js &>/dev/null; then                 \
   _js=".js"                                                    \
@@ -162,7 +167,7 @@ fi                                                             \
 %{__mkdir} -p "$BUILDINSTALLDIR"                               \
 %{__mkdir} -p "%{buildroot}%{_bindir}"                         \
 %{__cp} -r ./* -t "$BUILDINSTALLDIR"                           \
-%{?-s*:%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{-s*}}%{!?-s*:%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{npm_name}}
+%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{node_bin_symlink}
 
 ## Best used in check section
 ## This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
@@ -260,14 +265,17 @@ end}
 ## Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
-%node_self_test(Rv)                                                        \
-   for test in %{?_nodetests}; do                                          \
-      if [[ $test == /* ]]; then                                           \
-        NODE_ENV=test %{buildroot}%{_bindir}/%{node_bin_symlink} %{shrink: \
-        %{-R:-R}                                                           \
-        %{-v:-v}                                                           \
-        } %{_nodetestdir}$test                                             \
-      fi
+%node_self_test(Rv)                                                       \
+  if stat ./bin/%{npm_name}.js &>/dev/null; then                          \
+    _js=".js"                                                             \
+  fi                                                                      \
+   for test in %{?_nodetests}; do                                         \
+      if [[ $test == /* ]]; then                                          \
+        NODE_ENV=test %{buildroot}%{_bindir}/%{node_bin_symlink}%{shrink: \
+        %{-R:-R}                                                          \
+        %{-v:-v}                                                          \
+        } %{_nodetestdir}$test                                            \
+      fi                                                                  \
    done
 
 ## Generic NPM tests
