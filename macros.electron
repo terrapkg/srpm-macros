@@ -34,7 +34,7 @@ AND
 ## Package requirements are only the requirements for Electron itself. Electron apps may have additional requirements.
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
 %electronmeta(a)                                                                                                      \
-%global debug_package %{nil}                                                                                          \
+%undefine debug_package                                                                                               \
 %global __provides_exclude ^((libffmpeg[.]so.*)|(lib.*\\.so.*))$                                                      \
 %{lua:
   if not macros["_target_cpu"]:find('armv7') then
@@ -71,7 +71,7 @@ BuildRequires: nodejs
 BuildRequires: nodejs-npm
 BuildRequires: python3
 %{?-a:BuildRequires: nodejs-packaging}
-%{?-a:BuildRequires: typescript}}}
+%{?-a:BuildRequires: typescript}}}                                                                                    \
 %{!?with_bundled_electron:%{expand:
 BuildRequires: unzip}}                                                                                                \
 Requires:      at-spi2-core                                                                                           \
