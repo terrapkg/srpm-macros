@@ -179,6 +179,7 @@ fi                                                             \
 
 ## Best used in prep section if check fails
 ## Reference: https://docs.npmjs.com/cli/v11/commands/npm-audit
+## LIMITATION: Cannot be used for packages that would require a package lock as you can't lock packages installed with the -g flag
 # -d can be used to check what it will do before running, especially if using -f
 # -f should ONLY be used if absolutely necessary and SHOULD be tested locally on the module first, as it will potentially break dependencies
 %npm_audit_fix(dfo:O:p)                              \
