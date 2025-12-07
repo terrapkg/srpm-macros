@@ -105,16 +105,11 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
    if opt.n then
      rpm.define("npm_name " .. rpm.expand("%{-n*}"))
    end
-   local module = rpm.expand("%{?npm_name}")
    if not rpm.isdefined("npm_name") then
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
    end}                                                      \
 %{__npm} install -g %{npm_name}@%{version} --prefix="$(pwd)" \
-%setup -T -D -n lib/node_modules/%{npm_name}                 \
-%{lua:
-  if posix.stat("./bin/" .. rpm.expand("%{npm_name}") .. ".js") then
-    rpm.define("_js .js")
-  end}
+%setup -T -D -n lib/node_modules/%{npm_name}
 
 ## Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
 ## Files in the root of the repository need only their name
@@ -153,29 +148,21 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 %npm_install(s:) %{lua:
   if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
     error("Package has not been prepped! Please run %npm_prep first.")
-  else
-    module = rpm.expand("%{?npm_name}")
-  end
-  if not macros["_target_cpu"] == "noarch" then
-    installdir = rpm.expand("%{buildroot}%{nodejs_sitearch}/%{npm_name}")
-    installbin = rpm.expand("%{nodejs_sitearch}/%{npm_name}/bin/%{npm_name}%{?_js}")
-  else
-    installdir = rpm.expand("%{buildroot}%{nodejs_sitelib}/%{npm_name}")
-    installbin = rpm.expand("%{nodejs_sitelib}/%{npm_name}/bin/%{npm_name}%{?_js}")
-  end
-  bindir = rpm.expand("%{buildroot}%{_bindir}/")
-  print(macros["__mkdir"] .. " -p " .. installdir .. "\\n")
-  print(macros["__mkdir"] .. " -p " .. bindir .. "\\n")
-  print(macros["__cp"] .. " -r ./* -t " .. installdir .. "\\n")
-  if opt.s then
-    if rpm.expand("%{?node_bin_symlink}") ~= rpm.expand("%{-s*}") then
-      rpm.define("node_bin_symlink " .. rpm.expand("%{-s*}"))
-    end
-  else
-    rpm.define("node_bin_symlink " .. module)
-  end
-  print(macros["__ln_s"] .. "f " .. installbin .. " " .. bindir .. macros["node_bin_symlink"])
-}
+  end}                                                         \
+if $(stat ./bin/%{npm_name}.js &>/dev/null); then              \
+  _js=".js"                                                    \
+fi                                                             \
+if [[ "%{_target_cpu}" != "noarch" ]]; then                    \
+  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitearch}/%{npm_name}" \
+  INSTALLDIR="%{nodejs_sitearch}/%{npm_name}"                  \
+else                                                           \
+  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitelib}/%{npm_name}"  \
+  INSTALLDIR="%{nodejs_sitelib}/%{npm_name}"                   \
+fi                                                             \
+%{__mkdir} -p "$BUILDINSTALLDIR"                               \
+%{__mkdir} -p "%{buildroot}%{_bindir}"                         \
+%{__cp} -r ./* -t "$BUILDINSTALLDIR"                           \
+%{?-s*:%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{-s*}}%{!?-s*:%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{npm_name}}
 
 ## Best used in check section
 ## This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
