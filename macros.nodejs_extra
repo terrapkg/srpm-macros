@@ -149,7 +149,7 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
   if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
     error("Package has not been prepped! Please run %npm_prep first.")
   end}                                                         \
-if $(stat ./bin/%{npm_name}.js &>/dev/null); then              \
+if stat ./bin/%{npm_name}.js &>/dev/null; then                 \
   _js=".js"                                                    \
 fi                                                             \
 if [[ "%{_target_cpu}" != "noarch" ]]; then                    \
