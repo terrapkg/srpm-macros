@@ -266,9 +266,6 @@ end}
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
 %node_self_test(Rv)                                                       \
-  if stat ./bin/%{npm_name}.js &>/dev/null; then                          \
-    _js=".js"                                                             \
-  fi                                                                      \
    for test in %{?_nodetests}; do                                         \
       if [[ $test == /* ]]; then                                          \
         NODE_ENV=test %{buildroot}%{_bindir}/%{node_bin_symlink}%{shrink: \
