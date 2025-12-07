@@ -246,19 +246,11 @@ end}
 
 ## Outputs a summary of the licenses used in the main package and bundled dependencies
 ## Useful for filling out the License section
-%npm_license_summary()                \
-   (                                  \
-   set -euo pipefail                  \
-   %{__npm_license_checker} --summary \
-   )
+%npm_license_summary() %{__npm_license_checker} --summary
 
 ## Outputs all used licenses and removes all irrelevent info, especially paths
 ## Since this is a license file, the repository and publisher information have been removed, but they SHOULD ALWAYS be left in an unaltered state in the bundled module
-%npm_license()                                         \
-   (                                                   \
-   set -euo pipefail                                   \
-   %{__npm_license_checker} --limitAttributes licenses \
-   )
+%npm_license() %{__npm_license_checker} --limitAttributes licenses
 
 ## Only applicable if a test folder is provided from a source repo using %%fetch_node_tests
 ## Please not that many NodeJS projects have test methods that cannot be covered by this macro such as ones that should be run by NodeJS itself
