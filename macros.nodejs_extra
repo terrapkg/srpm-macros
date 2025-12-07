@@ -128,7 +128,7 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
   srcdir = macros["rpmbuilddir"] .. "/sourcetests"
   macros["_nodetestdir"] = srcdir
   if (rpm.expand("%{?url}"):find('git') or rpm.expand("%{?url}"):find('codeberg')) and not opt.u then
-    print(cmd .. macros["url"] .. ' && cd ' .. srcdir)
+    print(cmd .. rpm.expand("%{url} ") .. srcdir .. ' && cd ' .. srcdir)
   elseif opt.u then
     if rpm.expand("%{-u*}"):find('://') and rpm.expand("%{-u*}"):find('.') then
       print(cmd .. rpm.expand("%{-u*} ") .. srcdir .. ' && cd ' .. srcdir)
