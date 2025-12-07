@@ -100,7 +100,7 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 ## For use in prep section
 ## WARNING: Do NOT use in the prep section of projects using NPM that are not NodeJS packages!
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM Registry
-# -p: "Package lock." Required for running checks with %%npm_audit.
+# -p: "Package lock." May be required for running checks with %%npm_audit.
 # %%npm_prep -n nodepkgname
 %npm_prep(n:p) %{lua:
    if opt.n then
