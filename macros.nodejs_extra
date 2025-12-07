@@ -100,16 +100,15 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 ## For use in prep section
 ## WARNING: Do NOT use in the prep section of projects using NPM that are not NodeJS packages!
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM Registry
-# -p: "Package lock." May be required for running checks with %%npm_audit.
 # %%npm_prep -n nodepkgname
-%npm_prep(n:p) %{lua:
+%npm_prep(n:) %{lua:
    if opt.n then
      rpm.define("npm_name " .. rpm.expand("%{-n*}"))
    end
    if not rpm.isdefined("npm_name") then
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
-   end}                                                                                \
-%{__npm} install -g %{npm_name}@%{version} --prefix="$(pwd)" %{-p:--package-lock-only} \
+   end}                                                      \
+%{__npm} install -g %{npm_name}@%{version} --prefix="$(pwd)" \
 %setup -T -D -n lib/node_modules/%{npm_name}
 
 ## Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
@@ -171,7 +170,6 @@ fi                                                             \
 %{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{node_bin_symlink}
 
 ## Best used in check section
-## May require running %%npm_prep with the -p flag to force a package lock.
 ## This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
 %npm_audit()                        \
    (                                \
