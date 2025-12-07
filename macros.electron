@@ -71,7 +71,9 @@ BuildRequires: nodejs
 BuildRequires: nodejs-npm
 BuildRequires: python3
 %{?-a:BuildRequires: nodejs-packaging}
-%{?-a:BuildRequires: typescript}}}                                                                                    \
+%{?-a:BuildRequires: typescript}}}
+%{!?with_bundled_electron:%{expand:
+BuildRequires: unzip}}                                                                                                \
 Requires:      at-spi2-core                                                                                           \
 Requires:      c-ares                                                                                                 \
 Requires:      gtk3%{!?with_bundled_electron:%{expand:
