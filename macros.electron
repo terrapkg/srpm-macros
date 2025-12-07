@@ -185,7 +185,7 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publ
 ## Capital letters denote use in desktop file install process. These are cpaitalized differently for organizational purposes.
 # If no alternative names are provided via flag everything, falls back to the name set by the spec
 # -b: "Binary." Name of the actual executable file.
-# -d: "Directory." Choose a different name for the install directory in /usr/share
+# -d: "Directory." Choose a different name for the install directory in /usr/lib(64)
 # -D: "Desktop file." Handle automatic installation of .desktop file.
 # -E: "Enable features." For use with desktop file install. Comma separated.
 # -F: "Flags." Additional flags. Examples: no-sandbox disable-gpu-sandbox
@@ -204,7 +204,7 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publ
    print(rpm.expand("%{__mkdir} -p %{buildroot}") .. installdir .. "\\n")
    -- Wildcards for linux-*unpacked CANNOT be used because Electron projects can build multiple architectures at once!
    if arch ~= 'x64' then
-     print(macros["__cp"] .. " -pr dist/linux-" .. arch .. "-unpacked/* -t " .. installdir .. "\\n")
+     print(macros["__cp"] .. " -pr dist/linux-" .. arch .. "-unpacked/* -t " .. macros["buildroot"] .. installdir .. "\\n")
    else
      print(rpm.expand("%{__cp} -pr dist/linux-unpacked/* -t %{buildroot}") .. installdir .. "\\n")
    end

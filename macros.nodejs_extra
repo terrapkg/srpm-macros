@@ -108,13 +108,13 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
    local module = rpm.expand("%{?npm_name}")
    if not rpm.isdefined("npm_name") then
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
-   end}                                                         \
-   %{__npm} install -g %{npm_name}@%{version} --prefix="$(pwd)" \
-   %setup -T -D -n lib/node_modules/%{npm_name}                 \
-   %{lua:
-   if posix.stat("./bin/".. rpm.expand("%{npm_name}") .. ".js") then
+   end}                                                      \
+%{__npm} install -g %{npm_name}@%{version} --prefix="$(pwd)" \
+%setup -T -D -n lib/node_modules/%{npm_name}                 \
+%{lua:
+  if posix.stat("./bin/" .. rpm.expand("%{npm_name}") .. ".js") then
     rpm.define("_js .js")
-   end}
+  end}
 
 ## Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
 ## Files in the root of the repository need only their name
