@@ -105,7 +105,7 @@ ExclusiveArch: %{electron_arches}
 %{!?-e:%{!?-r:%{!?-E:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -E.}}}} \
 %{lua:
   if opt.E or opt.V then
-    print(rpm.expand("%{warn:Use of -E and -V may not work with all NPM built projects.}"))
+    print("echo Note: Use of -E and -V may not work with all NPM built projects.")
   end
   if opt.e then
     print(rpm.expand("HOME=%{rpmbuilddir} %{__npm} exec"))
@@ -125,10 +125,10 @@ ExclusiveArch: %{electron_arches}
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it)
 # -v: "Vite." Run Electron Vite builds
-%bun_build(eFNRr:v)                                                                       \
-%{-R:%{warn:Removing bun.lock. This is not recommended unless absolutely necessary.}}     \
-%{-R:%{__rm} -f bun.lock}                                                                 \
-%{__bun} install %{-F:--force} %{-N:--no-save}                                            \
+%bun_build(eFNRr:v)                                                                           \
+%{-R:echo "Warning: Removing bun.lock. This is not recommended unless absolutely necessary."} \
+%{-R:%{__rm} -f bun.lock}                                                                     \
+%{__bun} install %{-F:--force} %{-N:--no-save}                                                \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__bun} exec"))
