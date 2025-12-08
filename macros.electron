@@ -40,25 +40,25 @@ AND
   if not macros["_target_cpu"]:find('armv7') then
     for arch in string.gmatch(macros["x86_64"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\aarch64*\\\\so.*))$'
+        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\aarch64*\\\\.so.*)|(.*\\\\x86-32*\\\\.so.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*))$'
         macros["_electron_cpu"] = 'x64'
       end
     end
     for arch in string.gmatch(macros["ix86"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*\\\\x86-64*\\\\.so.*)|(.*\\\\aarch64*\\\\so.*))$'
+        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*\\\\x86-64*\\\\.so.*)|(.*\\\\aarch64*\\\\.so.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*))$'
         macros["_electron_cpu"] = 'ia32'
       end
     end
     for arch in string.gmatch(macros["arm64"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*\\\\x86-64*\\\\.so.*))$'
+        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*\\\\x86-64*\\\\.so.*)|(.*\\\\x86-32*\\\\.so.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*))$'
         macros["_electron_cpu"] = 'arm64'
         print("BuildRequires: zlib-ng-compat-devel")
       end
     end
   elseif macros["_target_cpu"]:find('armv7') then
-    macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*\\\\x86-64*\\\\.so.*)|(.*\\\\aarch64*\\\\so.*))$'
+    macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*\\\\x86-64*\\\\.so.*)|(.*\\\\aarch64*\\\\so.*)|(.*\\\\x86-32*\\\\so.*)|(.*\\\\libc*\\\\.musl*\\\\so.*))$'
     macros["_electron_cpu"] = 'armv7l'
     print("BuildRequires: zlib-ng-compat-devel")
   end}                                                                                                                \
