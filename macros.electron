@@ -70,6 +70,7 @@ BuildRequires: make
 BuildRequires: nodejs
 BuildRequires: nodejs-npm
 BuildRequires: python3
+%{?-a:BuildRequires: nodejs-devel}
 %{?-a:BuildRequires: nodejs-packaging}
 %{?-a:BuildRequires: typescript}}}                                                                                    \
 %{!?with_bundled_electron:%{expand:
