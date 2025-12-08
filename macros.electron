@@ -101,12 +101,13 @@ ExclusiveArch: %{electron_arches}
 # -r: "Run." Project-specific scripts to run.
 # -V: "Vite." Directly execute Electron Vite. Has the same limitation as -E.
 %npm_build(cC:eEM:r:V)                                                                                        \
-%{__npm} %{!?-c:install}%{?-c:ci} --no-audit                                                                  \
 %{!?-e:%{!?-r:%{!?-E:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -E.}}}} \
 %{lua:
   if opt.E or opt.V then
-    print("echo Note: Use of -E and -V may not work with all NPM built projects.")
-  end
+    print("set +x 2>/dev/null; echo -e \\"\\\\e[33mNote:\\\\e[0m Use of -E and -V may not work with all NPM built projects.\\"; set -x")
+  end}                                                                                                        \
+%{__npm} %{!?-c:install}%{?-c:ci} --no-audit                                                                  \
+%{lua:
   if opt.e then
     print(rpm.expand("HOME=%{rpmbuilddir} %{__npm} exec"))
     for i, cmd in ipairs(arg) do
@@ -125,10 +126,10 @@ ExclusiveArch: %{electron_arches}
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it)
 # -v: "Vite." Run Electron Vite builds
-%bun_build(eFNRr:v)                                                                           \
-%{-R:echo "Warning: Removing bun.lock. This is not recommended unless absolutely necessary."} \
-%{-R:%{__rm} -f bun.lock}                                                                     \
-%{__bun} install %{-F:--force} %{-N:--no-save}                                                \
+%bun_build(eFNRr:v)                                                                                                         \
+%{-R:set +x; echo -e "\e[91mWarning:\e[0m Removing bun.lock. This is not recommended unless absolutely necessary."; set -x} \
+%{-R:%{__rm} -f bun.lock}                                                                                                   \
+%{__bun} install %{-F:--force} %{-N:--no-save}                                                                              \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__bun} exec"))
@@ -136,9 +137,9 @@ ExclusiveArch: %{electron_arches}
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                    \
-%{-r:%{__bun} run %{-r*}}                                                                 \
-%{-v:HOME=%{rpmbuilddir} %{__bunx} electron-vite build}                                   \
+  end}                                                                                                                      \
+%{-r:%{__bun} run %{-r*}}                                                                                                   \
+%{-v:HOME=%{rpmbuilddir} %{__bunx} electron-vite build}                                                                     \
 HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
