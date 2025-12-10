@@ -35,11 +35,11 @@
 %_nvm_dir %{rpmbuilddir}/.nvm
 
 ## Call NPM with our build env vars
-%__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
+%__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{_vendored_nodejs_dir}/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
 
 ## Remotely execute a Node module from the NPM Registry with NPM
 ## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_buildflags set for consistent behavior.
-%__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
+%__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{_vendored_nodejs_dir}/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
 
 ## Macro to make sure system installed NVM uses the correct directory when used in %%vendor_nodejs.
 %__nvm /usr/bin/env NVM_DIR=%{_nvm_dir} /usr/bin/nvm
@@ -72,20 +72,20 @@ touch "$HOME/.bash_profile" &>/dev/null                                         
 nvm install %{?-v*}                                                                   \
 %{lua:
 if #macros["-v*"] < 3 then
-  rpm.define("__nodejs " .. rpm.expand("%{nvm_dir}/versions/node/v%{-v*}") .. "*/bin/node")
-  rpm.define("vendored_node_path " .. rpm.expand("%{nvm_dir}/versions/node/v%{-v*}") .. "*/bin")
+  rpm.define("__nodejs " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "*/bin/node")
+  rpm.define("vendored_nodejs_dir " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "*/bin")
 else
-  rpm.define("__nodejs " .. rpm.expand("%{nvm_dir}/versions/node/v%{-v*}") .. "/bin/node")
-  rpm.define("vendored_node_path " .. rpm.expand("%{nvm_dir}/versions/node/v%{-v*}") .. "/bin")
+  rpm.define("__nodejs " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "/bin/node")
+  rpm.define("_vendored_nodejs_dir " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "/bin")
 end}                                                                                 \
 %bcond vendored_nodejs 1
 
 ## ONLY use if PNPM is not usable from the repos for some reason
 # -v "Version." Choose a specific version of PNPM to vendor
 %vendor_pnpm(v:)                                                 \
-export PNPM_HOME="%{rpmbuilddir}/.pnpm"                          \
+export PNPM_HOME="%{_pnpm_cache_dir}"                            \
 curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
-%{?-v:%{rpmbuilddir}/.pnpm/pnpm env use --global %{-v*}}         \
+%{?-v:%{_pnpm_cache_dir}/pnpm env use --global %{-v*}}           \
 %bcond vendored_pnpm 1
 
 ## Export Node module related build flags globally if necessary for any reason.
