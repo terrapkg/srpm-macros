@@ -266,7 +266,7 @@ end}
 %npm_license() %{__npm_license_checker} --limitAttributes licenses
 
 ## Only applicable if a test folder is provided from a source repo using %%fetch_node_tests
-## Please not that many Node.js projects have test methods that cannot be covered by this macro such as ones that should be run by Node.js itself
+## Please note that many Node.js projects have test methods that cannot be covered by this macro such as ones that should be run by Node.js itself
 ## Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
