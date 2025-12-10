@@ -51,10 +51,10 @@
 %__bunx /usr/bin/env %{bun_common_envvars} /usr/bin/bunx
 
 ## Call PNPM with our build env vars
-%__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
+%__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_cache_dir}/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
 
 ## Remotely execute a Node module from the NPM Registry with PNPM
-%__pnpx /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{rpmbuilddir}/.pnpm/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
+%__pnpx /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_cache_dir}/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
 
 ## Call Yarn with our build env vars
 %__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
