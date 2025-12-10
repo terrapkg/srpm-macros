@@ -101,10 +101,10 @@ NPM_CONFIG_UPDATE_NOTIFIER="false" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \
 NO_UPDATE_NOTIFIER="1" ; export NO_UPDATE_NOTIFIER ; \
 NPM_CONFIG_COLOR="always" ; export NPM_CONFIG_COLOR ; \
 NPM_CONFIG_INIT_MODULE="%{rpmbuilddir}/.npm-init.js" ; export NPM_CONFIG_INIT_MODULE ; \
-BUN_HOME="%{rpmbuilddir}/.bun" ; export BUN_HOME ; \
+BUN_HOME="%{_bun_cache_dir}" ; export BUN_HOME ; \
 BUN_RUNTIME_TRANSPILER_CACHE_PATH="0" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
-PNPM_HOME="%{rpmbuilddir}/.pnpm" ; export PNPM_HOME ; \
-YARN_CACHE_FOLDER="%{rpmbuilddir}/.yarn" ; export YARN_CACHE_FOLDER ; \
+PNPM_HOME="%{_pnpm_cache_dir}" ; export PNPM_HOME ; \
+YARN_CACHE_FOLDER="%{_yarn_cache_dir}" ; export YARN_CACHE_FOLDER ; \
 NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 
 ## These macros REQUIRE that the macro %%npm_name be defined or the module be passed to them
