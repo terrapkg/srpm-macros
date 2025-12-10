@@ -74,7 +74,7 @@ nvm install %{?-v*}                                                             
 %{lua:
 if #macros["-v*"] < 3 then
   rpm.define("__nodejs " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "*/bin/node")
-  rpm.define("vendored_nodejs_dir " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "*/bin")
+  rpm.define("_vendored_nodejs_dir " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "*/bin")
 else
   rpm.define("__nodejs " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "/bin/node")
   rpm.define("_vendored_nodejs_dir " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "/bin")
