@@ -1,26 +1,38 @@
+## Define cache directory for NPM
+%_npm_cache_dir %{rpmbuilddir}/.npm
+
 ## Common env vars to be used for all NPM and descendents' macros
 ## NPM will default to the PROJECT SET config when environment variables are set in uppercase. This is intentional behavior and we don't override it as some build scripts rely on setting these variables to specific values. If you want to explicitly override all commands with these build flags, please use %%npm_buildflags in your calls to NPM.
-## For more information on the differences between uppercase and lowercase environment variables in NodeJS and NPM, see https://github.com/npm/npm/issues/14528
+## For more information on the differences between uppercase and lowercase environment variables in Node.js and NPM, see https://github.com/npm/npm/issues/14528
 ## Reference: https://docs.npmjs.com/cli/v11/using-npm/config
-%npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{rpmbuilddir}/.npm NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_COLOR=always NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js
+%npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{_npm_cache_dir} NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_COLOR=always NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js
+
+## Define cache directory for Bun
+%_bun_cache_dir %{rpmbuilddir}/.bun
 
 ## Common env vars for Bun
-## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to NodeJS), some Node module build deps such as Electron Builder do
-%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{rpmbuilddir}/.bun BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
+## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
+%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{_bun_cache_dir} BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
+
+## Define cache directory for PNPM
+%_pnpm_cache_dir %{rpmbuilddir}/.pnpm
 
 ## Common env vars for PNPM
 ## While PNPM itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
-%pnpm_common_envvars %{npm_common_envvars} PNPM_HOME=%{rpmbuilddir}/.pnpm
+%pnpm_common_envvars %{npm_common_envvars} PNPM_HOME=%{_pnpm_cache_dir}
+
+## Define cache directory for Yarn
+%_yarn_cache_dir %{rpmbuilddir}/.yarn
 
 ## Common env vars for Yarn
 ## While Yarn itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
-%yarn_common_envvars %{npm_common_envvars} YARN_CACHE_FOLDER=%{rpmbuilddir}/.yarn
+%yarn_common_envvars %{npm_common_envvars} YARN_CACHE_FOLDER=%{_yarn_cache_dir}
 
 ## Build flags for NPM so they can be called independently to force our build config.
 %npm_buildflags --userconfig=%{rpmbuilddir}/.npmrc --globalconfig=%{rpmbuilddir}/npmrc --cache=%{rpmbuilddir}/.npm --loglevel=error --fund=false --update-notifier=false --color=always --init-module=%{rpmbuilddir}/.npm-init.js
 
-## Only used if vendoring NodeJS
-%nvm_dir %{rpmbuilddir}/.nvm
+## Define NVM cache/vendored Node.js install directory
+%_nvm_dir %{rpmbuilddir}/.nvm
 
 ## Call NPM with our build env vars
 %__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npm}%{!?with_vendored_nodejs:/usr/bin/npm}
@@ -30,7 +42,7 @@
 %__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{vendored_node_path}/npx}%{!?with_vendored_nodejs:/usr/bin/npx}
 
 ## Macro to make sure system installed NVM uses the correct directory when used in %%vendor_nodejs.
-%__nvm /usr/bin/env NVM_DIR=%{nvm_dir} /usr/bin/nvm
+%__nvm /usr/bin/env NVM_DIR=%{_nvm_dir} /usr/bin/nvm
 
 ## Call Bun with our build env vars
 %__bun /usr/bin/env %{bun_common_envvars} /usr/bin/bun
@@ -52,10 +64,10 @@
 ## If you need to use this feature, make sure you use BuildRequires: yarnpkg-berry
 %__yarn_dlx %{__yarn} dlx
 
-## ONLY use if NodeJS is not usable from the repos for some reason (such as needing non-LTS NodeJS)
-# -v: "Version." The version of NodeJS to install. Required flag.
+## ONLY use if Node.js is not usable from the repos for some reason (such as needing non-LTS Node.js)
+# -v: "Version." The version of Node.js to install. Required flag.
 %vendor_nodejs(v:)                                                                   \
-%{!?-v*:%{error:NodeJS version to install required to be passed using the -v flag.}} \
+%{!?-v*:%{error:Node.js version to install required to be passed using the -v flag.}} \
 touch "$HOME/.bash_profile" &>/dev/null                                              \
 nvm install %{?-v*}                                                                  \
 %{lua:
@@ -98,7 +110,7 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 ## These macros REQUIRE that the macro %%npm_name be defined or the module be passed to them
 
 ## For use in prep section
-## WARNING: Do NOT use in the prep section of projects using NPM that are not NodeJS packages!
+## WARNING: Do NOT use in the prep section of projects using NPM that are not Node.js packages!
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM Registry
 # %%npm_prep -n nodepkgname
 %npm_prep(n:) %{lua:
@@ -254,7 +266,7 @@ end}
 %npm_license() %{__npm_license_checker} --limitAttributes licenses
 
 ## Only applicable if a test folder is provided from a source repo using %%fetch_node_tests
-## Please not that many NodeJS projects have test methods that cannot be covered by this macro such as ones that should be run by NodeJS itself
+## Please not that many Node.js projects have test methods that cannot be covered by this macro such as ones that should be run by Node.js itself
 ## Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
