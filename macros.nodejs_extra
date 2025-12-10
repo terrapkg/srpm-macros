@@ -251,7 +251,7 @@ end}
 
 ## Outputs all used licenses and removes all irrelevent info, especially paths
 ## Since this is a license file, the repository and publisher information have been removed, but they SHOULD ALWAYS be left in an unaltered state in the bundled module
-%npm_license() %{__npm_license_checker} --limitAttributes licenses
+%npm_license(o:) %{__npm_license_checker} --limitAttributes licenses %{-o:%{-o*}}
 
 ## Only applicable if a test folder is provided from a source repo using %%fetch_node_tests
 ## Please not that many NodeJS projects have test methods that cannot be covered by this macro such as ones that should be run by NodeJS itself
