@@ -78,7 +78,7 @@ if #macros["-v*"] < 3 then
 else
   rpm.define("__nodejs " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "/bin/node")
   rpm.define("_vendored_nodejs_dir " .. rpm.expand("%{_nvm_dir}/versions/node/v%{-v*}") .. "/bin")
-end}                                                                                 \
+end}                                                                                  \
 %bcond vendored_nodejs 1
 
 ## ONLY use if PNPM is not usable from the repos for some reason
