@@ -44,7 +44,7 @@
   local bins_num = tonumber(rpm.expand("%#"))
   local bins = {}
   local evr = macros["evr"]
-
+  
   for i = 1, bins_num do
     bins[i] = macros[i]
   end
@@ -52,7 +52,7 @@
     bins[1] = pkg
     bins_num = 1
   end
-
+  
   function format_print(sh, req)
     local sh_proper = sh:sub(1,1):upper()..sh:sub(2)
     print("%package -n "..pkg.."-"..sh.."-completion\\n")
