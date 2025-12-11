@@ -44,8 +44,8 @@
   local bins_num = tonumber(rpm.expand("%#"))
   local bins = {}
   local evr = macros["evr"]
-  for i = 1, bins_num do
 
+  for i = 1, bins_num do
     bins[i] = macros[i]
   end
   if bins_num == 0 then
