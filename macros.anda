@@ -188,4 +188,4 @@
 
 %_hicolor_apps_scale_dir %_hicolordir/scalable/apps
 
-%_applicationsdir %_datadir/applications
+%_appsdir %_datadir/applications
