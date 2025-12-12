@@ -186,6 +186,6 @@
 
 %_hicolordir %_iconsdir/hicolor
 
-%_scalableappsdir %_hicolordir/scalable/apps
+%_scalableiconsdir %_hicolordir/scalable/apps
 
 %_appsdir %_datadir/applications
