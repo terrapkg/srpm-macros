@@ -96,17 +96,25 @@ ExclusiveArch: %{electron_arches}
 # -c: "CI/clean install." Boolean to use npm ci instead of npm install. Needed for some projects with stricter build dependencies.
 # -C: "Config." Direct Electron Builder to the config file. May be necessary with NPM.
 # -e: "Exec." Execute commands though NPM directly. Note that some commands longer than one word MUST have -- follow the first word to be passed to the command, especially if they are passing arguments to a Node module.
-# -E: "electron-builder." Directly execute Electron Builder. Will NOT work in projects that need build commands executed via NodeJS instead of NPM.
+# -E: "Electron Builder/Electron Forge." Directly execute Electron Builder or Electron Forge. Will NOT work in projects that need build commands executed via NodeJS instead of NPM.
 # -M: "Mode." Mode to use in Electron Vite builds.
 # -r: "Run." Project-specific scripts to run.
 # -V: "Vite." Directly execute Electron Vite. Has the same limitation as -E.
-%npm_build(cC:eEM:r:V)                                                                                        \
-%{!?-e:%{!?-r:%{!?-E:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -E.}}}} \
+%npm_build(cC:eEM:r:V)                                                                                                                          \
+%{!?-e:%{!?-r:%{!?-E:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -E.}}}}                                   \
 %{lua:
   if opt.E or opt.V then
     print("set +x; echo -e \\"\\\\e[33mNote:\\\\e[0m Use of -E and -V may not work with all NPM built projects.\\"; set -x")
-  end}                                                                                                        \
-%{__npm} %{!?-c:install}%{?-c:ci} --no-audit                                                                  \
+  end}                                                                                                                                          \
+if cat package.json | grep electron-forge &>/dev/null; then                                                                                     \
+  BUILDER="electron-forge"                                                                                                                      \
+elif cat package.json | grep electron-builder &>/dev/null; then                                                                                 \
+  BUILDER="electron-builder"                                                                                                                    \
+fi                                                                                                                                              \
+%{__npm} %{!?-c:install}%{?-c:ci} --no-audit                                                                                                    \
+if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                                   \
+%{__npm} install @reforged/maker-appimage --no-save                                                                                             \
+fi                                                                                                                                              \
 %{lua:
   if opt.e then
     print(rpm.expand("HOME=%{rpmbuilddir} %{__npm} exec"))
@@ -114,22 +122,37 @@ ExclusiveArch: %{electron_arches}
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                                        \
-%{-r:HOME=%{rpmbuilddir} %{__npm} run %{-r*}}                                                                 \
-%{-V:HOME=%{rpmbuilddir} %{__npm} exec electron-vite -- build %{-M:--mode %{-M*}}}                            \
-%{-E:HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux --%{_electron_cpu} --publish=never %{-C:-c %{-C*}}}
+  end}                                                                                                                                          \
+%{-r:HOME=%{rpmbuilddir} %{__npm} run %{-r*}}                                                                                                   \
+%{-V:HOME=%{rpmbuilddir} %{__npm} exec electron-vite -- build %{-M:--mode %{-M*}}}                                                              \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                                 \
+%{-E:HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux --%{_electron_cpu} --publish=never %{-C:-c %{-C*}}}                          \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                                 \
+%{-E:HOME=%{rpmbuilddir} %{__npm} exec electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
+fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
+# -c: "CI/clean install." Equivalent to using "bun install --frozen-lockfile".
 # -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder/Electron Vite commands.
 # -F: "Force." Always request the latest versions from the NPM Registry and reinstall all dependenices
 # -N: "No save." Do not create a lockfile. Prevents freezing dependencies.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it)
 # -v: "Vite." Run Electron Vite builds
-%bun_build(eFNRr:v)                                                                                                         \
-%{-R:set +x; echo -e "\e[91mWarning:\e[0m Removing bun.lock. This is not recommended unless absolutely necessary."; set -x} \
-%{-R:%{__rm} -f bun.lock}                                                                                                   \
-%{__bun} install %{-F:--force} %{-N:--no-save}                                                                              \
+%bun_build(ceFNRr:v)                                                                                                                   \
+%{?-c:%{?-R:%{error:Can't use both -c and -R}}}                                                                                        \
+%{?-c:%{?-N:%{error:Can't use both -c and -N}}}                                                                                        \
+if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
+  BUILDER="electron-forge"                                                                                                             \
+elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
+  BUILDER="electron-builder"                                                                                                           \
+fi                                                                                                                                     \
+%{-R:set +x; echo -e "\e[91mWarning:\e[0m Removing bun.lock. This is not recommended unless absolutely necessary."; set -x}            \
+%{-R:%{__rm} -f bun.lock}                                                                                                              \
+%{__bun} %{-c:ci}%{!?-c:install} %{-F:--force} %{-N:--no-save}                                                                         \
+if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                          \
+%{__bun} install @reforged/maker-appimage --no-save                                                                                    \
+fi                                                                                                                                     \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__bun} exec"))
@@ -137,10 +160,14 @@ ExclusiveArch: %{electron_arches}
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                                                      \
-%{-r:%{__bun} run %{-r*}}                                                                                                   \
-%{-v:HOME=%{rpmbuilddir} %{__bunx} electron-vite build}                                                                     \
-HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never
+  end}                                                                                                                                 \
+%{-r:%{__bun} run %{-r*}}                                                                                                              \
+%{-v:HOME=%{rpmbuilddir} %{__bunx} electron-vite build}                                                                                \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
+fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
 # -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder/Electron Vite commands. Usually, the actual "exec" part of the command is optional. However, this macro calls it explicitly.
@@ -149,9 +176,17 @@ HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publ
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -R: "Recursive." For use with PNPM exec. Runs on every project in the workspace so use with caution.
 # -v: "Vite." Run electron-vite builds.
-%pnpm_build(eFNr:Rv)                                                                      \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                             \
-%{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                       \
+%pnpm_build(eFNr:Rv)                                                                                                                   \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
+if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
+  BUILDER="electron-forge"                                                                                                             \
+elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
+  BUILDER="electron-builder"                                                                                                           \
+fi                                                                                                                                     \
+%{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                                                                    \
+if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                          \
+%{__pnpm} install @reforged/maker-appimage --no-lockfile                                                                               \
+fi                                                                                                                                     \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__pnpm} %{-R:-r} exec"))
@@ -159,10 +194,14 @@ HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publ
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                    \
-%{-r:%{__pnpm} run %{-r*}}                                                                \
-%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                   \
-HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never
+  end}                                                                                                                                 \
+%{-r:%{__pnpm} run %{-r*}}                                                                                                             \
+%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                                                                \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__pnpm} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
+fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
 # -e: "Exec." Execute commands though Yarn directly. Not recommended for Electron Builder/Electron Vite commands.
@@ -170,9 +209,17 @@ HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publ
 # -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%yarn_build(eFNr:v)                                                                       \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                             \
-%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                              \
+%yarn_build(eFNr:v)                                                                                                                   \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                         \
+if cat package.json | grep electron-forge &>/dev/null; then                                                                           \
+  BUILDER="electron-forge"                                                                                                            \
+elif cat package.json | grep electron-builder &>/dev/null; then                                                                       \
+  BUILDER="electron-builder"                                                                                                          \
+fi                                                                                                                                    \
+%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                                                                          \
+if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                         \
+%{__yarn} install @reforged/maker-appimage --no-lockfile                                                                              \
+fi                                                                                                                                    \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__yarn} exec"))
@@ -180,10 +227,14 @@ HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publ
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                    \
-%{-r:%{__yarn} run %{-r*}}                                                                \
-%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                   \
-HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never
+  end}                                                                                                                                 \
+%{-r:%{__yarn} run %{-r*}}                                                                                                             \
+%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                                                                \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__yarn} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
+fi
 
 ## Capital letters denote use in desktop file install process. These are capitalized differently for organizational purposes.
 # If no alternative names are provided via flag everything, falls back to the name set by the spec
@@ -198,33 +249,41 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publ
 # -l: "Licenses." Use this if you want to collect all extra licenses into a directory called bundled_licenses automatically to package them via RPM. DOES NOT include build dep licenses. If using this macro you should add "%%license bundled_licenses/*" to the files section.
 # -s: "Symlink." Name of the symlink to the executable.
 # -S: Additional symlink to the binary. ONLY do this if a program has two common names, i.e, Heroic being called both "heroic" and "heroic-games-launcher"
-%electron_install(b:d:DE:Fi:lO::s:S:U:) %{lua:
+%electron_install(b:d:DE:Fi:lO::s:S:U:)                         \
+if cat package.json | grep electron-forge &>/dev/null; then     \
+  BUILDER="electron-forge"                                      \
+  OUTDIR="./out/*-linux-%{_electron_cpu}"                       \
+  APPOUTDIR="./out/make/AppImage/%{_electron_cpu}"              \
+  APPARCH="%{_electron_cpu}"                                    \
+elif cat package.json | grep electron-builder &>/dev/null; then \
+  BUILDER="electron-builder"                                    \
+  APPOUTDIR="./dist"                                            \
+  if [[ "%{_electron_cpu}" == "x64" ]]; then                    \
+    OUTDIR="./dist/linux-unpacked"                              \
+    APPARCH="x86_64"                                            \
+  elif [[ "%{_electron_cpu}" == "ia32" ]]; then                 \
+    OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"             \
+    APPARCH="i386"                                              \
+  else                                                          \
+    OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"             \
+    APPARCH="%{_electron_cpu}"                                  \
+  fi                                                            \
+fi                                                              \
+%{lua:
    local bin = macros["-b*"] or macros["name"]
    local dir = macros["-d*"] or macros["name"]
    local installdir = macros["_libdir"] .. "/" .. dir
    local link = macros["-s*"] or macros["name"]
    local arch = macros["_electron_cpu"]
    print(rpm.expand("%{__mkdir} -p %{buildroot}") .. installdir .. "\\n")
-   -- Wildcards for linux-*unpacked CANNOT be used because Electron projects can build multiple architectures at once!
-   if arch ~= 'x64' then
-     print(macros["__cp"] .. " -pr dist/linux-" .. arch .. "-unpacked/* -t " .. macros["buildroot"] .. installdir .. "\\n")
-   else
-     print(rpm.expand("%{__cp} -pr dist/linux-unpacked/* -t %{buildroot}") .. installdir .. "\\n")
-   end
+   print(rpm.expand("%{__cp} -pr $OUTDIR/* -t %{buildroot}") .. installdir .. "\\n")
    print(rpm.expand("%{__mkdir} -p %{buildroot}%{_bindir}") .. "\\n")
    print(macros["__ln_s"] .. "f " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
    if opt.S then
      print(macros["__ln_s"] .. "f " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")
    end
    if opt.D then
-   -- Wildcards cannot be used here for similar reasons.
-     if arch == 'arm64' or arch == 'armv7l' then
-       print("dist/*" .. arch .. ".AppImage --appimage-extract '*.desktop'\\n")
-     elseif arch == 'ia32' then
-       print("dist/*i386.AppImage --appimage-extract '*.desktop'\\n")
-     elseif arch == 'x64' then
-       print("dist/*x86_64.AppImage --appimage-extract '*.desktop'\\n")
-     end
+     print(rpm.expand("$APPOUTDIR/*$APPARCH.AppImage --appimage-extract '*.desktop'\\n"))
    if opt.F then
      if not arg[1] then
        error("Extra flags not supplied.")
@@ -233,14 +292,18 @@ HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publ
      end
    end
    print("/usr/bin/desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
-   end}                                                                                                                                                                                          \
-%{?-l:export BUNDLED_LICENSE_DIR="$(pwd)/bundled_licenses" && %{__mkdir} -p "$BUNDLED_LICENSE_DIR"}                                                                                                                                 \
-%{?-l:find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +} \
-%{__install} -Dm644 dist/.icon-set/icon_*16.png %{buildroot}%{_iconsdir}/hicolor/16x16/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \
-%{__install} -Dm644 dist/.icon-set/icon_*32.png %{buildroot}%{_iconsdir}/hicolor/32x32/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \
-%{__install} -Dm644 dist/.icon-set/icon_*48.png %{buildroot}%{_iconsdir}/hicolor/48x48/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \
-%{__install} -Dm644 dist/.icon-set/icon_*64.png %{buildroot}%{_iconsdir}/hicolor/64x64/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                     \
-%{__install} -Dm644 dist/.icon-set/icon_*128.png %{buildroot}%{_iconsdir}/hicolor/128x128/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
-%{__install} -Dm644 dist/.icon-set/icon_*256.png %{buildroot}%{_iconsdir}/hicolor/256x256/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
-%{__install} -Dm644 dist/.icon-set/icon_*512.png %{buildroot}%{_iconsdir}/hicolor/512x512/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png                                                                  \
-%{__install} -Dm644 dist/.icon-set/icon_*1024.png %{buildroot}%{_iconsdir}/hicolor/1024x1024/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png
+   end}                                                                                                                      \
+%{?-l:BUNDLED_LICENSE_DIR="$(pwd)/bundled_licenses" && %{__mkdir} -p "$BUNDLED_LICENSE_DIR"}                                 \
+%{?-l:find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +}                                                       \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                              \
+%{__install} -Dm644 dist/.icon-set/icon_*16.png %{buildroot}%{_hicolordir}/16x16/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/icon_*32.png %{buildroot}%{_hicolordir}/32x32/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/icon_*48.png %{buildroot}%{_hicolordir}/48x48/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/icon_*64.png %{buildroot}%{_hicolordir}/64x64/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/icon_*128.png %{buildroot}%{_hicolordir}/128x128/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png    \
+%{__install} -Dm644 dist/.icon-set/icon_*256.png %{buildroot}%{_hicolordir}/256x256/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png    \
+%{__install} -Dm644 dist/.icon-set/icon_*512.png %{buildroot}%{_hicolordir}/512x512/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png    \
+%{__install} -Dm644 dist/.icon-set/icon_*1024.png %{buildroot}%{_hicolordir}/1024x1024/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                              \
+%{__install} -Dm644 assets/app-icon.png %{buildroot}%{_hicolordir}/512x512/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png             \
+fi
