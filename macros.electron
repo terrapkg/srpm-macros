@@ -30,7 +30,7 @@ AND
 (BSD-3-Clause AND LGPL-2.1-or-later AND Apache-2.0 AND IJG AND MIT AND GPL-2.0-or-later AND ISC AND OpenSSL AND (MPL-1.1 OR GPL-2.0-only OR LGPL-2.0-only))}}
 
 ## Note: This does NOT automatically pull Bun/PNPM/Yarn or any other build dependencies. Those must be specified, this meta macro only sets the bare minimum that is consistently needed for Electron builds.
-## nodejs-packaging is REQUIRED if using Fedora NodeJS macros such as %%{__nodejs}
+## nodejs-packaging is REQUIRED if using Fedora Node.js macros such as %%{__nodejs}
 ## Package requirements are only the requirements for Electron itself. Electron apps may have additional requirements.
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
 %electronmeta(a)                                                                                                      \
@@ -96,7 +96,7 @@ ExclusiveArch: %{electron_arches}
 # -c: "CI/clean install." Boolean to use npm ci instead of npm install. Needed for some projects with stricter build dependencies.
 # -C: "Config." Direct Electron Builder to the config file. May be necessary with NPM.
 # -e: "Exec." Execute commands though NPM directly. Note that some commands longer than one word MUST have -- follow the first word to be passed to the command, especially if they are passing arguments to a Node module.
-# -E: "Electron Builder/Electron Forge." Directly execute Electron Builder or Electron Forge. Will NOT work in projects that need build commands executed via NodeJS instead of NPM.
+# -E: "Electron Builder/Electron Forge." Directly execute Electron Builder or Electron Forge. Will NOT work in projects that need build commands executed via Node.js instead of NPM.
 # -M: "Mode." Mode to use in Electron Vite builds.
 # -r: "Run." Project-specific scripts to run.
 # -V: "Vite." Directly execute Electron Vite. Has the same limitation as -E.
