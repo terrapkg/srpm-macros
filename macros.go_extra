@@ -1,6 +1,6 @@
 %goprep_online(z:ai:b:s:kervS:A)     \
 %{lua:
-rpm.define("gomodulesmode " .. "GO111MODULE=on")
+rpm.define("gomodulesmode GO111MODULE=\"${GO111MODULE:-on}\"")
 local        fedora =  require "fedora.common"
 local       extract = (rpm.expand("%{-e}") == "")
 -- Use autosetup if either -A or -S is passed
@@ -31,7 +31,3 @@ else
    process(rpm.expand("%{?-z*}"))
 end
 }
-
-%go_build_online() go build -buildmode pie -compiler gc -tags="rpm_crashtraceback ${GO_BUILDTAGS-${BUILDTAGS-}}" -a -x \\\
-         -ldflags "%gobuild_ldflags" \\\
-         -o %{?2}%{!?2:%gobuilddir/bin/%{?1}%{!?1:%name}} %{?1}%{!?1:%goipath}
