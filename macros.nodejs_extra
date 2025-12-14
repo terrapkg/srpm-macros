@@ -7,20 +7,27 @@
 ## Reference: https://docs.npmjs.com/cli/v11/using-npm/config
 %npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{_npm_cache_dir} NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_COLOR=always NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js
 
-## Define cache directory for Bun
+## Define home for Bun files
 ## Currently Bun doesn't respect this, tracking issue here: https://github.com/oven-sh/bun/issues/10152
-%_bun_cache_dir %{rpmbuilddir}/.bun
+%_bun_home %{rpmbuilddir}/.bun
+
+## Define cache directory for Bun
+%_bun_cache_dir %{_bun_home}/install/cache
 
 ## Common env vars for Bun
 ## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
-%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{_bun_cache_dir} BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
+%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{_bun_home} BUN_INSTALL_CACHE_DIR=%{_bun_cache_dir} BUN_RUNTIME_TRANSPILER_CACHE_PATH=%{_bun_cache_dir} FORCE_COLOR=1
 
-## Define cache directory for PNPM
-%_pnpm_cache_dir %{rpmbuilddir}/.pnpm
+## Define home for PNPM files
+%_pnpm_home %{rpmbuilddir}/.pnpm
+
+## Define store directory for PNPM
+## SHOULD be unused but some builds may produce this
+%_pnpm_store %{_pnpm_home}/store
 
 ## Common env vars for PNPM
 ## While PNPM itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
-%pnpm_common_envvars %{npm_common_envvars} PNPM_HOME=%{_pnpm_cache_dir}
+%pnpm_common_envvars %{npm_common_envvars} PNPM_HOME=%{_pnpm_home}
 
 ## Define cache directory for Yarn
 %_yarn_cache_dir %{rpmbuilddir}/.yarn
@@ -52,10 +59,10 @@
 %__bunx /usr/bin/env %{bun_common_envvars} /usr/bin/bunx
 
 ## Call PNPM with our build env vars
-%__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_cache_dir}/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
+%__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_home}/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
 
 ## Remotely execute a Node module from the NPM Registry with PNPM
-%__pnpx /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_cache_dir}/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
+%__pnpx /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_home}/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
 
 ## Call Yarn with our build env vars
 %__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
@@ -84,9 +91,9 @@ end}                                                                            
 ## ONLY use if PNPM is not usable from the repos for some reason
 # -v "Version." Choose a specific version of PNPM to vendor
 %vendor_pnpm(v:)                                                 \
-export PNPM_HOME="%{_pnpm_cache_dir}"                            \
+export PNPM_HOME="%{_pnpm_home}"                                 \
 curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
-%{?-v:%{_pnpm_cache_dir}/pnpm env use --global %{-v*}}           \
+%{?-v:%{_pnpm_home}/pnpm env use --global %{-v*}}                \
 %bcond vendored_pnpm 1
 
 ## Export Node module related build flags globally if necessary for any reason.
@@ -102,9 +109,10 @@ NPM_CONFIG_UPDATE_NOTIFIER="false" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \
 NO_UPDATE_NOTIFIER="1" ; export NO_UPDATE_NOTIFIER ; \
 NPM_CONFIG_COLOR="always" ; export NPM_CONFIG_COLOR ; \
 NPM_CONFIG_INIT_MODULE="%{rpmbuilddir}/.npm-init.js" ; export NPM_CONFIG_INIT_MODULE ; \
-BUN_HOME="%{_bun_cache_dir}" ; export BUN_HOME ; \
-BUN_RUNTIME_TRANSPILER_CACHE_PATH="0" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
-PNPM_HOME="%{_pnpm_cache_dir}" ; export PNPM_HOME ; \
+BUN_HOME="%{_bun_home}" ; export BUN_HOME ; \
+BUN_INSTALL_CACHE_DIR="%{_bun_cache_dir}" ; export BUN_INSTALL_CACHE_DIR \
+BUN_RUNTIME_TRANSPILER_CACHE_PATH="%{_bun_cache_dir}" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
+PNPM_HOME="%{_pnpm_home}" ; export PNPM_HOME ; \
 YARN_CACHE_FOLDER="%{_yarn_cache_dir}" ; export YARN_CACHE_FOLDER ; \
 NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 
