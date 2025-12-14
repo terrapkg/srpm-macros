@@ -104,7 +104,7 @@ ExclusiveArch: %{electron_arches}
 %{!?-e:%{!?-r:%{!?-E:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -E.}}}} \
 %{lua:
   if opt.E or opt.V then
-    print("set +x; echo -e \\"\\\\e[33mNote:\\\\e[0m Use of -E and -V may not work with all NPM built projects.\\"; set -x")
+    print("set +x; echo \\"NOTE: Use of -E and -V may not work with all NPM built projects.\\"; set -x")
   end}                                                                                                        \
 %{__npm} %{!?-c:install}%{?-c:ci} --no-audit                                                                  \
 %{lua:
@@ -127,7 +127,7 @@ ExclusiveArch: %{electron_arches}
 # -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it)
 # -v: "Vite." Run Electron Vite builds
 %bun_build(eFNRr:v)                                                                                                         \
-%{-R:set +x; echo -e "\e[91mWarning:\e[0m Removing bun.lock. This is not recommended unless absolutely necessary."; set -x} \
+%{-R:set +x; echo "WARNING: Removing bun.lock. This is not recommended unless absolutely necessary."; set -x} \
 %{-R:%{__rm} -f bun.lock}                                                                                                   \
 %{__bun} install %{-F:--force} %{-N:--no-save}                                                                              \
 %{lua:
