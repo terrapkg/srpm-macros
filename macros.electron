@@ -139,20 +139,20 @@ fi
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it)
 # -v: "Vite." Run Electron Vite builds
-%bun_build(ceFNRr:v)                                                                                                                    \
-%{?-c:%{?-R:%{error:Can't use both -c and -R}}}                                                                                         \
-%{?-c:%{?-N:%{error:Can't use both -c and -N}}}                                                                                         \
-if cat package.json | grep electron-forge &>/dev/null; then                                                                             \
-  BUILDER="electron-forge"                                                                                                              \
-elif cat package.json | grep electron-builder &>/dev/null; then                                                                         \
-  BUILDER="electron-builder"                                                                                                            \
-fi                                                                                                                                      \
-%{-R:set +x; echo "WARNING: Removing bun.lock. This is not recommended unless absolutely necessary."; set -x}                           \
-%{-R:%{__rm} -f bun.lock}                                                                                                               \
-%{__bun} %{-c:ci}%{!?-c:install} %{-F:--force} %{-N:--no-save}                                                                          \
-if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                           \
-%{__bun} install @reforged/maker-appimage --no-save --no-verify                                                                         \
-fi                                                                                                                                      \
+%bun_build(ceFNRr:v)                                                                                                                   \
+%{?-c:%{?-R:%{error:Can't use both -c and -R}}}                                                                                        \
+%{?-c:%{?-N:%{error:Can't use both -c and -N}}}                                                                                        \
+if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
+  BUILDER="electron-forge"                                                                                                             \
+elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
+  BUILDER="electron-builder"                                                                                                           \
+fi                                                                                                                                     \
+%{-R:set +x; echo "WARNING: Removing bun.lock. This is not recommended unless absolutely necessary."; set -x}                          \
+%{-R:%{__rm} -f bun.lock}                                                                                                              \
+%{__bun} %{-c:ci}%{!?-c:install} %{-F:--force} %{-N:--no-save}                                                                         \
+if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                          \
+%{__bun} install @reforged/maker-appimage --no-save --no-verify                                                                        \
+fi                                                                                                                                     \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__bun} exec"))
@@ -160,13 +160,13 @@ fi                                                                              
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                                                                  \
-%{-r:%{__bun} run %{-r*}}                                                                                                               \
-%{-v:HOME=%{rpmbuilddir} %{__bunx} electron-vite build}                                                                                 \
-if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                         \
-HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never                                               \
-elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                         \
-HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"} \
+  end}                                                                                                                                 \
+%{-r:%{__bun} run %{-r*}}                                                                                                              \
+%{-v:HOME=%{rpmbuilddir} %{__bunx} electron-vite build}                                                                                \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
@@ -176,17 +176,17 @@ fi
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -R: "Recursive." For use with PNPM exec. Runs on every project in the workspace so use with caution.
 # -v: "Vite." Run electron-vite builds.
-%pnpm_build(eFNr:Rv)                                                                                                                    \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                           \
-if cat package.json | grep electron-forge &>/dev/null; then                                                                             \
-  BUILDER="electron-forge"                                                                                                              \
-elif cat package.json | grep electron-builder &>/dev/null; then                                                                         \
-  BUILDER="electron-builder"                                                                                                            \
-fi                                                                                                                                      \
-%{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                                                                     \
-if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                           \
-%{__pnpm} install @reforged/maker-appimage --no-lockfile                                                                                \
-fi                                                                                                                                      \
+%pnpm_build(eFNr:Rv)                                                                                                                   \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
+if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
+  BUILDER="electron-forge"                                                                                                             \
+elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
+  BUILDER="electron-builder"                                                                                                           \
+fi                                                                                                                                     \
+%{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                                                                    \
+if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                          \
+%{__pnpm} install @reforged/maker-appimage --no-lockfile                                                                               \
+fi                                                                                                                                     \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__pnpm} %{-R:-r} exec"))
@@ -194,13 +194,13 @@ fi                                                                              
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                                                                  \
-%{-r:%{__pnpm} run %{-r*}}                                                                                                              \
-%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                                                                 \
-if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                         \
-HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never                                               \
-elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                         \
-HOME=%{rpmbuilddir} %{__pnpm} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"} \
+  end}                                                                                                                                 \
+%{-r:%{__pnpm} run %{-r*}}                                                                                                             \
+%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                                                                \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__pnpm} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
@@ -209,17 +209,17 @@ fi
 # -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%yarn_build(eFNr:v)                                                                                                                    \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
-if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
-  BUILDER="electron-forge"                                                                                                             \
-elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
-  BUILDER="electron-builder"                                                                                                           \
-fi                                                                                                                                     \
-%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                                                                           \
-if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                          \
-%{__yarn} install @reforged/maker-appimage --no-lockfile                                                                               \
-fi                                                                                                                                     \
+%yarn_build(eFNr:v)                                                                                                                   \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                         \
+if cat package.json | grep electron-forge &>/dev/null; then                                                                           \
+  BUILDER="electron-forge"                                                                                                            \
+elif cat package.json | grep electron-builder &>/dev/null; then                                                                       \
+  BUILDER="electron-builder"                                                                                                          \
+fi                                                                                                                                    \
+%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                                                                          \
+if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                         \
+%{__yarn} install @reforged/maker-appimage --no-lockfile                                                                              \
+fi                                                                                                                                    \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__yarn} exec"))
@@ -227,13 +227,13 @@ fi                                                                              
       print(" " .. cmd)
     end
     print("\\n")
-  end}                                                                                                                                  \
-%{-r:%{__yarn} run %{-r*}}                                                                                                              \
-%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                                                                 \
-if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                         \
-HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never                                               \
-elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                         \
-HOME=%{rpmbuilddir} %{__yarn} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"} \
+  end}                                                                                                                                 \
+%{-r:%{__yarn} run %{-r*}}                                                                                                             \
+%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                                                                \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                        \
+HOME=%{rpmbuilddir} %{__yarn} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 fi
 
 ## Capital letters denote use in desktop file install process. These are capitalized differently for organizational purposes.
