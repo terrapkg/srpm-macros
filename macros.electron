@@ -111,7 +111,7 @@ if cat package.json | grep electron-forge &>/dev/null; then                     
 elif cat package.json | grep electron-builder &>/dev/null; then                                                                                  \
   BUILDER="electron-builder"                                                                                                                     \
 fi                                                                                                                                               \
-%{__npm} %{!?-c:install}%{?-c:ci} --no-audit                                                                                                     \
+%{__npm} %{!?-c:install}%{?-c:ci}                                                                                                                \
 if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                                    \
 %{__npm} install @reforged/maker-appimage --no-save --no-audit                                                                                   \
 fi                                                                                                                                               \
