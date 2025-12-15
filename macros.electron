@@ -284,6 +284,7 @@ fi                                                              \
    end
    if opt.D then
      print(rpm.expand("$APPOUTDIR/*$APPARCH.AppImage --appimage-extract '*.desktop'\\n"))
+     print(rpm.expand("%{__sed} -i '/.*AppImage.*/d' squashfs-root/*.desktop\\n"))
    if opt.F then
      if not arg[1] then
        error("Extra flags not supplied.")
@@ -291,7 +292,7 @@ fi                                                              \
        macros["desktop_file_args"] = table.concat(arg, " --")
      end
    end
-   print("/usr/bin/desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
+     print("/usr/bin/desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
    end}                                                                                                                      \
 %{?-l:BUNDLED_LICENSE_DIR="$(pwd)/bundled_licenses" && %{__mkdir} -p "$BUNDLED_LICENSE_DIR"}                                 \
 %{?-l:find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +}                                                          \
