@@ -113,7 +113,7 @@ elif cat package.json | grep electron-builder &>/dev/null; then                 
 fi                                                                                                                                               \
 %{__npm} %{!?-c:install}%{?-c:ci} --no-audit                                                                                                     \
 if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                                    \
-%{__npm} install @reforged/maker-appimage --no-save                                                                                              \
+%{__npm} install @reforged/maker-appimage --no-save --no-audit                                                                                   \
 fi                                                                                                                                               \
 %{lua:
   if opt.e then
