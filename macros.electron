@@ -112,9 +112,6 @@ elif cat package.json | grep electron-builder &>/dev/null; then                 
   BUILDER="electron-builder"                                                                                                                     \
 fi                                                                                                                                               \
 %{__npm} %{!?-c:install}%{?-c:ci}                                                                                                                \
-if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                                    \
-%{__npm} install @reforged/maker-appimage --no-save --no-audit                                                                                   \
-fi                                                                                                                                               \
 %{lua:
   if opt.e then
     print(rpm.expand("HOME=%{rpmbuilddir} %{__npm} exec"))
@@ -125,11 +122,13 @@ fi                                                                              
   end}                                                                                                                                           \
 %{-r:HOME=%{rpmbuilddir} %{__npm} run %{-r*}}                                                                                                    \
 %{-V:HOME=%{rpmbuilddir} %{__npm} exec electron-vite -- build %{-M:--mode %{-M*}}}                                                               \
-if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                                  \
-%{-E:HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux --%{_electron_cpu} --publish=never %{-C:-c %{-C*}}}                           \
-elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                                  \
-%{-E:HOME=%{rpmbuilddir} %{__npm} exec electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"} \
-fi
+%{-E:%{expand:
+if [[ "$BUILDER" == "electron-builder" ]]; then
+HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux --%{_electron_cpu} --publish=never %{-C:-c %{-C*}}
+elif [[ "$BUILDER" == "electron-forge" ]]; then
+%{__npm} install @reforged/maker-appimage --no-save --no-audit
+HOME=%{rpmbuilddir} %{__npm} exec electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"
+fi}}
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
 # -c: "CI/clean install." Equivalent to using "bun install --frozen-lockfile".
