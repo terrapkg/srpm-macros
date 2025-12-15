@@ -151,7 +151,7 @@ fi                                                                              
 %{-R:%{__rm} -f bun.lock}                                                                                                               \
 %{__bun} %{-c:ci}%{!?-c:install} %{-F:--force} %{-N:--no-save}                                                                          \
 if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                           \
-%{__bun} install @reforged/maker-appimage --no-save                                                                                     \
+%{__bun} install @reforged/maker-appimage --no-save --no-verify                                                                         \
 fi                                                                                                                                      \
 %{lua:
   if opt.e then
