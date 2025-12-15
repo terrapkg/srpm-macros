@@ -2,7 +2,7 @@
 ## %%with_bundled_electron alone does not work because the name macro is defined in the spec itself
 %is_electron_bundled() %bcond bundled_electron %["%{name}" != "electron"]
 
-%electron_arches %{x86_64} %{ix86} %{arm64} armv7l armv7hl armv7hnl
+%electron_arches %{x86_64} %{ix86} %{arm64} armv7l armv7hl armv7hnl %{mips64}
 
 ## NOTE: Best for pure Electron programs. If packages use binaries not made with Electron Builder, when using this Macro care must be taken to not cause overlapping licenses.
 ## The SOURCE LICENSE of Electron is MIT. However, as it uses Chromium code, the Chromium license comes bundled with it and all Electron apps. Electron ALSO bundles FFmpeg and code from vulkan-loader.
@@ -40,25 +40,31 @@ AND
   if not macros["_target_cpu"]:find('armv7') then
     for arch in string.gmatch(macros["x86_64"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)||(.*aarch-64.*))$'
+        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)||(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\..*))$'
         macros["_electron_cpu"] = 'x64'
       end
     end
     for arch in string.gmatch(macros["ix86"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)|(.*64bit.*)|(.*aarch-64.*))$'
+        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)|(.*64bit.*)|(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\..*))$'
         macros["_electron_cpu"] = 'ia32'
       end
     end
     for arch in string.gmatch(macros["arm64"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*))$'
+        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)|(.*mips64.*)|(ld\\\\.so\\\\..*))$'
         macros["_electron_cpu"] = 'arm64'
         print("BuildRequires: zlib-ng-compat-devel")
       end
     end
+    for arch in string.gmatch(macros["mips64"], "%S+") do
+      if macros["_target_cpu"] == arch then
+        macros["__requires_exclude"] = ''^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\so.*)|(.*64bit.*)|(.*aarch-64.*)|(.*_ARM_.*))$'
+        macros["_electron_cpu"] = 'mips64el'
+      end
+    end
   elseif macros["_target_cpu"]:find('armv7') then
-    macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\libc*\\\\.musl*\\\\so.*)|(.*64bit.*)|(.*aarch-64.*))$'
+    macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\libc*\\\\.musl*\\\\so.*)|(.*64bit.*)|(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\..*))$'
     macros["_electron_cpu"] = 'armv7l'
     print("BuildRequires: zlib-ng-compat-devel")
   end}                                                                                                                \
