@@ -33,41 +33,41 @@ AND
 ## nodejs-packaging is REQUIRED if using Fedora Node.js macros such as %%{__nodejs}
 ## Package requirements are only the requirements for Electron itself. Electron apps may have additional requirements.
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
-%electronmeta(a)                                                                                                      \
-%global debug_package %{nil}                                                                                          \
-%global __provides_exclude ^((libffmpeg[.]so.*)|(lib.*\\.so.*))$                                                      \
+%electronmeta(a)                                                                                                                   \
+%global debug_package %{nil}                                                                                                       \
+%global __provides_exclude ^((libffmpeg\\.so.*)|(libEGL\\.so.*)|(libGLESv2\\.so.*)|(libvk_swiftshader\\.so.*)|(libvulkan\\.so.*))$ \
 %{lua:
   if not macros["_target_cpu"]:find('armv7') then
     for arch in string.gmatch(macros["x86_64"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)||(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\..*))$'
+        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)||(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
         macros["_electron_cpu"] = 'x64'
       end
     end
     for arch in string.gmatch(macros["ix86"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)|(.*64bit.*)|(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\..*))$'
+        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)|(.*64bit.*)|(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
         macros["_electron_cpu"] = 'ia32'
       end
     end
     for arch in string.gmatch(macros["arm64"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)|(.*mips64.*)|(ld\\\\.so\\\\..*))$'
+        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
         macros["_electron_cpu"] = 'arm64'
         print("BuildRequires: zlib-ng-compat-devel")
       end
     end
     for arch in string.gmatch(macros["mips64"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = ''^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\so.*)|(.*64bit.*)|(.*aarch-64.*)|(.*_ARM_.*))$'
+        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\so.*)|(.*64bit.*)|(.*aarch-64.*)|(.*_ARM_.*))$'
         macros["_electron_cpu"] = 'mips64el'
       end
     end
   elseif macros["_target_cpu"]:find('armv7') then
-    macros["__requires_exclude"] = '^((libffmpeg[.]so.*)|(lib.*\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\libc*\\\\.musl*\\\\so.*)|(.*64bit.*)|(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\..*))$'
+    macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLES.*\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\libc*\\\\.musl*\\\\so.*)|(.*64bit.*)|(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
     macros["_electron_cpu"] = 'armv7l'
     print("BuildRequires: zlib-ng-compat-devel")
-  end}                                                                                                                \
+  end}                                                                                                                             \
 %{is_electron_bundled}%{?with_bundled_electron:%{expand:BuildRequires: desktop-file-utils
 BuildRequires: gcc
 BuildRequires: gcc-c++
@@ -79,21 +79,21 @@ BuildRequires: nodejs-npm%{-a:%{expand:
 BuildRequires: nodejs-packaging}}
 BuildRequires: python3%{-a:%{expand:
 BuildRequires: typescript}}}}%{!?with_bundled_electron:%{expand:
-BuildRequires: unzip}}                                                                                                \
-Requires:      at-spi2-core                                                                                           \
-Requires:      c-ares                                                                                                 \
+BuildRequires: unzip}}                                                                                                             \
+Requires:      at-spi2-core                                                                                                        \
+Requires:      c-ares                                                                                                              \
 Requires:      gtk3%{!?with_bundled_electron:%{expand:
-Requires:      minizip}}                                                                                              \
-Requires:      (libuuid or libuuid1)                                                                                  \
-Requires:      libnotify                                                                                              \
-Requires:      libXScrnSaver                                                                                          \
-Requires:      (libXtst or libXtst6)                                                                                  \
-Requires:      nss                                                                                                    \
-Requires:      re2                                                                                                    \
-Requires:      xdg-utils                                                                                              \
-%{?with_bundled_electron:Provides:      bundled(electron)}%{!?with_bundled_electron:Provides:      bundled(chromium)} \
-Provides:      bundled(ffmpeg)                                                                                        \
-Provides:      bundled(vulkan-loader)                                                                                 \
+Requires:      minizip}}                                                                                                           \
+Requires:      (libuuid or libuuid1)                                                                                               \
+Requires:      libnotify                                                                                                           \
+Requires:      libXScrnSaver                                                                                                       \
+Requires:      (libXtst or libXtst6)                                                                                               \
+Requires:      nss                                                                                                                 \
+Requires:      re2                                                                                                                 \
+Requires:      xdg-utils                                                                                                           \
+%{?with_bundled_electron:Provides:      bundled(electron)}%{!?with_bundled_electron:Provides:      bundled(chromium)}              \
+Provides:      bundled(ffmpeg)                                                                                                     \
+Provides:      bundled(vulkan-loader)                                                                                              \
 ExclusiveArch: %{electron_arches}
 
 ## NPM is usually NOT how Electron projects are built and almost any other build system is preferrable. This macro has MANY flags to work around these and will fail if no necessary ones are detected. Capital letter flags are for use with calling Electron Builder.
@@ -155,9 +155,6 @@ fi                                                                              
 %{-R:set +x; echo "WARNING: Removing bun.lock. This is not recommended unless absolutely necessary."; set -x}                          \
 %{-R:%{__rm} -f bun.lock}                                                                                                              \
 %{__bun} %{-c:ci}%{!?-c:install} %{-F:--force} %{-N:--no-save}                                                                         \
-if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                          \
-%{__bun} install @reforged/maker-appimage --no-save --no-verify                                                                        \
-fi                                                                                                                                     \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__bun} exec"))
@@ -171,6 +168,7 @@ fi                                                                              
 if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                        \
 HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
 elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                        \
+%{__bun} install @reforged/maker-appimage --no-save --no-verify                                                                        \
 HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 fi
 
@@ -189,9 +187,6 @@ elif cat package.json | grep electron-builder &>/dev/null; then                 
   BUILDER="electron-builder"                                                                                                           \
 fi                                                                                                                                     \
 %{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                                                                    \
-if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                          \
-%{__pnpm} install @reforged/maker-appimage --no-lockfile                                                                               \
-fi                                                                                                                                     \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__pnpm} %{-R:-r} exec"))
@@ -205,6 +200,7 @@ fi                                                                              
 if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                        \
 HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
 elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                        \
+%{__pnpm} install @reforged/maker-appimage --no-lockfile                                                                               \
 HOME=%{rpmbuilddir} %{__pnpm} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 fi
 
@@ -214,17 +210,14 @@ fi
 # -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder/Electron Vite commands.
 # -v: "Vite." Run electron-vite builds.
-%yarn_build(eFNr:v)                                                                                                                   \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                         \
-if cat package.json | grep electron-forge &>/dev/null; then                                                                           \
-  BUILDER="electron-forge"                                                                                                            \
-elif cat package.json | grep electron-builder &>/dev/null; then                                                                       \
-  BUILDER="electron-builder"                                                                                                          \
-fi                                                                                                                                    \
-%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                                                                          \
-if [[ "$BUILDER" == "electron-forge" ]]; then                                                                                         \
-%{__yarn} install @reforged/maker-appimage --no-lockfile                                                                              \
-fi                                                                                                                                    \
+%yarn_build(eFNr:v)                                                                                                                    \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
+if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
+  BUILDER="electron-forge"                                                                                                             \
+elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
+  BUILDER="electron-builder"                                                                                                           \
+fi                                                                                                                                     \
+%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                                                                           \
 %{lua:
   if opt.e then
     print(rpm.expand("%{__yarn} exec"))
@@ -238,6 +231,7 @@ fi                                                                              
 if [[ "$BUILDER" == "electron-builder" ]]; then                                                                                        \
 HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
 elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                                        \
+%{__yarn} install @reforged/maker-appimage --no-lockfile                                                                               \
 HOME=%{rpmbuilddir} %{__yarn} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 fi
 
