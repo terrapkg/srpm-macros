@@ -40,19 +40,19 @@ AND
   if not macros["_target_cpu"]:find('armv7') then
     for arch in string.gmatch(macros["x86_64"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)||(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
+        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(libc\\\\.musl\\\\.so.*)|(libgcc_s\\\\.so.*)|(libpthread\\\\.so.*)|(.*_ARM_.*)|(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
         macros["_electron_cpu"] = 'x64'
       end
     end
     for arch in string.gmatch(macros["ix86"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)|(.*64bit.*)|(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
+        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*\\\\armhf*\\\\.so.*)|(libc\\\\.musl\\\\.so.*)|(libgcc_s\\\\.so.*)|(libpthread\\\\.so.*)|(.*_ARM_.*)|(.*64bit.*)|(.*aarch-64.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
         macros["_electron_cpu"] = 'ia32'
       end
     end
     for arch in string.gmatch(macros["arm64"], "%S+") do
       if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(.*\\\\libc*\\\\.musl*\\\\.so.*)|(.*_ARM_.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
+        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libEGL\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(libc\\\\.musl\\\\.so.*)|(libgcc_s\\\\.so.*)||(libpthread\\\\.so.*)|(.*_ARM_.*)|(.*mips64.*)|(ld\\\\.so\\\\.[[:digit:]+]))$'
         macros["_electron_cpu"] = 'arm64'
         print("BuildRequires: zlib-ng-compat-devel")
       end
