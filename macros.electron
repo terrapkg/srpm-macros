@@ -117,7 +117,7 @@ if cat package.json | grep electron-forge &>/dev/null; then                     
 elif cat package.json | grep electron-builder &>/dev/null; then                                                                                  \
   BUILDER="electron-builder"                                                                                                                     \
 fi                                                                                                                                               \
-%{__npm} %{!?-c:install}%{?-c:ci}                                                                                                                \
+%{__npm} %{!?-c:install}%{-c:ci}                                                                                                                 \
 %{lua:
   if opt.e then
     print(rpm.expand("HOME=%{rpmbuilddir} %{__npm} exec"))
@@ -145,8 +145,8 @@ fi}}
 # -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it)
 # -v: "Vite." Run Electron Vite builds
 %bun_build(ceFNRr:v)                                                                                                                   \
-%{?-c:%{?-R:%{error:Can't use both -c and -R}}}                                                                                        \
-%{?-c:%{?-N:%{error:Can't use both -c and -N}}}                                                                                        \
+%{-c:%{-R:%{error:Can't use both -c and -R}}}                                                                                          \
+%{-c:%{-N:%{error:Can't use both -c and -N}}}                                                                                          \
 if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
   BUILDER="electron-forge"                                                                                                             \
 elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
@@ -181,10 +181,10 @@ fi
 # -v: "Vite." Run electron-vite builds.
 %pnpm_build(eFNr:Rv)                                                                                                                   \
 %{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
-if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
-  BUILDER="electron-forge"                                                                                                             \
-elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
+if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
   BUILDER="electron-builder"                                                                                                           \
+elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
+  BUILDER="electron-forge"                                                                                                             \
 fi                                                                                                                                     \
 %{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                                                                    \
 %{lua:
@@ -212,10 +212,10 @@ fi
 # -v: "Vite." Run electron-vite builds.
 %yarn_build(eFNr:v)                                                                                                                    \
 %{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
-if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
-  BUILDER="electron-forge"                                                                                                             \
-elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
+if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
   BUILDER="electron-builder"                                                                                                           \
+elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
+  BUILDER="electron-forge"                                                                                                             \
 fi                                                                                                                                     \
 %{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                                                                           \
 %{lua:
@@ -249,12 +249,7 @@ fi
 # -s: "Symlink." Name of the symlink to the executable.
 # -S: Additional symlink to the binary. ONLY do this if a program has two common names, i.e, Heroic being called both "heroic" and "heroic-games-launcher"
 %electron_install(b:d:DE:Fi:lO::s:S:U:)                         \
-if cat package.json | grep electron-forge &>/dev/null; then     \
-  BUILDER="electron-forge"                                      \
-  OUTDIR="./out/*-linux-%{_electron_cpu}"                       \
-  APPOUTDIR="./out/make/AppImage/%{_electron_cpu}"              \
-  APPARCH="%{_electron_cpu}"                                    \
-elif cat package.json | grep electron-builder &>/dev/null; then \
+if cat package.json | grep electron-builder &>/dev/null; then   \
   BUILDER="electron-builder"                                    \
   APPOUTDIR="./dist"                                            \
   if [[ "%{_electron_cpu}" == "x64" ]]; then                    \
@@ -267,19 +262,23 @@ elif cat package.json | grep electron-builder &>/dev/null; then \
     OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"             \
     APPARCH="%{_electron_cpu}"                                  \
   fi                                                            \
+elif cat package.json | grep electron-forge &>/dev/null; then   \
+  BUILDER="electron-forge"                                      \
+  OUTDIR="./out/*-linux-%{_electron_cpu}"                       \
+  APPOUTDIR="./out/make/AppImage/%{_electron_cpu}"              \
+  APPARCH="%{_electron_cpu}"                                    \
 fi                                                              \
 %{lua:
    local bin = macros["-b*"] or macros["name"]
    local dir = macros["-d*"] or macros["name"]
-   local installdir = macros["_libdir"] .. "/" .. dir
+   local installdir = rpm.expand("%{_libdir}/") .. dir
    local link = macros["-s*"] or macros["name"]
-   local arch = macros["_electron_cpu"]
    print(rpm.expand("%{__mkdir} -p %{buildroot}") .. installdir .. "\\n")
    print(rpm.expand("%{__cp} -pr $OUTDIR/* -t %{buildroot}") .. installdir .. "\\n")
-   print(rpm.expand("%{__mkdir} -p %{buildroot}%{_bindir}") .. "\\n")
+   print(rpm.expand("%{__mkdir} -p %{buildroot}%{_bindir}\\n""))
    print(macros["__ln_s"] .. "f " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. link .. "\\n")
    if opt.S then
-     print(macros["__ln_s"] .. "f " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/") .. macros["-S*"] .. "\\n")
+     print(macros["__ln_s"] .. "f " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/%{-S*}\\n"))
    end
    if opt.D then
      print(rpm.expand("$APPOUTDIR/*$APPARCH.AppImage --appimage-extract '*.desktop'\\n"))
@@ -291,19 +290,20 @@ fi                                                              \
        macros["desktop_file_args"] = table.concat(arg, " --")
      end
    end
-     print("/usr/bin/desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{?-E: --enable=features=%{-E*}}") .. rpm.expand("%{?-O:%{!?-O*: --ozone-platform-hint=auto}}%{?-O:%{?-O*: --ozone-platform=%{-O*}}}")  .. rpm.expand("%{?-U: %{-U*}}") .. rpm.expand("%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
-   end}                                                                                                                      \
-%{?-l:BUNDLED_LICENSE_DIR="$(pwd)/bundled_licenses" && %{__mkdir} -p "$BUNDLED_LICENSE_DIR"}                                 \
-%{?-l:find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +}                                                          \
-if [[ "$BUILDER" == "electron-builder" ]]; then                                                                              \
-%{__install} -Dm644 dist/.icon-set/icon_*16.png %{buildroot}%{_hicolordir}/16x16/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png       \
-%{__install} -Dm644 dist/.icon-set/icon_*32.png %{buildroot}%{_hicolordir}/32x32/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png       \
-%{__install} -Dm644 dist/.icon-set/icon_*48.png %{buildroot}%{_hicolordir}/48x48/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png       \
-%{__install} -Dm644 dist/.icon-set/icon_*64.png %{buildroot}%{_hicolordir}/64x64/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png       \
-%{__install} -Dm644 dist/.icon-set/icon_*128.png %{buildroot}%{_hicolordir}/128x128/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png    \
-%{__install} -Dm644 dist/.icon-set/icon_*256.png %{buildroot}%{_hicolordir}/256x256/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png    \
-%{__install} -Dm644 dist/.icon-set/icon_*512.png %{buildroot}%{_hicolordir}/512x512/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png    \
-%{__install} -Dm644 dist/.icon-set/icon_*1024.png %{buildroot}%{_hicolordir}/1024x1024/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png \
-elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                              \
-%{__install} -Dm644 assets/app-icon.png %{buildroot}%{_hicolordir}/512x512/apps/%{?-i:%{-i*}}%{!?-i:%{name}}.png             \
+     print("/usr/bin/desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{-E: --enable=features=%{-E*}}%{-O:%{!?-O*: --ozone-platform-hint=auto}}%{-O:%{-O*: --ozone-platform=%{-O*}}}%{-U: %{-U*}}%{?desktop_file_args: --%{desktop_file_args}}") .. "\\"" .. " squashfs-root/*.desktop")
+   end}                                                                                                                    \
+%{-l:%{expand:BUNDLED_LICENSE_DIR="$PWD/bundled_licenses"
+%{__mkdir} -p "$BUNDLED_LICENSE_DIR"
+find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +}}                                                        \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                             \
+%{__install} -Dm644 dist/.icon-set/icon_*16.png %{buildroot}%{_hicolordir}/16x16/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/icon_*32.png %{buildroot}%{_hicolordir}/32x32/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/icon_*48.png %{buildroot}%{_hicolordir}/48x48/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/icon_*64.png %{buildroot}%{_hicolordir}/64x64/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/icon_*128.png %{buildroot}%{_hicolordir}/128x128/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png    \
+%{__install} -Dm644 dist/.icon-set/icon_*256.png %{buildroot}%{_hicolordir}/256x256/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png    \
+%{__install} -Dm644 dist/.icon-set/icon_*512.png %{buildroot}%{_hicolordir}/512x512/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png    \
+%{__install} -Dm644 dist/.icon-set/icon_*1024.png %{buildroot}%{_hicolordir}/1024x1024/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                             \
+%{__install} -Dm644 assets/app-icon.png %{buildroot}%{_hicolordir}/512x512/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png             \
 fi

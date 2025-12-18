@@ -86,7 +86,7 @@ touch "$HOME/.bash_profile" &>/dev/null                                         
 %vendor_pnpm(v:)                                                 \
 export PNPM_HOME="%{_pnpm_home}"                                 \
 curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
-%{?-v:%{_pnpm_home}/pnpm env use --global %{-v*}}                \
+%{-v:%{_pnpm_home}/pnpm env use --global %{-v*}}                 \
 %bcond vendored_pnpm 1
 
 ## Export Node module related build flags globally if necessary for any reason.
@@ -117,12 +117,12 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 # %%npm_prep -n nodepkgname
 %npm_prep(n:) %{lua:
    if opt.n then
-     rpm.define("npm_name " .. rpm.expand("%{-n*}"))
+     rpm.define("npm_name %{-n*}")
    end
    if not rpm.isdefined("npm_name") then
      error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
-   end}                                                      \
-%{__npm} install -g %{npm_name}@%{version} --prefix="$(pwd)" \
+   end}                                                    \
+%{__npm} install -g %{npm_name}@%{version} --prefix="$PWD" \
 %setup -T -D -n lib/node_modules/%{npm_name}
 
 ## Fetch the Node tests within the spec. Uses Git commands that ONLY download specified directories
@@ -139,13 +139,12 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
     end
   end
   macros["_nodetests"] = table.concat(arg, " ")
-  srcdir = macros["rpmbuilddir"] .. "/sourcetests"
-  macros["_nodetestdir"] = srcdir
+  rpm.define("_nodetestdir %{rpmbuilddir}/sourcetests")
   if (rpm.expand("%{?url}"):find('git') or rpm.expand("%{?url}"):find('codeberg')) and not opt.u then
-    print(cmd .. rpm.expand("%{url} ") .. srcdir .. ' && cd ' .. srcdir)
+    print(cmd .. rpm.expand("%{url}.git %{_nodetestdir} && cd %{_nodetestdir}\\n"))
   elseif opt.u then
     if rpm.expand("%{-u*}"):find('://') and rpm.expand("%{-u*}"):find('.') then
-      print(cmd .. rpm.expand("%{-u*} ") .. srcdir .. ' && cd ' .. srcdir)
+      print(cmd .. rpm.expand("%{-u*} %{_nodetestdir} && cd %{_nodetestdir}\\n"))
     else
       error("-u argument could not be detected as a clonable URL. Please make sure it is in the format of 'https://github.com/repo/project' or try adding '.git' to the end.")
     end
@@ -196,17 +195,17 @@ fi                                                             \
 ## LIMITATION: Cannot be used for packages that would require a package lock as you can't lock packages installed with the -g flag
 # -d can be used to check what it will do before running, especially if using -f
 # -f should ONLY be used if absolutely necessary and SHOULD be tested locally on the module first, as it will potentially break dependencies
-%npm_audit_fix(dfo:O:p)                              \
-   (                                                 \
-   set -euo pipefail                                 \
-   %{__npm} audit fix %{shrink:                      \
-   %{-d:--dry-run}                                   \
-   %{-f:--force}                                     \
-   %{-o:--omit=%{-o*}}                               \
-   %{-O:--only=%{-O*}}                               \
-   %{-p:--package-lock-only}                         \
-   %{nil}                                            \
-}                                                    \
+%npm_audit_fix(dfo:O:p)         \
+   (                            \
+   set -euo pipefail            \
+   %{__npm} audit fix %{shrink: \
+   %{-d:--dry-run}              \
+   %{-f:--force}                \
+   %{-o:--omit=%{-o*}}          \
+   %{-O:--only=%{-O*}}          \
+   %{-p:--package-lock-only}    \
+   %{nil}                       \
+}                               \
 )
 
 ## For use in check section
