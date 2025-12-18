@@ -151,11 +151,11 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
     end
   else
     error("URL could not be automatically identified as clonable and -u is not set. Please set a Git repository hosting the tests for this module using the -u option.")
-  end}                                                 \
-  %{__git} switch -c v%{version} -q                    \
-  %{__git} sparse-checkout set --no-cone %{_nodetests} \
-  %{__git} checkout -q                                 \
-  cd ~-
+  end}                                               \
+%{__git} switch -c v%{version} -q                    \
+%{__git} sparse-checkout set --no-cone %{_nodetests} \
+%{__git} checkout -q                                 \
+cd "$OLDPWD"
 
 ## Install package to %%nodejs_sitelib or %%nodejs_sitearch.
 # -s: "Symlink." Install bindir symlink as a different name than the %%npm_name.
@@ -164,9 +164,9 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
     error("Package has not been prepped! Please run %npm_prep first.")
   end
   if opt.s then
-    rpm.define("node_bin_symlink %{-s*}")
+    rpm.define("__node_bin_symlink %{-s*}")
   else
-    rpm.define("node_bin_symlink %{npm_name}")
+    rpm.define("__node_bin_symlink %{npm_name}")
   end}                                                         \
 if stat ./bin/%{npm_name}.js &>/dev/null; then                 \
   _js=".js"                                                    \
@@ -181,7 +181,7 @@ fi                                                             \
 %{__mkdir} -p "$BUILDINSTALLDIR"                               \
 %{__mkdir} -p "%{buildroot}%{_bindir}"                         \
 %{__cp} -r ./* -t "$BUILDINSTALLDIR"                           \
-%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{node_bin_symlink}
+%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{__node_bin_symlink}
 
 ## Best used in check section
 ## This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
@@ -273,16 +273,24 @@ end}
 ## Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
-%node_self_test(Rv)                                                       \
-   for test in %{?_nodetests}; do                                         \
-      if [[ $test == /* ]]; then                                          \
-        NODE_ENV=test %{buildroot}%{_bindir}/%{node_bin_symlink}%{shrink: \
-        %{-R:-R}                                                          \
-        %{-v:-v}                                                          \
-        } %{_nodetestdir}$test                                            \
-      fi                                                                  \
-   done
+%node_self_test(Rv)                                                \
+if stat ./bin/%{npm_name}.js &>/dev/null; then                     \
+  _js=".js"                                                        \
+fi                                                                 \
+if [[ "%{_target_cpu}" != "noarch" ]]; then                        \
+  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitearch}/%{npm_name}"     \
+else                                                               \
+  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitelib}/%{npm_name}"      \
+fi                                                                 \
+for test in %{?_nodetests}; do                                     \
+  if [[ "$test" == /* ]]; then                                     \
+    NODE_ENV=test "$BUILDINSTALLDIR/bin/%{npm_name}$_js" %{shrink: \
+    %{-R:-R}                                                       \
+    %{-v:-v}                                                       \
+    } "%{_nodetestdir}$test"                                       \
+   fi                                                              \
+done
 
 ## Generic NPM tests
-%npm_test()      \
-   %{__npm} test
+%npm_test()   \
+%{__npm} test
