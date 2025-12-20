@@ -189,3 +189,5 @@
 %_scalableiconsdir %_hicolordir/scalable/apps
 
 %_appsdir %_datadir/applications
+
+%_pkgconfigdir %{_libdir}/pkgconfig
