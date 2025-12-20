@@ -112,10 +112,10 @@ ExclusiveArch: %{electron_arches}
   if opt.E or opt.V then
     print("set +x; echo -e \\"NOTE: Use of -E and -V may not work with all NPM built projects.\\"; set -x")
   end}                                                                                                                                           \
-if cat package.json | grep electron-forge &>/dev/null; then                                                                                      \
-  BUILDER="electron-forge"                                                                                                                       \
-elif cat package.json | grep electron-builder &>/dev/null; then                                                                                  \
+if cat package.json | grep electron-builder &>/dev/null; then                                                                                    \
   BUILDER="electron-builder"                                                                                                                     \
+elif cat package.json | grep electron-forge &>/dev/null; then                                                                                    \
+  BUILDER="electron-forge"                                                                                                                       \
 fi                                                                                                                                               \
 %{__npm} %{!?-c:install}%{-c:ci}                                                                                                                 \
 %{lua:
@@ -147,10 +147,10 @@ fi}}
 %bun_build(ceFNRr:v)                                                                                                                   \
 %{-c:%{-R:%{error:Can't use both -c and -R}}}                                                                                          \
 %{-c:%{-N:%{error:Can't use both -c and -N}}}                                                                                          \
-if cat package.json | grep electron-forge &>/dev/null; then                                                                            \
-  BUILDER="electron-forge"                                                                                                             \
-elif cat package.json | grep electron-builder &>/dev/null; then                                                                        \
+if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
   BUILDER="electron-builder"                                                                                                           \
+elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
+  BUILDER="electron-forge"                                                                                                             \
 fi                                                                                                                                     \
 %{-R:set +x; echo "WARNING: Removing bun.lock. This is not recommended unless absolutely necessary."; set -x}                          \
 %{-R:%{__rm} -f bun.lock}                                                                                                              \
