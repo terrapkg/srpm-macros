@@ -43,7 +43,7 @@
 # cmd1 ...: the commands the completion files are for
 %pkg_completion(BbefNzn:) %{lua:
   local shells = {}
-  local pkg = macros["-N*"] or macros["name"]
+  local pkg = macros["-n*"] or macros["name"]
   local bins_num = tonumber(rpm.expand("%#"))
   local bins = {}
   local evr = macros["evr"]
