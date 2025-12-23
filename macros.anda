@@ -47,7 +47,7 @@
   local bins_num = tonumber(rpm.expand("%#"))
   local bins = {}
   local evr = macros["evr"]
-  
+
   for i = 1, bins_num do
     bins[i] = macros[i]
   end
@@ -55,10 +55,10 @@
     bins[1] = pkg
     bins_num = 1
   end
-  
+
   function format_print(sh, req)
     local sh_proper = sh:sub(1,1):upper()..sh:sub(2)
-    print("%package -N "..pkg.."-"..sh.."-completion\\n")
+    print("%package -n "..pkg.."-"..sh.."-completion\\n")
     print("Summary: "..sh_proper.." completion for "..pkg.."\\n")
     print("Requires: "..pkg.." = "..evr.."\\n")
     print("Requires: "..req.."\\n")
@@ -94,6 +94,13 @@
     format_print("fish", "fish")
     for i = 1, bins_num do
       print(rpm.expand("%fish_completions_dir/"..bins[i]..".fish\\n"))
+    end
+    print("\\n")
+  end
+  if rpm.isdefined("-n") then
+    format_print("nushell", "nu")
+    for i = 1, bins_num do
+      print(rpm.expand("%nushell_completions_dir/"..bins[i]..".nu\\n"))
     end
     print("\\n")
   end
