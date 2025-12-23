@@ -37,11 +37,11 @@
 # -b: bash
 # -e: elvish
 # -f: fish
-# -n: nushell
+# -N: nushell
 # -z: zsh
-# -N <pkgname>: name of the current package (default `%name`)
+# -n <pkgname>: name of the current package (default `%name`)
 # cmd1 ...: the commands the completion files are for
-%pkg_completion(BbefnzN:) %{lua:
+%pkg_completion(BbefNzn:) %{lua:
   local shells = {}
   local pkg = macros["-N*"] or macros["name"]
   local bins_num = tonumber(rpm.expand("%#"))
@@ -97,7 +97,7 @@
     end
     print("\\n")
   end
-  if rpm.isdefined("-n") then
+  if rpm.isdefined("-N") then
     format_print("nushell", "nu")
     for i = 1, bins_num do
       print(rpm.expand("%nushell_completions_dir/"..bins[i]..".nu\\n"))
