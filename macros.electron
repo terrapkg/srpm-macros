@@ -291,19 +291,19 @@ fi                                                              \
      end
    end
      print("/usr/bin/desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{-E: --enable=features=%{-E*}}%{-O:%{!?-O*: --ozone-platform-hint=auto}}%{-O:%{-O*: --ozone-platform=%{-O*}}}%{?desktop_file_args: --%{desktop_file_args}}%{-U: %{-U*}}\\" squashfs-root/*.desktop"))
-   end}                                                                                                                     \
+   end}                                                                                                                \
 %{-l:%{expand:BUNDLED_LICENSE_DIR="$PWD/bundled_licenses"
 %{__mkdir} -p "$BUNDLED_LICENSE_DIR"
 find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +}}                                                        \
-if [[ "$BUILDER" == "electron-builder" ]]; then                                                                              \
-%{__install} -Dm644 dist/.icon-set/*icon_*16.png %{buildroot}%{_hicolordir}/16x16/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
-%{__install} -Dm644 dist/.icon-set/*icon_*32.png %{buildroot}%{_hicolordir}/32x32/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
-%{__install} -Dm644 dist/.icon-set/*icon_*48.png %{buildroot}%{_hicolordir}/48x48/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
-%{__install} -Dm644 dist/.icon-set/*icon_*64.png %{buildroot}%{_hicolordir}/64x64/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
-%{__install} -Dm644 dist/.icon-set/*icon_*128.png %{buildroot}%{_hicolordir}/128x128/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png    \
-%{__install} -Dm644 dist/.icon-set/*icon_*256.png %{buildroot}%{_hicolordir}/256x256/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png    \
-%{__install} -Dm644 dist/.icon-set/*icon_*512.png %{buildroot}%{_hicolordir}/512x512/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png    \
-%{__install} -Dm644 dist/.icon-set/*icon_*1024.png %{buildroot}%{_hicolordir}/1024x1024/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png \
-elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                              \
-%{__install} -Dm644 assets/app-icon.png %{buildroot}%{_hicolordir}/512x512/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png              \
+if [[ "$BUILDER" == "electron-builder" ]]; then                                                                        \
+%{__install} -Dm644 dist/.icon-set/*16.png %{buildroot}%{_hicolordir}/16x16/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/*32.png %{buildroot}%{_hicolordir}/32x32/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/*48.png %{buildroot}%{_hicolordir}/48x48/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/*64.png %{buildroot}%{_hicolordir}/64x64/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png       \
+%{__install} -Dm644 dist/.icon-set/*128.png %{buildroot}%{_hicolordir}/128x128/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png    \
+%{__install} -Dm644 dist/.icon-set/*256.png %{buildroot}%{_hicolordir}/256x256/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png    \
+%{__install} -Dm644 dist/.icon-set/*512.png %{buildroot}%{_hicolordir}/512x512/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png    \
+%{__install} -Dm644 dist/.icon-set/*1024.png %{buildroot}%{_hicolordir}/1024x1024/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png \
+elif [[ "$BUILDER" == "electron-forge" ]]; then                                                                        \
+%{__install} -Dm644 assets/app-icon.png %{buildroot}%{_hicolordir}/512x512/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png        \
 fi
