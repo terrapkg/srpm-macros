@@ -33,8 +33,9 @@ AND
 ## nodejs-packaging is REQUIRED if using Fedora Node.js macros such as %%{__nodejs}
 ## Package requirements are only the requirements for Electron itself. Electron apps may have additional requirements.
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
-%electronmeta(a)                                                                                                                   \
-%global debug_package %{nil}                                                                                                       \
+# -D: "Disable debug." Disable debug packages. Needed for most Electron apps.
+%electronmeta(aD)                                                                                                                  \
+%{-D:%global debug_package %{nil}}                                                                                                 \
 %global __provides_exclude ^((libffmpeg\\.so.*)|(libEGL\\.so.*)|(libGLESv2\\.so.*)|(libvk_swiftshader\\.so.*)|(libvulkan\\.so.*))$ \
 %{lua:
   if not macros["_target_cpu"]:find('armv7') then
