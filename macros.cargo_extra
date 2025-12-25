@@ -1,7 +1,9 @@
+%_cargo_home %{rpmbuilddir}/.cargo
+
 %cargo_prep_online (\
 set -eu \
-%{__mkdir} -p .cargo \
-cat > .cargo/config << EOF \
+%{__mkdir} -p %{_cargo_home} \
+cat > %{_cargo_home}/config << EOF \
 [profile.rpm]\
 inherits = "release"\
 opt-level = %{rustflags_opt_level}\
@@ -32,9 +34,10 @@ directory = "%{cargo_registry}"\
 \
 EOF\
 %{__rm} -f Cargo.toml.orig \
+%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo \
 %{lua: 
-if rpm.expand("%{fedora}"):find("^%d") then 
-rpm.define("build_rustflags " .. rpm.expand("%build_rustflags %[%{with mold} ? \\"-C link-arg=-fuse-ld=mold\\" : \\"\\"]"))
+if rpm.isdefined("fedora") then
+rpm.define("build_rustflags %build_rustflags %[%{with mold} ? \\"-C link-arg=-fuse-ld=mold\\" : \\"\\"]")
 end}\
 )
 
@@ -127,9 +130,9 @@ set -euo pipefail\
 )
 
 %rustup_nightly \
-    %global __cargo /usr/bin/env CARGO_HOME=.cargo RUSTFLAGS='%{build_rustflags}' .cargo/bin/cargo \
-    %global __rustc .cargo/bin/rustc                                                               \
-    %global __rustdoc .cargo/bin/rustdoc                                                           \
-    CARGO_HOME=.cargo rustup-init --default-toolchain nightly -y                                   \
-    . ".cargo/env"                                                                                 \
+    %global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTFLAGS='%{build_rustflags}' %{_cargo_home}/bin/cargo \
+    %global __rustc %{_cargo_home}/bin/rustc                                                                       \
+    %global __rustdoc %{_cargo_home}/bin/rustdoc                                                                   \
+    CARGO_HOME=%{_cargo_home} rustup-init --default-toolchain nightly -y                                           \
+    source "%{_cargo_home}/env"                                                                                    \
     rustup override set nightly
