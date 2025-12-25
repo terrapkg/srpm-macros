@@ -40,7 +40,7 @@ EOF\
 %global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo \
 %{lua: 
 if rpm.isdefined("fedora") then
-rpm.define("build_rustflags %build_rustflags %[%{with mold} ? \\"-C link-arg=-fuse-ld=mold\\" : \\"\\"]")
+rpm.define("build_rustflags " .. rpm.expand("%build_rustflags %[%{with mold} ? \\"-C link-arg=-fuse-ld=mold\\" : \\"\\"]"))
 end}\
 )
 
