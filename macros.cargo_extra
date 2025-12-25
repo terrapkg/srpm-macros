@@ -135,4 +135,5 @@ set -euo pipefail\
     %global __rustdoc %{_cargo_home}/bin/rustdoc                                                                   \
     CARGO_HOME=%{_cargo_home} rustup-init --default-toolchain nightly -y                                           \
     source "%{_cargo_home}/env"                                                                                    \
-    rustup override set nightly
+    rustup override set nightly                                                                                    \
+    %bcond rust_nightly 1
