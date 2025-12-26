@@ -1,6 +1,5 @@
-%_cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo
-
 %cargo_prep_online (\
+%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo \
 set -eu \
 %{__mkdir} -p target/rpm\
 %{__ln_s} rpm target/release\
