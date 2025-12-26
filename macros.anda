@@ -192,7 +192,7 @@
 
 %__anda_libsfiles %_anda_srpm_macros_dir/find-libsinfo.sh %buildroot > anda-libsfiles.list
 
-%go_task go-task --parallel --verbose --yes
+%go_task go-task --parallel --concurrency %{?_smp_build_ncpus} --verbose --yes
 
 %_hicolordir %_iconsdir/hicolor
 
