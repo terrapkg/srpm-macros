@@ -132,11 +132,11 @@ set -euo pipefail\
 )
 
 %rustup_nightly \
-    %global _rustup_home %{rpmbuilddir}/.rustup                                                                                                                        \
-    %global __cargo /usr/bin/env CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{build_rustflags}' '%{_cargo_home}'/bin/cargo                                                 \
-    %global __rustc '%{_cargo_home}'/bin/rustc                                                                                                                         \
-    %global __rustdoc '%{_cargo_home}'/bin/rustdoc                                                                                                                     \
-    /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y --no-modify-path \
-    source %{_rustup_home}/env                                                                                                                                         \
-    rustup override set nightly                                                                                                                                        \
+    %global _rustup_home %{rpmbuilddir}/.rustup                                                                                                       \
+    %global __cargo /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{build_rustflags}' '%{_cargo_home}'/bin/cargo  \
+    %global __rustc '%{_cargo_home}'/bin/rustc                                                                                                        \
+    %global __rustdoc '%{_cargo_home}'/bin/rustdoc                                                                                                    \
+    /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y \
+    source %{_rustup_home}/env                                                                                                                        \
+    rustup override set nightly                                                                                                                       \
     %bcond rust_nightly 1
