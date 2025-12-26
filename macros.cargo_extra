@@ -4,7 +4,7 @@
 set -eu \
 %{__mkdir} -p target/rpm\
 %{__ln_s} rpm target/release\
-%{__rm} -rf .cargo/\
+%{__rm} -rf {.cargo/,%{_cargo_home}/}\
 %{__mkdir} -p %{_cargo_home}\
 cat > %{_cargo_home}/config.toml << EOF \
 [profile.rpm]\
