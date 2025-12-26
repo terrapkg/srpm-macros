@@ -1,4 +1,4 @@
-%_cargo_home %{rpmbuilddir}/.cargo
+%_cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo
 
 %cargo_prep_online (\
 set -eu \
