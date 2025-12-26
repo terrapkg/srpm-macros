@@ -1,5 +1,5 @@
 %cargo_prep_online (\
-%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo \
+%{!?_cargo_home:%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo} \
 set -eu \
 %{__mkdir} -p target/rpm\
 %{__ln_s} rpm target/release\
@@ -132,6 +132,7 @@ set -euo pipefail\
 )
 
 %rustup_nightly \
+    %{!?_cargo_home:%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo}                                                         \
     %global _rustup_home %{rpmbuilddir}/.rustup                                                                                                       \
     %global __cargo /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{build_rustflags}' '%{_cargo_home}'/bin/cargo  \
     %global __rustc '%{_cargo_home}'/bin/rustc                                                                                                        \
