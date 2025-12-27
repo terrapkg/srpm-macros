@@ -3,8 +3,8 @@
 set -eu \
 %{__mkdir} -p target/rpm\
 %{__ln_s} rpm target/release\
-%{__rm} -rf {.cargo/,'%{_cargo_home}/'}\
-%{__mkdir} -p '%{_cargo_home}'\
+%{!?with_rust_nightly:%{__rm} -rf {.cargo/,'%{_cargo_home}/'}}\
+%{!?with_rust_nightly:%{__mkdir} -p '%{_cargo_home}'}\
 cat > '%{_cargo_home}/config.toml' << EOF \
 [profile.rpm]\
 inherits = "release"\
@@ -140,6 +140,7 @@ set -euo pipefail\
     %global __cargo /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{build_rustflags}' '%{_cargo_home}'/bin/cargo     \
     %global __rustc '%{_cargo_home}'/bin/rustc                                                                                                           \
     %global __rustdoc '%{_cargo_home}'/bin/rustdoc                                                                                                       \
+    %{__rm} -rf {.cargo/,'%{_cargo_home}/'}                                                                                                              \
     /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init -q --default-toolchain nightly -y \
     source '%{_cargo_home}/env'                                                                                                                          \
     rustup override set nightly                                                                                                                          \
