@@ -136,15 +136,15 @@ set -euo pipefail\
 %rustup_nightly %{lua: 
     if rpm.isdefined("fedora") and not macros["build_rustflags"]:find("mold") then
     rpm.define("build_rustflags " .. rpm.expand("%build_rustflags %[%{with mold} ? \\"-C link-arg=-fuse-ld=mold\\" : \\"\\"]"))
-    end}                                                                                                                                                               \
+    end}                                                                                                                                                                  \
     %{!?_cargo_home:%{expand:
     %global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo
-    %{__rm} -rf {.cargo/,'%{_cargo_home}/'}}}                                                                                                                          \
-    %global _rustup_home %{rpmbuilddir}/.rustup                                                                                                                        \
-    %global __cargo /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{build_rustflags}' %{_cargo_home}/bin/cargo                     \
-    %global __rustc %{_cargo_home}/bin/rustc                                                                                                                           \
-    %global __rustdoc %{_cargo_home}/bin/rustdoc                                                                                                                       \
-    /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y --no-modify-path \
-    source '%{_cargo_home}/env'                                                                                                                                        \
-    rustup override set nightly                                                                                                                                        \
+    %{__rm} -rf {.cargo/,'%{_cargo_home}/'}}}                                                                                                                             \
+    %global _rustup_home %{rpmbuilddir}/.rustup                                                                                                                           \
+    %global __cargo /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{build_rustflags}' %{_cargo_home}/bin/cargo                        \
+    %global __rustc %{_cargo_home}/bin/rustc                                                                                                                              \
+    %global __rustdoc %{_cargo_home}/bin/rustdoc                                                                                                                          \
+    /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y -q --no-modify-path \
+    source '%{_cargo_home}/env'                                                                                                                                           \
+    rustup override set nightly                                                                                                                                           \
     %bcond rust_nightly 1
