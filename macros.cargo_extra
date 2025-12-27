@@ -3,8 +3,9 @@
 set -eu \
 %{__mkdir} -p target/rpm\
 %{__ln_s} rpm target/release\
-%{!?with_rust_nightly:%{__rm} -rf {.cargo/,'%{_cargo_home}/'}}\
-%{!?with_rust_nightly:%{__mkdir} -p '%{_cargo_home}'}\
+%{!?with_rust_nightly:%{expand:
+%{__rm} -rf {.cargo/,'%{_cargo_home}/'}
+%{__mkdir} -p '%{_cargo_home}'}}\
 cat > '%{_cargo_home}/config.toml' << EOF \
 [profile.rpm]\
 inherits = "release"\
@@ -36,12 +37,12 @@ directory = "%{cargo_registry}"\
 \
 EOF\
 %{__rm} -f Cargo.toml.orig \
+)\
 %{lua: 
 if rpm.isdefined("fedora") and not macros["build_rustflags"]:find("mold") then
 rpm.define("build_rustflags " .. rpm.expand("%build_rustflags %[%{with mold} ? \\"-C link-arg=-fuse-ld=mold\\" : \\"\\"]"))
 end}\
-%{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME='%{_cargo_home}' RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo} \
-)
+%{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME='%{_cargo_home}' RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}
 
 
 
@@ -134,9 +135,10 @@ set -euo pipefail\
 %rustup_nightly %{lua: 
     if rpm.isdefined("fedora") and not macros["build_rustflags"]:find("mold") then
     rpm.define("build_rustflags " .. rpm.expand("%build_rustflags %[%{with mold} ? \\"-C link-arg=-fuse-ld=mold\\" : \\"\\"]"))
-    print(rpm.expand("%{__rm} -rf {.cargo/,'%{_cargo_home}/'}"))
-    end}\
-    %{!?_cargo_home:%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo}                                                            \
+    end}                                                                                                                                                 \
+    %{!?_cargo_home:%{expand:
+    %global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo
+    %{__rm} -rf {.cargo/,'%{_cargo_home}/'}}}                                                                                                            \
     %global _rustup_home %{rpmbuilddir}/.rustup                                                                                                          \
     %global __cargo /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{build_rustflags}' '%{_cargo_home}'/bin/cargo     \
     %global __rustc '%{_cargo_home}'/bin/rustc                                                                                                           \
