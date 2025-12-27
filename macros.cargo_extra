@@ -135,7 +135,7 @@ set -euo pipefail\
 %rustup_nightly \
 %{?_cargo_home:%{error:%%rustup_nightly must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
 %global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo \
-%{__rm} -rf {.cargo/,'%{_cargo_home}/' \
+%{__rm} -rf {.cargo/,'%{_cargo_home}/'} \
 %global _rustup_home %{rpmbuilddir}/.rustup \
 %global __cargo /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{terra_rustflags}' %{_cargo_home}/bin/cargo \
 %global __rustc %{_cargo_home}/bin/rustc \
