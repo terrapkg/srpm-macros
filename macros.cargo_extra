@@ -1,7 +1,15 @@
-%cargo_prep_online (\
+%terra_rustflags %{build_rustflags} %[%{defined fedora} && %{with mold} ? "-Clink-arg=-fuse-ld=mold" : ""]
+
+%cargo_prep_online \
+%{!?_cargo_home:%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo} \
+(\
 set -eu \
-%{__mkdir} -p .cargo \
-cat > .cargo/config << EOF \
+%{__mkdir} -p target/rpm\
+%{__ln_s} rpm target/release\
+%{!?with_rust_nightly:%{expand:
+%{__rm} -rf {.cargo/,'%{_cargo_home}/'}
+%{__mkdir} -p '%{_cargo_home}'}}\
+cat > '%{_cargo_home}/config.toml' << EOF \
 [profile.rpm]\
 inherits = "release"\
 opt-level = %{rustflags_opt_level}\
@@ -32,11 +40,9 @@ directory = "%{cargo_registry}"\
 \
 EOF\
 %{__rm} -f Cargo.toml.orig \
-%{lua: 
-if rpm.expand("%{fedora}"):find("^%d") then 
-rpm.define("build_rustflags " .. rpm.expand("%build_rustflags %[%{with mold} ? \\"-C link-arg=-fuse-ld=mold\\" : \\"\\"]"))
-end}\
-)
+)\
+%global build_rustflags %{terra_rustflags} \
+%{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME='%{_cargo_home}' RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}
 
 
 
@@ -127,9 +133,14 @@ set -euo pipefail\
 )
 
 %rustup_nightly \
-    %global __cargo /usr/bin/env CARGO_HOME=.cargo RUSTFLAGS='%{build_rustflags}' .cargo/bin/cargo \
-    %global __rustc .cargo/bin/rustc                                                               \
-    %global __rustdoc .cargo/bin/rustdoc                                                           \
-    CARGO_HOME=.cargo rustup-init --default-toolchain nightly -y                                   \
-    . ".cargo/env"                                                                                 \
-    rustup override set nightly
+%{?_cargo_home:%{error:%%rustup_nightly must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
+%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo \
+%{__rm} -rf {.cargo/,'%{_cargo_home}/'} \
+%global _rustup_home %{rpmbuilddir}/.rustup \
+%global __cargo /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{terra_rustflags}' %{_cargo_home}/bin/cargo \
+%global __rustc %{_cargo_home}/bin/rustc \
+%global __rustdoc %{_cargo_home}/bin/rustdoc \
+/usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y -q --no-modify-path \
+source "%{_cargo_home}/env' \
+rustup override set nightly \
+%bcond rust_nightly 1
