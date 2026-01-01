@@ -1,0 +1,165 @@
+## See: %%{rust_arches} which are basically all the arches Fedora currently supports, at this moment this is falling back to raw %%_target_cpu
+#%%tauri_arches %%{x86_64} %%{ix86} %%{arm} %%{arm64} %%{riscv64} %%{mips} %%{power64} s390x sparc64 sparc64v
+
+%__tauri /usr/bin/env %{npm_common_envvars} CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1} RUSTFLAGS='%{build_rustflags}' CI=true /usr/bin/tauri
+
+## Preps a Tauri build.
+## Mostly a wrapper for %%cargo_prep_online that also sets the Tauri subdir but also changes directory to it before running %%cargo_prep_online as a test that the directory is correct.
+%tauri_prep(n:) %{shrink:                                 \
+%{-n:%global tauri_subdir %{-n*}}                         \
+%{!?-n:%{!?tauri_subdir:%global tauri_subdir src-tauri}}} \
+cd %{tauri_subdir}                                        \
+%cargo_prep_online                                        \
+cd "$OLDPWD"
+
+## Pulls in BuildRequires that should cover most Tauri builds and checks for non-Cargo dependencies.
+# -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
+%tauri_generate_buildrequires(a)\
+echo "autoconf automake binutils bison byacc desktop-file-utils cargo cargo-rpm-macros cscope ctags curl elfutils gcc gcc-c++ glibc-devel flex indent libappindicator-gtk3-devel librsvg2-devel libtool libxdo-devel ltrace nodejs%{-a: nodejs-devel} nodejs-npm%{-a: nodejs-packaging} make openssl-devel perf pkgconf rust rust-srpm-macros strace%{-a: typescript} tauri valgrind webkit2gtk4.1-devel wget" \
+if cat %{tauri_subdir}/Cargo.lock | grep "glib-sys" &>/dev/null; then \
+  echo "glib2-devel" \
+fi \
+\
+if cat %{tauri_subdir}/Cargo.lock | grep "gdk-sys" &>/dev/null; then \
+  echo "gtk3-devel" \
+fi \
+\
+if cat %{tauri_subdir}/Cargo.lock | grep "javascriptcore-rs-sys" &>/dev/null; then \
+  echo "javascriptcoregtk4.1-devel" \
+fi \
+\
+if cat %{tauri_subdir}/Cargo.lock | grep "soup-sys" &>/dev/null; then \
+  echo "libsoup3-devel" \
+fi \
+if cat %{tauri_subdir}/Cargo.lock | grep "onig-sys" &>/dev/null; then \
+  echo "oniguruma-devel" \
+fi
+
+## Build opts for Tauri.
+## The macro %%__tauri_bundles may be defined to choose if Tauri builds binaries (in some cases, AppImages may be useful for extracting .desktop files). Defaults to no bundles.
+%__tauri_common_opts %{shrink:
+  --verbose                                              \
+  %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo}\
+  %{!?__tauri_bundles:--no-bundle}                       \
+  %{?__tauri_bundles:--bundles %{__tauri_bundles}}       \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                   \
+}
+
+## Build with Tauri.
+## MAY be used instead of a JavaScript build macro for Tauri projects. Partial support for %%cargo_build's -n and -a flags when used outside of a JavaScript package manager build env. Tauri and Cargo are supposed to receive the same feature flags so use with caution.
+## -f is parsed twice because the same features should ideally be passed to both Tauri and Cargo.
+%tauri_build(naf:)\
+%{shrink:                                            \
+    %{__tauri} build                                 \
+    %{__tauri_common_opts}                           \
+    --                                               \
+    %{__cargo_common_opts}                           \
+    --profile rpm                                    \
+    %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}} \
+    %*                                               \
+}
+
+## Ported %%cargo_install to make it work for Tauri
+## MAY be used for Fedora style Rust Crate packaging with the build files
+%tauri_install(t:naf:)\
+(\
+set -euo pipefail                                                   \
+cd %{tauri_subdir}                                                  \
+CRATE_NAME=$(%{__cargo_to_rpm} --path Cargo.toml name)              \
+if %{__cargo_is_lib} && [ %{cargo_install_lib} -eq 1 ] ; then       \
+  CRATE_VERSION=$(%{__cargo_to_rpm} --path Cargo.toml version)      \
+  REG_DIR=%{buildroot}%{cargo_registry}/$CRATE_NAME-$CRATE_VERSION  \
+  %{__mkdir} -p $REG_DIR                                            \
+  %{__awk} -i inplace -v INPLACE_SUFFIX=.deps '/^\\\[((.+\\\.)?((dev|build)-)?dependencies|features)/{f=1;next} /^\\\[/{f=0}; !f' Cargo.toml \
+  %{__cargo} package -l | grep -w -E -v 'Cargo.(lock|toml.orig)' | xargs -d '\\\n' %{__cp} --parents -a -t $REG_DIR \
+  %{__mv} Cargo.toml{.deps,}                                        \
+  %{__cp} -a Cargo.toml $REG_DIR/Cargo.toml                         \
+  %{__rm} -f $REG_DIR/Cargo.toml.deps                               \
+  echo '{"files":{},"package":""}' > $REG_DIR/.cargo-checksum.json  \
+fi                                                                  \
+if %{__cargo_is_bin %{-n} %{-a} %{-f:-f%{-f*}}} && [ %{cargo_install_bin} -eq 1 ] ; then \
+  %{shrink:                                                         \
+    %{__install}                                                    \
+      -Dpm755                                                       \
+      ./target/rpm/$CRATE_NAME                                      \
+      -t %{buildroot}%{_bindir}                                     \
+      %*                                                            \
+  }                                                                 \
+fi                                                                  \
+cd $OLDPWD                                                          \
+)
+
+## Nearly identical to %%cargo_license_summary_online but points to the Tauri subdir.
+## Does this so that it can be run in the buildsubdir like expected.
+%tauri_cargo_license_summary(f:)\
+(\
+set -euo pipefail\
+%{shrink:                                                           \
+    %{__cargo} tree                                                 \
+    -Z avoid-dev-deps                                               \
+    --workspace                                                     \
+    --manifest-path="%{tauri_subdir}/Cargo.toml"                    \
+    --edges no-build,no-dev,no-proc-macro                           \
+    --no-dedupe                                                     \
+    --target all                                                    \
+    %{__cargo_parse_opts %{-f:-f%{-f*}}}                            \
+    --prefix none                                                   \
+    --format "# {l}"                                                \
+    | sed -e "s: / :/:g" -e "s:/: OR :g" -e "\\|/.*:|{s|/| OR |}"   \
+    | sort -u                                                       \
+}\
+)
+
+
+## Nearly identical to %%cargo_license_online but points to the Tauri subdir.
+## Does this so that > LICENSE.dependencies can be run in the buildsubdir like expected.
+%tauri_cargo_license(f:)\
+(\
+set -euo pipefail\
+%{shrink:                                                                                  \
+    %{__cargo} tree                                                                        \
+    -Z avoid-dev-deps                                                                      \
+    --workspace                                                                            \
+    --manifest-path="%{tauri_subdir}/Cargo.toml"                                           \
+    --edges no-build,no-dev,no-proc-macro                                                  \
+    --no-dedupe                                                                            \
+    --target all                                                                           \
+    %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                   \
+    --prefix none                                                                          \
+    --format "{l}: {p}"                                                                    \
+    | sed -e "s: ($(pwd)[^)]*)::g" -e "s: / :/:g" -e "s:/: OR :g" -e "\\|/.*:|{s|/| OR |}" \
+    | sort -u                                                                              \
+}\
+)
+
+
+## Nearly identical to %%cargo_vendor_manifest_online but points to the Tauri subdir.
+## Does this so that it can be run in the buildsubdir like expected.
+%tauri_cargo_vendor_manifest()\
+(\
+set -euo pipefail\
+%{shrink:                                                           \
+    %{__cargo} tree                                                 \
+    --workspace                                                     \
+    --manifest-path="%{tauri_subdir}/Cargo.toml"                    \
+    --edges normal,build,dev                                        \
+    --no-dedupe                                                     \
+    --target all                                                    \
+    --all-features                                                  \
+    --prefix none                                                   \
+    --format "{p}"                                                  \
+    | grep -v "$(pwd)"                                              \
+    | sed -e "s: (proc-macro)::"                                    \
+    | sort -u                                                       \
+    > cargo-vendor.txt                                              \
+}\
+)
+
+## Wrapper around %%tauri_build that also handles licenses
+## Port of %%cargo_build_crate, does not check if the Crate is a binary because Tauri ALWAYS makes binaries
+%tauri_build_crate(naf:)\
+%tauri_build %{-n} %{-a} %{-f:-f%{-f*}}\
+if [ %{cargo_install_bin} -eq 1 ] ; then\
+    %{tauri_cargo_license_summary %{-n} %{-a} %{-f:-f%{-f*}}}\
+    %{tauri_cargo_license %{-n} %{-a} %{-f:-f%{-f*}}} > LICENSE.dependencies\
+fi

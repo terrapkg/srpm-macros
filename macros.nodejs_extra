@@ -7,35 +7,6 @@
 ## Reference: https://docs.npmjs.com/cli/v11/using-npm/config
 %npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{_npm_cache_dir} NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_COLOR=always NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js
 
-## Define home for Bun files
-## Currently Bun doesn't respect this, tracking issue here: https://github.com/oven-sh/bun/issues/10152
-%_bun_home %{rpmbuilddir}/.bun
-
-## Define cache directory for Bun
-%_bun_cache_dir %{_bun_home}/install/cache
-
-## Common env vars for Bun
-## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
-%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{_bun_home} BUN_INSTALL_CACHE_DIR=%{_bun_cache_dir} BUN_RUNTIME_TRANSPILER_CACHE_PATH=%{_bun_cache_dir} FORCE_COLOR=1
-
-## Define home for PNPM files
-%_pnpm_home %{rpmbuilddir}/.pnpm
-
-## Define store directory for PNPM
-## SHOULD be unused but some builds may produce this
-%_pnpm_store %{_pnpm_home}/store
-
-## Common env vars for PNPM
-## While PNPM itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
-%pnpm_common_envvars %{npm_common_envvars} PNPM_HOME=%{_pnpm_home}
-
-## Define cache directory for Yarn
-%_yarn_cache_dir %{rpmbuilddir}/.yarn
-
-## Common env vars for Yarn
-## While Yarn itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
-%yarn_common_envvars %{npm_common_envvars} YARN_CACHE_FOLDER=%{_yarn_cache_dir}
-
 ## Build flags for NPM so they can be called independently to force our build config.
 %npm_buildflags --userconfig=%{rpmbuilddir}/.npmrc --globalconfig=%{rpmbuilddir}/npmrc --cache=%{rpmbuilddir}/.npm --loglevel=error --fund=false --update-notifier=false --color=always --init-module=%{rpmbuilddir}/.npm-init.js
 
@@ -52,26 +23,6 @@
 ## Macro to make sure system installed NVM uses the correct directory when used in %%vendor_nodejs.
 %__nvm /usr/bin/env NVM_DIR=%{_nvm_dir} /usr/bin/nvm
 
-## Call Bun with our build env vars
-%__bun /usr/bin/env %{bun_common_envvars} /usr/bin/bun
-
-## Execute a Node module in the Bun build environment (installing it if it isn't present)
-%__bunx /usr/bin/env %{bun_common_envvars} /usr/bin/bunx
-
-## Call PNPM with our build env vars
-%__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_home}/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
-
-## Remotely execute a Node module from the NPM Registry with PNPM
-%__pnpx /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_home}/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
-
-## Call Yarn with our build env vars
-%__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
-
-## Remotely execute a Node module from the NPM Registry with Yarn
-## NOTE: Yarn DLX (Yarn's equivalent to NPX, PNPX, and Bunx) only exists in Yarn Berry!
-## If you need to use this feature, make sure you use BuildRequires: yarnpkg-berry
-%__yarn_dlx %{__yarn} dlx
-
 ## ONLY use if Node.js is not usable from the repos for some reason (such as needing non-LTS Node.js)
 # -v: "Version." The version of Node.js to install. Required flag.
 %vendor_nodejs(v:)                                                                    \
@@ -80,34 +31,6 @@ touch "$HOME/.bash_profile" &>/dev/null                                         
 %{__nvm} install %{-v*} --save                                                        \
 %global __nodejs %{__nvm} run                                                         \
 %bcond vendored_nodejs 1
-
-## ONLY use if PNPM is not usable from the repos for some reason
-# -v "Version." Choose a specific version of PNPM to vendor
-%vendor_pnpm(v:)                                                 \
-export PNPM_HOME="%{_pnpm_home}"                                 \
-curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
-%{-v:%{_pnpm_home}/pnpm env use --global %{-v*}}                 \
-%bcond vendored_pnpm 1
-
-## Export Node module related build flags globally if necessary for any reason.
-## Based on Fedora's %%set_build_flags and can be used the same way or in combination with it.
-## Also creates a variable that can be called for our NPM build flags, similar to how Fedora supplies buildflags in both variables and macros.
-%set_node_build_flags \
-NPM_CONFIG_USERCONFIG="%{rpmbuilddir}/.npmrc" ; export NPM_CONFIG_USERCONFIG ; \
-NPM_CONFIG_GLOBALCONFIG="%{rpmbuilddir}/npmrc" ; export NPM_CONFIG_GLOBALCONFIG ; \
-NPM_CONFIG_CACHE="%{_npm_cache_dir}" ; export NPM_CONFIG_CACHE ; \
-NPM_CONFIG_LOGLEVEL="error" ; export NPM_CONFIG_LOGLEVEL ; \
-NPM_CONFIG_FUND="false" ; export NPM_CONFIG_FUND ; \
-NPM_CONFIG_UPDATE_NOTIFIER="false" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \
-NO_UPDATE_NOTIFIER="1" ; export NO_UPDATE_NOTIFIER ; \
-NPM_CONFIG_COLOR="always" ; export NPM_CONFIG_COLOR ; \
-NPM_CONFIG_INIT_MODULE="%{rpmbuilddir}/.npm-init.js" ; export NPM_CONFIG_INIT_MODULE ; \
-BUN_HOME="%{_bun_home}" ; export BUN_HOME ; \
-BUN_INSTALL_CACHE_DIR="%{_bun_cache_dir}" ; export BUN_INSTALL_CACHE_DIR \
-BUN_RUNTIME_TRANSPILER_CACHE_PATH="%{_bun_cache_dir}" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
-PNPM_HOME="%{_pnpm_home}" ; export PNPM_HOME ; \
-YARN_CACHE_FOLDER="%{_yarn_cache_dir}" ; export YARN_CACHE_FOLDER ; \
-NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 
 ## These macros REQUIRE that the macro %%npm_name be defined or the module be passed to them
 
@@ -207,51 +130,6 @@ fi                                                             \
    %{nil}                       \
 }                               \
 )
-
-## For use in check section
-## ONLY use if package uses bundled Node dependencies.
-## NOTE: Technically Bun audit is a wrapper for NPM audit, however it unfortunately lacks the ability to FIX vulnerabilities
-## There is no timeline for this being implemented, but there is a tracking issue: https://github.com/oven-sh/bun/issues/20238
-## For now, you need to fix vulnerabilities, please see %%npm_audit_fix
-# NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%bun_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__bun} audit
-
-## For use in check section
-## ONLY use if package uses bundled Node dependencies.
-## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%pnpm_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit
-
-## Fix dependencies using PNPM.
-## WARNING: Does NOT support all the options NPM audit fix does. It may be preferable to use that instead as this will also fix build dependencies.
-%pnpm_audit_fix() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit --fix
-
-## Approve dependency scripts with Bun if needed.
-# -a: "All." Approve all scripts. Use with caution.
-# Example: %%bun_pm_trust pkg1 pkg2
-%bun_pm_trust(a) \
-%{lua:
-if not opt.a and not arg[1] then
-  error("bun pm trust requires package names or -a for --all")
-elseif not opt.a then
-  print(rpm.expand("%{__bun} pm trust"))
-  for i, cmd in ipairs(arg) do
-    print(" " .. cmd)
-  end
-  print("\\n")
-elseif opt.a then
-  print(rpm.expand("%{__bun} pm trust --all"))
-end}
-
-## Approve dependency scripts with PNPM if needed.
-# -g: Direct duplicate of "-g" (global).
-%pnpm_approve_builds(g) %{__pnpm} approve-builds %{-g:-g}
-
-## For use in check section
-## ONLY use if package uses bundled Node dependencies.
-## Unfortunately, like Bun, Yarn lacks a built in way to fix vulnerabilities.
-## If you need to fix vulnerabilities, please see %%npm_audit_fix
-## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%yarn_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__yarn} audit
 
 ## Below require nodejs-license-checker as a build dep
 
