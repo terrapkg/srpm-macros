@@ -201,3 +201,5 @@
 %_appsdir %_datadir/applications
 
 %_pkgconfigdir %{_libdir}/pkgconfig
+
+%_gnomeextensionsdir %{_datadir}/gnome-shell/extensions%{?uuid:/%{uuid}}
