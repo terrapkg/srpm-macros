@@ -15,10 +15,13 @@
 ## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
 %bun_common_envvars %{npm_common_envvars} BUN_HOME=%{_bun_home} BUN_INSTALL_CACHE_DIR=%{_bun_cache_dir} BUN_RUNTIME_TRANSPILER_CACHE_PATH=%{_bun_cache_dir} FORCE_COLOR=1
 
+## Build flags for Bun so they can be called independently to force our build config.
+%bun_buildflags --cache-dir=%{_bun_cache_dir}
+
 ## Common env vars for Deno
 ## While Deno itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
 ## Preferably, DENO_JOBS would be set via something like a -j flag, but Deno only supports setting this via environment variable.
-%deno_common_envvars %{npm_common_envvars} DENO_DIR=%{_deno_dir} DENO_INSTALL_ROOT=%{_deno_install_root} DENO_NO_UPDATE_CHECK=1 DENO_JOBS=${RPM_BUILD_NCPUS}
+%deno_common_envvars %{npm_common_envvars} DENO_DIR=%{_deno_dir} DENO_INSTALL_ROOT=%{_deno_install_root} DENO_NO_UPDATE_CHECK=1 DENO_JOBS=${RPM_BUILD_NCPUS} FORCE_COLOR=1
 
 ## Define home for PNPM files
 %_pnpm_home %{rpmbuilddir}/.pnpm
@@ -37,6 +40,9 @@
 ## Common env vars for Yarn
 ## While Yarn itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
 %yarn_common_envvars %{npm_common_envvars} YARN_CACHE_FOLDER=%{_yarn_cache_dir}
+
+## Build flags for Yarn so they can be called independently to force our build config.
+%yarn_buildflags --cache-folder=%{_yarn_cache_dir}
 
 ## Call Bun with our build env vars
 %__bun /usr/bin/env %{bun_common_envvars} /usr/bin/bun
@@ -94,7 +100,9 @@ DENO_NO_UPDATE_CHECK="1" ; export DENO_NO_UPDATE_CHECK ; \
 DENO_JOBS="${RPM_BUILD_NCPUS}" ; export DENO_JOBS ; \
 PNPM_HOME="%{_pnpm_home}" ; export PNPM_HOME ; \
 YARN_CACHE_FOLDER="%{_yarn_cache_dir}" ; export YARN_CACHE_FOLDER ; \
-NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
+NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS ; \
+BUNFLAGS="${BUNFLAGS-%{bun_buildflags} }" ; export BUNFLAGS ; \
+YARNFLAGS="${YARNFLAGS-%{yarn_buildflags} }" ; export YARNFLAGS
 
 ## For use in check section
 ## ONLY use if package uses bundled Node dependencies.
@@ -117,6 +125,13 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 ## Fix dependencies using PNPM.
 ## WARNING: Does NOT support all the options NPM audit fix does. It may be preferable to use that instead as this will also fix build dependencies.
 %pnpm_audit_fix() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit --fix
+
+## For use in check section
+## ONLY use if package uses bundled Node dependencies.
+## Unfortunately, like Bun, Yarn lacks a built in way to fix vulnerabilities.
+## If you need to fix vulnerabilities, please see %%npm_audit_fix
+## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
+%yarn_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__yarn} audit
 
 ## Approve dependency scripts with Bun if needed.
 # -a: "All." Approve all scripts. Use with caution.
@@ -152,12 +167,21 @@ end}
 # -g: Direct duplicate of "-g" (global).
 %pnpm_approve_builds(g) %{__pnpm} approve-builds %{-g:-g}
 
-## For use in check section
-## ONLY use if package uses bundled Node dependencies.
-## Unfortunately, like Bun, Yarn lacks a built in way to fix vulnerabilities.
-## If you need to fix vulnerabilities, please see %%npm_audit_fix
-## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%yarn_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__yarn} audit
+## Run tests with Bun
+%bun_test(-) \
+%{__bun} test
+
+## Run tests with Deno
+%deno_test(-) \
+%{__deno} test --parallel
+
+## Run tests with PNPM
+%pnpm_test(-) \
+%{__pnpm} test
+
+## Run tests with Yarn
+%yarn_test(-) \
+%{__yarn} test
 
 ## NPM is very limited compared to other JavaScript package managers. This macro has MANY flags to work around this and will fail if no necessary ones are detected. Capital letter flags are for use with calling Electron Builder, Electron Forge, Electron Vite, or Tauri.
 ## Generally, -e and -r should be used. However, -B and -V can also be used if a project has a relatively simple build process.

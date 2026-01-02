@@ -131,6 +131,10 @@ fi                                                             \
 }                               \
 )
 
+## Run tests with NPM
+%npm_test(-)   \
+%{__npm} test
+
 ## Below require nodejs-license-checker as a build dep
 
 ## Make this a macro so it can be called on its own for any reason
@@ -167,7 +171,3 @@ for test in %{?_nodetests}; do                                     \
     } "%{_nodetestdir}$test"                                       \
    fi                                                              \
 done
-
-## Generic NPM tests
-%npm_test()   \
-%{__npm} test
