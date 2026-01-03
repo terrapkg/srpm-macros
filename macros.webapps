@@ -240,7 +240,14 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then
 %{__npm} install @reforged/maker-appimage --no-save --no-audit
 HOME=%{rpmbuilddir} %{__npm} exec electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then
-%tauri_build
+%{shrink:
+  %{__npm} run tauri build
+  %{__tauri_common_opts}
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}
+  --
+  %{__cargo_common_opts}
+  --profile rpm}
+fi
 fi}}
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
@@ -295,7 +302,12 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 %{__bun} install @reforged/maker-appimage --no-save --no-verify                                                                        \
 HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
-%tauri_build                                                                                                                           \
+%{shrink:                                                                                                                              \
+  %{__bun} tauri build                                                                                                                 \
+  %{__tauri_common_opts}                                                                                                               \
+  --                                                                                                                                   \
+  %{__cargo_common_opts}                                                                                                               \
+  --profile rpm}                                                                                                                       \
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
@@ -355,7 +367,12 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 %{__deno} install @reforged/maker-appimage --no-lock --no-verify                                                                     \
 HOME=%{rpmbuilddir} %{__dx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                     \
-%tauri_build                                                                                                                         \
+%{shrink:                                                                                                                            \
+  %{__deno} task tauri build                                                                                                         \
+  %{__tauri_common_opts}                                                                                                             \
+  --                                                                                                                                 \
+  %{__cargo_common_opts}                                                                                                             \
+  --profile rpm}                                                                                                                     \
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
@@ -406,7 +423,12 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 %{__pnpm} install @reforged/maker-appimage --no-lockfile                                                                               \
 HOME=%{rpmbuilddir} %{__pnpm} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
-%tauri_build                                                                                                                           \
+%{shrink:                                                                                                                              \
+  %{__pnpm} tauri build                                                                                                                \
+  %{__tauri_common_opts}                                                                                                               \
+  --                                                                                                                                   \
+  %{__cargo_common_opts}                                                                                                               \
+  --profile rpm}                                                                                                                       \
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
@@ -455,5 +477,10 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 %{__yarn} install @reforged/maker-appimage --no-lockfile                                                                               \
 HOME=%{rpmbuilddir} %{__yarn} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
-%tauri_build                                                                                                                           \
+%{shrink:                                                                                                                              \
+  %{__yarn} tauri build                                                                                                                \
+  %{__tauri_common_opts}                                                                                                               \
+  --                                                                                                                                   \
+  %{__cargo_common_opts}                                                                                                               \
+  --profile rpm}                                                                                                                       \
 fi
