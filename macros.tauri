@@ -38,11 +38,11 @@ fi
 ## Build opts for Tauri.
 ## The macro %%__tauri_bundles may be defined to choose if Tauri builds binaries (in some cases, AppImages may be useful for extracting .desktop files). Defaults to no bundles.
 %__tauri_common_opts %{shrink:
-  --verbose                                                         \
-  %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo}           \
-  %{!?__tauri_bundles:--no-bundle}                                  \
-  %{?__tauri_bundles:--bundles %{__tauri_bundles}}                  \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                              \
+  --verbose                                               \
+  %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo} \
+  %{!?__tauri_bundles:--no-bundle}                        \
+  %{?__tauri_bundles:--bundles %{__tauri_bundles}}        \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                    \
 }
 
 ## Build with Tauri.
