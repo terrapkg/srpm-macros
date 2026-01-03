@@ -56,8 +56,8 @@ fi
     %{?__tauri_ignore_version_mismatches:--ignore-version-mismatches} \
     --                                                                \
     %{__cargo_common_opts}                                            \
-    --profile rpm                                                     \
     %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}}                  \
+    --profile rpm                                                     \
     %*                                                                \
 }
 

@@ -246,6 +246,7 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then
   %{__cargo_parse_opts %{-f:-f%{-f*}}}
   --
   %{__cargo_common_opts}
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}
   --profile rpm}
 fi
 fi}}
@@ -307,6 +308,7 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                
   %{__tauri_common_opts}                                                                                                               \
   --                                                                                                                                   \
   %{__cargo_common_opts}                                                                                                               \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
   --profile rpm}                                                                                                                       \
 fi
 
@@ -372,6 +374,7 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                
   %{__tauri_common_opts}                                                                                                             \
   --                                                                                                                                 \
   %{__cargo_common_opts}                                                                                                             \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                               \
   --profile rpm}                                                                                                                     \
 fi
 
@@ -428,6 +431,7 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                
   %{__tauri_common_opts}                                                                                                               \
   --                                                                                                                                   \
   %{__cargo_common_opts}                                                                                                               \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
   --profile rpm}                                                                                                                       \
 fi
 
@@ -482,5 +486,6 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                
   %{__tauri_common_opts}                                                                                                               \
   --                                                                                                                                   \
   %{__cargo_common_opts}                                                                                                               \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
   --profile rpm}                                                                                                                       \
 fi
