@@ -38,25 +38,27 @@ fi
 ## Build opts for Tauri.
 ## The macro %%__tauri_bundles may be defined to choose if Tauri builds binaries (in some cases, AppImages may be useful for extracting .desktop files). Defaults to no bundles.
 %__tauri_common_opts %{shrink:
-  --verbose                                              \
-  %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo}\
-  %{!?__tauri_bundles:--no-bundle}                       \
-  %{?__tauri_bundles:--bundles %{__tauri_bundles}}       \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                   \
+  --verbose                                                         \
+  %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo}           \
+  %{!?__tauri_bundles:--no-bundle}                                  \
+  %{?__tauri_bundles:--bundles %{__tauri_bundles}}                  \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                              \
 }
 
 ## Build with Tauri.
 ## MAY be used instead of a JavaScript build macro for Tauri projects. Partial support for %%cargo_build's -n and -a flags when used outside of a JavaScript package manager build env. Tauri and Cargo are supposed to receive the same feature flags so use with caution.
+## The macro %%__tauri_ignore_version_mismatches MAY be defined to force system Tauri even in case of a mismatch, but not advised.
 ## -f is parsed twice because the same features should ideally be passed to both Tauri and Cargo.
 %tauri_build(naf:)\
-%{shrink:                                            \
-    %{__tauri} build                                 \
-    %{__tauri_common_opts}                           \
-    --                                               \
-    %{__cargo_common_opts}                           \
-    --profile rpm                                    \
-    %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}} \
-    %*                                               \
+%{shrink:                                                             \
+    %{__tauri} build                                                  \
+    %{__tauri_common_opts}                                            \
+    %{?__tauri_ignore_version_mismatches:--ignore-version-mismatches} \
+    --                                                                \
+    %{__cargo_common_opts}                                            \
+    --profile rpm                                                     \
+    %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}}                  \
+    %*                                                                \
 }
 
 ## Ported %%cargo_install to make it work for Tauri
