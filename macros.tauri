@@ -1,6 +1,51 @@
 ## See: %%{rust_arches} which are basically all the arches Fedora currently supports, at this moment this is falling back to raw %%_target_cpu
 #%%tauri_arches %%{x86_64} %%{ix86} %%{arm} %%{arm64} %%{riscv64} %%{mips} %%{power64} s390x sparc64 sparc64v
 
+## Build requirements for Tauri packages
+## Usage if not using Mock with %%generate_buildrequires:
+# BuildRequires: %{tauri_buildrequires}
+# BuildRequires: %{tauri_buildrequires -a}
+%tauri_buildrequires(a) %{shrink:\
+autoconf \
+automake \
+binutils \
+bison \
+byacc \
+cargo \
+cargo-rpm-macros \
+cscope \
+ctags \
+curl \
+desktop-file-utils \
+elfutils \
+gcc \
+gcc-c++ \
+glibc-devel \
+flex \
+indent \
+libappindicator-gtk3-devel \
+librsvg2-devel \
+libtool \
+libxdo-devel \
+ltrace \
+nodejs \
+%{-a:nodejs-devel} \
+nodejs-npm \
+%{-a:nodejs-packaging} \
+make \
+openssl-devel \
+perf \
+pkgconf \
+rust \
+rust-srpm-macros \
+strace \
+tauri \
+%{-a:typescript} \
+valgrind \
+webkit2gtk4.1-devel \
+wget}
+
+
 %__tauri /usr/bin/env %{npm_common_envvars} CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1} RUSTFLAGS='%{build_rustflags}' /usr/bin/tauri
 
 ## Preps a Tauri build.
@@ -15,7 +60,7 @@ cd "$OLDPWD"
 ## Pulls in BuildRequires that should cover most Tauri builds and checks for non-Cargo dependencies.
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
 %tauri_generate_buildrequires(a)\
-echo "autoconf automake binutils bison byacc cargo cargo-rpm-macros cscope ctags curl desktop-file-utils elfutils gcc gcc-c++ glibc-devel flex indent libappindicator-gtk3-devel librsvg2-devel libtool libxdo-devel ltrace nodejs%{-a: nodejs-devel} nodejs-npm%{-a: nodejs-packaging} make openssl-devel perf pkgconf rust rust-srpm-macros strace%{-a: typescript} tauri valgrind webkit2gtk4.1-devel wget" \
+%(echo '"%{tauri_buildrequires %{-a}}"' | sed 's/ /" ; echo "/g;s/^"autoconf/echo "autoconf/g') \
 if cat %{tauri_subdir}/Cargo.lock | grep "glib-sys" &>/dev/null; then \
   echo "glib2-devel" \
 fi \
