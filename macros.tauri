@@ -37,8 +37,10 @@ fi
 
 ## Build opts for Tauri.
 ## The macro %%__tauri_bundles may be defined to choose if Tauri builds binaries (in some cases, AppImages may be useful for extracting .desktop files). Defaults to no bundles.
+## --ci is passed so these opts are also compatible with Tauri JS without setting the JavaScript build env to CI entirely.
 %__tauri_common_opts %{shrink:
   --verbose                                               \
+  --ci                                                    \
   %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo} \
   %{!?__tauri_bundles:--no-bundle}                        \
   %{?__tauri_bundles:--bundles %{__tauri_bundles}}        \
