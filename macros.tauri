@@ -3,8 +3,8 @@
 
 ## Build requirements for Tauri packages
 ## Usage if not using Mock with %%generate_buildrequires:
-# BuildRequires: %{tauri_buildrequires}
-# BuildRequires: %{tauri_buildrequires -a}
+# BuildRequires: %%{tauri_buildrequires}
+# BuildRequires: %%{tauri_buildrequires -a}
 %tauri_buildrequires(a) %{shrink:\
 autoconf \
 automake \
