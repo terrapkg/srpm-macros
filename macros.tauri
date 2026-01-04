@@ -15,7 +15,7 @@ cd "$OLDPWD"
 ## Pulls in BuildRequires that should cover most Tauri builds and checks for non-Cargo dependencies.
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
 %tauri_generate_buildrequires(a)\
-echo "autoconf automake binutils bison byacc desktop-file-utils cargo cargo-rpm-macros cscope ctags curl elfutils gcc gcc-c++ glibc-devel flex indent libappindicator-gtk3-devel librsvg2-devel libtool libxdo-devel ltrace nodejs%{-a: nodejs-devel} nodejs-npm%{-a: nodejs-packaging} make openssl-devel perf pkgconf rust rust-srpm-macros strace%{-a: typescript} tauri valgrind webkit2gtk4.1-devel wget" \
+echo "autoconf automake binutils bison byacc cargo cargo-rpm-macros cscope ctags curl desktop-file-utils elfutils gcc gcc-c++ glibc-devel flex indent libappindicator-gtk3-devel librsvg2-devel libtool libxdo-devel ltrace nodejs%{-a: nodejs-devel} nodejs-npm%{-a: nodejs-packaging} make openssl-devel perf pkgconf rust rust-srpm-macros strace%{-a: typescript} tauri valgrind webkit2gtk4.1-devel wget" \
 if cat %{tauri_subdir}/Cargo.lock | grep "glib-sys" &>/dev/null; then \
   echo "glib2-devel" \
 fi \
@@ -83,10 +83,7 @@ if %{__cargo_is_lib} && [ %{cargo_install_lib} -eq 1 ] ; then       \
 fi                                                                  \
 if %{__cargo_is_bin %{-n} %{-a} %{-f:-f%{-f*}}} && [ %{cargo_install_bin} -eq 1 ] ; then \
   %{shrink:                                                         \
-    %{__install}                                                    \
-      -Dpm755                                                       \
-      ./target/rpm/$CRATE_NAME                                      \
-      -t %{buildroot}%{_bindir}                                     \
+    %{crate_install_bin}                                            \
       %*                                                            \
   }                                                                 \
 fi                                                                  \
