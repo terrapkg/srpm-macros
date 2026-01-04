@@ -61,12 +61,17 @@ cd "$OLDPWD"
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
 %tauri_generate_buildrequires(a)\
 %(echo '"%{tauri_buildrequires %{-a}}"' | sed 's/ /" ; echo "/g;s/^"autoconf/echo "autoconf/g') \
+\
 if cat %{tauri_subdir}/Cargo.lock | grep "glib-sys" &>/dev/null; then \
   echo "glib2-devel" \
 fi \
 \
 if cat %{tauri_subdir}/Cargo.lock | grep "gdk-sys" &>/dev/null; then \
   echo "gtk3-devel" \
+fi \
+\
+if cat %{tauri_subdir}/Cargo.lock | grep "gtk4-sys" &>/dev/null; then \
+  echo "gtk4-devel" \
 fi \
 \
 if cat %{tauri_subdir}/Cargo.lock | grep "javascriptcore-rs-sys" &>/dev/null; then \
