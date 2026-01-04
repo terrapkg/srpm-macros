@@ -241,9 +241,6 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then
 HOME=%{rpmbuilddir} %{__npm} exec electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then
 %{shrink:
-  CARGO_HOME=%{_cargo_home}
-  %{!?with_rust_nightly:RUSTC_BOOTSTRAP=1}
-  RUSTFLAGS='%{build_rustflags}'
   %{__npm} run tauri build
   --
   %{__tauri_common_opts}
@@ -307,9 +304,6 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
 %{shrink:                                                                                                                              \
-  CARGO_HOME=%{_cargo_home}                                                                                                            \
-  %{!?with_rust_nightly:RUSTC_BOOTSTRAP=1}                                                                                             \
-  RUSTFLAGS='%{build_rustflags}'                                                                                                       \
   %{__bun} tauri build                                                                                                                 \
   %{__tauri_common_opts}                                                                                                               \
   --                                                                                                                                   \
@@ -376,9 +370,6 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 HOME=%{rpmbuilddir} %{__dx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                     \
 %{shrink:                                                                                                                            \
-  CARGO_HOME=%{_cargo_home}                                                                                                          \
-  %{!?with_rust_nightly:RUSTC_BOOTSTRAP=1}                                                                                           \
-  RUSTFLAGS='%{build_rustflags}'                                                                                                     \
   %{__deno} task tauri build                                                                                                         \
   %{__tauri_common_opts}                                                                                                             \
   --                                                                                                                                 \
@@ -436,9 +427,6 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 HOME=%{rpmbuilddir} %{__pnpm} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
 %{shrink:                                                                                                                              \
-  CARGO_HOME=%{_cargo_home}                                                                                                            \
-  %{!?with_rust_nightly:RUSTC_BOOTSTRAP=1}                                                                                             \
-  RUSTFLAGS='%{build_rustflags}'                                                                                                       \
   %{__pnpm} tauri build                                                                                                                \
   %{__tauri_common_opts}                                                                                                               \
   --                                                                                                                                   \
@@ -494,9 +482,6 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 HOME=%{rpmbuilddir} %{__yarn} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
 %{shrink:                                                                                                                              \
-  CARGO_HOME=%{_cargo_home}                                                                                                            \
-  %{!?with_rust_nightly:RUSTC_BOOTSTRAP=1}                                                                                             \
-  RUSTFLAGS='%{build_rustflags}'                                                                                                       \
   %{__yarn} tauri build                                                                                                                \
   %{__tauri_common_opts}                                                                                                               \
   --                                                                                                                                   \

@@ -1,7 +1,7 @@
 ## See: %%{rust_arches} which are basically all the arches Fedora currently supports, at this moment this is falling back to raw %%_target_cpu
 #%%tauri_arches %%{x86_64} %%{ix86} %%{arm} %%{arm64} %%{riscv64} %%{mips} %%{power64} s390x sparc64 sparc64v
 
-%__tauri /usr/bin/env %{npm_common_envvars} CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1} RUSTFLAGS='%{build_rustflags}' CI=true /usr/bin/tauri
+%__tauri /usr/bin/env %{npm_common_envvars} CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1} RUSTFLAGS='%{build_rustflags}' /usr/bin/tauri
 
 ## Preps a Tauri build.
 ## Mostly a wrapper for %%cargo_prep_online that also sets the Tauri subdir but also changes directory to it before running %%cargo_prep_online as a test that the directory is correct.
