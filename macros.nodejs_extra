@@ -17,7 +17,7 @@
 ## Call NPM with our build env vars
 %__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{__nvm} exec npm --}%{!?with_vendored_nodejs:/usr/bin/npm}
 
-## Remotely execute a Node module from the NPM Registry with NPM
+## Remotely execute a Node module from the NPM Registry or JavaScript Registry with NPM
 ## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_buildflags set for consistent behavior.
 %__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{__nvm} exec npx --}%{!?with_vendored_nodejs:/usr/bin/npx}
 

@@ -65,7 +65,7 @@
 ## Call Yarn with our build env vars
 %__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
 
-## Remotely execute a Node module from the NPM Registry with Yarn
+## Remotely execute a Node module from the NPM Registry or JavaScript Registry with Yarn
 ## NOTE: Yarn DLX (Yarn's equivalent to NPX, PNPX, and Bunx) only exists in Yarn Berry!
 ## If you need to use this feature, make sure you use BuildRequires: yarnpkg-berry
 %__yarn_dlx %{__yarn} dlx
