@@ -53,7 +53,7 @@
 ## Call Deno with our build env vars
 %__deno /usr/bin/env %{deno_common_envvars} /usr/bin/deno
 
-## Remotely execute a Node module from the NPM Registry with Deno
+## Remotely execute a Node module from the NPM Registry or JavaScript Registry with Deno
 %__dx /usr/bin/env %{deno_common_envvars} /usr/bin/dx
 
 ## Call PNPM with our build env vars
@@ -80,7 +80,7 @@ curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
 
 ## Export Node module related build flags globally if necessary for any reason.
 ## Based on Fedora's %%set_build_flags and can be used the same way or in combination with it.
-## Also creates a variable that can be called for our NPM build flags, similar to how Fedora supplies buildflags in both variables and macros.
+## Also creates a variable that can be called for our NPM, Bun, and Yarn build/config flags, similar to how Fedora supplies buildflags in both variables and macros.
 %set_node_build_flags \
 NPM_CONFIG_USERCONFIG="%{rpmbuilddir}/.npmrc" ; export NPM_CONFIG_USERCONFIG ; \
 NPM_CONFIG_GLOBALCONFIG="%{rpmbuilddir}/npmrc" ; export NPM_CONFIG_GLOBALCONFIG ; \
@@ -101,8 +101,8 @@ DENO_JOBS="${RPM_BUILD_NCPUS}" ; export DENO_JOBS ; \
 PNPM_HOME="%{_pnpm_home}" ; export PNPM_HOME ; \
 YARN_CACHE_FOLDER="%{_yarn_cache_dir}" ; export YARN_CACHE_FOLDER ; \
 NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS ; \
-BUNFLAGS="${BUNFLAGS-%{bun_buildflags} }" ; export BUNFLAGS ; \
-YARNFLAGS="${YARNFLAGS-%{yarn_buildflags} }" ; export YARNFLAGS
+BUNFLAGS="${BUNFLAGS:-%{bun_buildflags} }" ; export BUNFLAGS ; \
+YARNFLAGS="${YARNFLAGS:-%{yarn_buildflags} }" ; export YARNFLAGS
 
 ## For use in check section
 ## ONLY use if package uses bundled Node dependencies.

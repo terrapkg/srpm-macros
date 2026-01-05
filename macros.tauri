@@ -39,7 +39,7 @@ pkgconf \
 rust \
 rust-srpm-macros \
 strace \
-tauri \
+%{-a:tauri} \
 %{-a:typescript} \
 valgrind \
 webkit2gtk4.1-devel \
