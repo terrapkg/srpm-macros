@@ -3,7 +3,7 @@
 # Effectively a copy of regular Cargo macros, but for Tauri
 
 ## Definition for "tauri" for genbr stage to determine BuildRequires
-%buildsystem_cargo_generate_buildrequires() %tauri_generate_buildrequires %{*}
+%buildsystem_tauri_generate_buildrequires() %tauri_generate_buildrequires %{*}
 
 ## Definition for "tauri" for conf stage, setting as empty due to non-use
 %buildsystem_tauri_conf() %{nil}
@@ -16,4 +16,4 @@
 %buildsystem_tauri_install() %tauri_install_crate %{*}
 
 ## Definition for "tauri" for check stage to run tests, setting as empty due to non-use
-%buildsystem_cargo_check() %{nil}
+%buildsystem_tauri_check() %{nil}
