@@ -5,7 +5,11 @@
 ## Usage if not using Mock with %%generate_buildrequires:
 # BuildRequires: %%{tauri_buildrequires}
 # BuildRequires: %%{tauri_buildrequires -a}
-%tauri_buildrequires(a) %{shrink:\
+# BuildRequires: %%{tauri_buildrequires -a}
+# BuildRequires: %%{tauri_buildrequires -at}
+# -a: "Additional." Additional build deps that may be needed specifically for when building with NPM.
+# -t: "Tauri." Pull Tauri itself.
+%tauri_buildrequires(at) %{shrink:\
 autoconf \
 automake \
 binutils \
@@ -39,7 +43,7 @@ pkgconf \
 rust \
 rust-srpm-macros \
 strace \
-%{-a:tauri} \
+%{-t:tauri} \
 %{-a:typescript} \
 valgrind \
 webkit2gtk4.1-devel \
@@ -58,8 +62,8 @@ cd "$OLDPWD"
 
 ## Pulls in BuildRequires that should cover most Tauri builds and checks for non-Cargo dependencies.
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
-%tauri_generate_buildrequires(a)\
-%(echo '"%{tauri_buildrequires %{-a}}"' | sed 's/ /" ; echo "/g;s/^"autoconf/echo "autoconf/g') \
+%tauri_generate_buildrequires(at)\
+%(echo '"%{tauri_buildrequires %{-a} %{-t}}"' | sed 's/ /" ; echo "/g;s/^"autoconf/echo "autoconf/g') \
 \
 if cat %{tauri_subdir}/Cargo.lock | grep "glib-sys" &>/dev/null; then \
   echo "glib2-devel" \
