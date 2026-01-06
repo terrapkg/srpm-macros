@@ -82,24 +82,24 @@ curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
 ## Based on Fedora's %%set_build_flags and can be used the same way or in combination with it.
 ## Also creates a variable that can be called for our NPM, Bun, and Yarn build/config flags, similar to how Fedora supplies buildflags in both variables and macros.
 %set_node_build_flags \
-NPM_CONFIG_USERCONFIG="%{rpmbuilddir}/.npmrc" ; export NPM_CONFIG_USERCONFIG ; \
-NPM_CONFIG_GLOBALCONFIG="%{rpmbuilddir}/npmrc" ; export NPM_CONFIG_GLOBALCONFIG ; \
-NPM_CONFIG_CACHE="%{_npm_cache_dir}" ; export NPM_CONFIG_CACHE ; \
-NPM_CONFIG_LOGLEVEL="error" ; export NPM_CONFIG_LOGLEVEL ; \
-NPM_CONFIG_FUND="false" ; export NPM_CONFIG_FUND ; \
-NPM_CONFIG_UPDATE_NOTIFIER="false" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \
-NO_UPDATE_NOTIFIER="1" ; export NO_UPDATE_NOTIFIER ; \
-NPM_CONFIG_COLOR="always" ; export NPM_CONFIG_COLOR ; \
-NPM_CONFIG_INIT_MODULE="%{rpmbuilddir}/.npm-init.js" ; export NPM_CONFIG_INIT_MODULE ; \
-BUN_HOME="%{_bun_home}" ; export BUN_HOME ; \
-BUN_INSTALL_CACHE_DIR="%{_bun_cache_dir}" ; export BUN_INSTALL_CACHE_DIR \
-BUN_RUNTIME_TRANSPILER_CACHE_PATH="%{_bun_cache_dir}" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
-DENO_DIR="%{_deno_dir}" ; export DENO_DIR ; \
-DENO_INSTALL_ROOT="%{_deno_install_root}" ; export DENO_INSTALL_ROOT ; \
-DENO_NO_UPDATE_CHECK="1" ; export DENO_NO_UPDATE_CHECK ; \
-DENO_JOBS="${RPM_BUILD_NCPUS}" ; export DENO_JOBS ; \
-PNPM_HOME="%{_pnpm_home}" ; export PNPM_HOME ; \
-YARN_CACHE_FOLDER="%{_yarn_cache_dir}" ; export YARN_CACHE_FOLDER ; \
+NPM_CONFIG_USERCONFIG="${NPM_CONFIG_USERCONFIG:-%{rpmbuilddir}/.npmrc}" ; export NPM_CONFIG_USERCONFIG ; \
+NPM_CONFIG_GLOBALCONFIG="${NPM_CONFIG_GLOBALCONFIG:-%{rpmbuilddir}/npmrc}" ; export NPM_CONFIG_GLOBALCONFIG ; \
+NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-%{_npm_cache_dir}}" ; export NPM_CONFIG_CACHE ; \
+NPM_CONFIG_LOGLEVEL="${NPM_CONFIG_LOGLEVEL:-error}" ; export NPM_CONFIG_LOGLEVEL ; \
+NPM_CONFIG_FUND="${NPM_CONFIG_FUND:-false}" ; export NPM_CONFIG_FUND ; \
+NPM_CONFIG_UPDATE_NOTIFIER="${NPM_CONFIG_UPDATE_NOTIFIER:-false}" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \
+NO_UPDATE_NOTIFIER="${NO_UPDATE_NOTIFIER:-1}" ; export NO_UPDATE_NOTIFIER ; \
+NPM_CONFIG_COLOR="${NPM_CONFIG_COLOR:-always}" ; export NPM_CONFIG_COLOR ; \
+NPM_CONFIG_INIT_MODULE="${NPM_CONFIG_INIT_MODULE:-%{rpmbuilddir}/.npm-init.js}" ; export NPM_CONFIG_INIT_MODULE ; \
+BUN_HOME="${BUN_HOME:-%{_bun_home}}" ; export BUN_HOME ; \
+BUN_INSTALL_CACHE_DIR="${BUN_INSTALL_CACHE_DIR:-%{_bun_cache_dir}}" ; export BUN_INSTALL_CACHE_DIR \
+BUN_RUNTIME_TRANSPILER_CACHE_PATH="${BUN_RUNTIME_TRANSPILER_CACHE_PATH:-%{_bun_cache_dir}}" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
+DENO_DIR="${DENO_DIR:-%{_deno_dir}}" ; export DENO_DIR ; \
+DENO_INSTALL_ROOT="${DENO_INSTALL_ROOT:-%{_deno_install_root}}" ; export DENO_INSTALL_ROOT ; \
+DENO_NO_UPDATE_CHECK="${DENO_NO_UPDATE_CHECK:-1}" ; export DENO_NO_UPDATE_CHECK ; \
+DENO_JOBS="${DENO_JOBS:-${RPM_BUILD_NCPUS}}" ; export DENO_JOBS ; \
+PNPM_HOME="${PNPM_HOME:-%{_pnpm_home}}" ; export PNPM_HOME ; \
+YARN_CACHE_FOLDER="${YARN_CACHE_FOLDER:-%{_yarn_cache_dir}}" ; export YARN_CACHE_FOLDER ; \
 NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS ; \
 BUNFLAGS="${BUNFLAGS:-%{bun_buildflags} }" ; export BUNFLAGS ; \
 YARNFLAGS="${YARNFLAGS:-%{yarn_buildflags} }" ; export YARNFLAGS
