@@ -66,7 +66,7 @@
 %__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
 
 ## Remotely execute a Node module from the NPM Registry or JavaScript Registry with Yarn
-## NOTE: Yarn DLX (Yarn's equivalent to NPX, PNPX, and Bunx) only exists in Yarn Berry!
+## NOTE: Yarn DLX (Yarn's equivalent to NPX, PNPX, Bunx, and DX/Deno X) only exists in Yarn Berry!
 ## If you need to use this feature, make sure you use BuildRequires: yarnpkg-berry
 %__yarn_dlx %{__yarn} dlx
 
@@ -164,7 +164,7 @@ end}
 
 ## Approve dependency scripts with PNPM if needed.
 # -g: Direct duplicate of "-g" (global).
-%pnpm_approve_builds(g) %{__pnpm} approve-builds %{-g:-g}
+%pnpm_approve_builds(g) %{__pnpm} approve-builds %{-g}
 
 ## Run tests with Bun
 %bun_test(-) \
