@@ -203,3 +203,108 @@
 %_pkgconfigdir %{_libdir}/pkgconfig
 
 %_gnomeextensionsdir %{_datadir}/gnome-shell/extensions%{?uuid:/%{uuid}}
+
+%__desktop_file_install /usr/bin/desktop-file-install
+
+%__desktop_file_edit /usr/bin/desktop-file-edit
+
+%__desktop_file_validate /usr/bin/desktop-file-validate
+
+%__update_desktop_database /usr/bin/update-desktop-database
+
+# %%desktop_file_install -k Exec -v /usr/bin/pkg -f path/to/file.desktop
+# %%desktop_file_install -k Exec -v /usr/bin/pkg -u %U path/to/file.desktop
+%desktop_file_install(f:k:v:u:) %{lua:
+if (opt.k and not opt.v) or (opt.v and not opt.k) then
+  error("Keys set with -k must have a corresponding value set with -v!")
+elseif opt.k then
+  dfi = macros["__desktop_file_install"]
+  file = macros["-f*"] or arg[1]
+
+  if macros["-k*"]:find(",") then
+    if not macros["-v*"]:find(",") then
+      error("Every call to -k must have a corresponding call to -v!")
+    end
+    function split(arguments, split_pattern)
+      local arg_list = {}
+      local pattern = '([^'..split_pattern..']+)'
+      string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+      return arg_list
+    end
+
+    key = split(macros["-k*"], ",")
+    value = split(macros["-v*"], ",")
+    keys = #key
+    values = #value
+
+    print(dfi)
+    for i = 1, keys do
+      if key[i] == "Exec" and macros["-u*"] then
+        print(" --set-key=\\"" .. key[i] .. " " .. macros["-u*"] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
+      else
+        print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
+      end
+    end
+    print(" " .. file .. "\\n")
+  elseif not macros["-k*"]:find(",") then
+    if macros["-v*"]:find(",") then
+      error("Too many arguments to -v when only one was found for -k!")
+    end
+    print(dfi .. rpm.expand(" --set-key=\\"%{-k*}%{?-u*: %{-u*}}\\" --set-value=\\"%{-v*}\\" " .. file .. "\\n"))
+  end
+end}
+
+# %%desktop_file_edit -k Exec -v /usr/bin/pkg -f path/to/file.desktop
+# %%desktop_file_edit -k Exec -v /usr/bin/pkg -u %U path/to/file.desktop
+%desktop_file_edit(f:k:v:u:) %{lua:
+if (opt.k and not opt.v) or (opt.v and not opt.k) then
+  error("Keys set with -k must have a corresponding value set with -v!")
+elseif opt.k then
+  dfe = macros["__desktop_file_edit"]
+  file = macros["-f*"] or arg[1]
+
+  if macros["-k*"]:find(",") then
+    if not macros["-v*"]:find(",") then
+      error("Every call to -k must have a corresponding call to -v!")
+    end
+    function split(arguments, split_pattern)
+      local arg_list = {}
+      local pattern = '([^'..split_pattern..']+)'
+      string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+      return arg_list
+    end
+
+    key = split(macros["-k*"], ",")
+    value = split(macros["-v*"], ",")
+    keys = #key
+    values = #value
+
+    print(dfe)
+    for i = 1, keys do
+      if key[i] == "Exec" and macros["-u*"] then
+        print(" --set-key=\\"" .. key[i] .. " " .. macros["-u*"] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
+      else
+        print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
+      end
+    end
+    print(" " .. file .. "\\n")
+  elseif not macros["-k*"]:find(",") then
+    if macros["-v*"]:find(",") then
+      error("Too many arguments to -v when only one was found for -k!")
+    end
+    print(dfe .. rpm.expand(" --set-key=\\"%{-k*}%{?-u*: %{-u*}}\\" --set-value=\\"%{-v*}\\" " .. file .. "\\n"))
+  end
+end}
+
+# Accepts -f or $#, either works
+%desktop_file_validate(f:) %{lua:
+if opt.f then
+  print(macros["__desktop_file_validate"] .. " " .. macros["-f*"] .. "\\n")
+else
+  for i, file in ipairs(arg) do
+    print(macros["__desktop_file_validate"] .. " " .. file .. "\\n")
+  end
+end}
+
+# A post/postun script, probably not needed but in case some cursed package needs it...
+%update_desktop_database() %{__update_desktop_database} --quiet || :
