@@ -111,8 +111,8 @@ ExclusiveArch: %{electron_arches}
 # -l: "Licenses." Use this if you want to collect all extra licenses into a directory called bundled_licenses automatically to package them via RPM. DOES NOT include build dep licenses. If using this macro you should add "%%license bundled_licenses/*" to the files section.
 # -s: "Symlink." Name of the symlink to the executable.
 # -S: Additional symlink to the binary. ONLY do this if a program has two common names, i.e, Heroic being called both "heroic" and "heroic-games-launcher"
-%electron_install(b:d:DE:Fi:I::lO::s:S:U:) %{expand:
-%{-i:%{!?-I:%{error:Icon name provided but -I was not passed.}}}}  \
+%electron_install(b:d:DE:Fi:I::lO::s:S:U:) %{-i:%{!?-I:%{expand:
+%{error:Icon name provided but -I was not passed.}}}}              \
 if cat package.json | grep electron-builder &>/dev/null; then      \
   WEBAPP_BUILD_TOOL="electron-builder"                             \
   APPOUTDIR="./dist"                                               \
