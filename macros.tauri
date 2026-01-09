@@ -101,10 +101,10 @@ fi
 }
 
 ## Build with Tauri.
-## MAY be used instead of a JavaScript build macro for Tauri projects. Partial support for %%cargo_build's -n and -a flags when used outside of a JavaScript package manager build env. Tauri and Cargo are supposed to receive the same feature flags so use with caution.
+## MAY be used instead of a JavaScript build macro for Tauri projects.
 ## The macro %%__tauri_ignore_version_mismatches MAY be defined to force system Tauri even in case of a mismatch, but not advised.
 ## -f is parsed twice because the same features should ideally be passed to both Tauri and Cargo.
-%tauri_build(naf:)\
+%tauri_build(f:)\
 %set_node_build_flags                                                 \
 %{shrink:                                                             \
     %{__tauri} build                                                  \
@@ -113,14 +113,14 @@ fi
     %{?__tauri_ignore_version_mismatches:--ignore-version-mismatches} \
     --                                                                \
     %{__cargo_common_opts}                                            \
-    %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}}                  \
+    %{__cargo_parse_opts %{-f:-f%{-f*}}}                              \
     --profile rpm                                                     \
     %*                                                                \
 }
 
 ## Ported %%cargo_install to make it work for Tauri
 ## MAY be used for Fedora style Rust Crate packaging with the build files
-%tauri_install(t:naf:)\
+%tauri_install(t:f:)\
 (\
 set -euo pipefail                                                   \
 cd %{tauri_subdir}                                                  \
@@ -136,7 +136,7 @@ if %{__cargo_is_lib} && [ %{cargo_install_lib} -eq 1 ] ; then       \
   %{__rm} -f $REG_DIR/Cargo.toml.deps                               \
   echo '{"files":{},"package":""}' > $REG_DIR/.cargo-checksum.json  \
 fi                                                                  \
-if %{__cargo_is_bin %{-n} %{-a} %{-f:-f%{-f*}}} && [ %{cargo_install_bin} -eq 1 ] ; then \
+if %{__cargo_is_bin %{-f:-f%{-f*}}} && [ %{cargo_install_bin} -eq 1 ] ; then \
   %{shrink:                                                         \
     %{crate_install_bin}                                            \
       %*                                                            \
@@ -213,9 +213,9 @@ set -euo pipefail\
 
 ## Wrapper around %%tauri_build that also handles licenses
 ## Port of %%cargo_build_crate, does not check if the Crate is a binary because Tauri ALWAYS makes binaries
-%tauri_build_crate(naf:)\
-%tauri_build %{-n} %{-a} %{-f:-f%{-f*}}\
+%tauri_build_crate(f:)\
+%tauri_build %{-f:-f%{-f*}}\
 if [ %{cargo_install_bin} -eq 1 ] ; then\
-    %{tauri_cargo_license_summary %{-n} %{-a} %{-f:-f%{-f*}}}\
-    %{tauri_cargo_license %{-n} %{-a} %{-f:-f%{-f*}}} > LICENSE.dependencies\
+    %{tauri_cargo_license_summary %{-f:-f%{-f*}}}\
+    %{tauri_cargo_license %{-f:-f%{-f*}}} > LICENSE.dependencies\
 fi
