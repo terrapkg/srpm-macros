@@ -459,6 +459,7 @@ fi                                                                              
       print(" " .. cmd)
     end
     print("\\n")
+  end
   if opt.r then
     function split(arguments, split_pattern)
       local arg_list = {}
