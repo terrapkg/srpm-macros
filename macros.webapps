@@ -303,7 +303,7 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
 %{shrink:                                                                                                                              \
-  %{__bun} tauri build                                                                                                                 \
+  %{__bunx} tauri build                                                                                                                \
   %{__tauri_common_opts}                                                                                                               \
   %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
   --                                                                                                                                   \
@@ -370,7 +370,7 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                       
 HOME=%{rpmbuilddir} %{__dx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                     \
 %{shrink:                                                                                                                            \
-  %{__deno} task tauri build                                                                                                         \
+  %{__dx} tauri build                                                                                                                \
   %{__tauri_common_opts}                                                                                                             \
   %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                               \
   --                                                                                                                                 \
