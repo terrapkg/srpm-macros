@@ -217,10 +217,12 @@
 %desktop_file_install(f:k:v:u:) %{lua:
 if (opt.k and not opt.v) or (opt.v and not opt.k) then
   error("Keys set with -k must have a corresponding value set with -v!")
-elseif opt.k then
-  dfi = macros["__desktop_file_install"]
-  file = macros["-f*"] or arg[1]
+end
 
+local dfi = macros["__desktop_file_install"]
+local file = macros["-f*"] or arg[1]
+
+if opt.k then
   if macros["-k*"]:find(",") then
     if not macros["-v*"]:find(",") then
       error("Every call to -k must have a corresponding call to -v!")
@@ -232,10 +234,10 @@ elseif opt.k then
       return arg_list
     end
 
-    key = split(macros["-k*"], ",")
-    value = split(macros["-v*"], ",")
-    keys = #key
-    values = #value
+    local key = split(macros["-k*"], ",")
+    local value = split(macros["-v*"], ",")
+    local keys = #key
+    local values = #value
 
     print(dfi)
     for i = 1, keys do
@@ -252,6 +254,8 @@ elseif opt.k then
     end
     print(dfi .. rpm.expand(" --set-key=\\"%{-k*}%{?-u*: %{-u*}}\\" --set-value=\\"%{-v*}\\" " .. file .. "\\n"))
   end
+else
+  print(dfi .. " " .. file .. "\\n")
 end}
 
 # %%desktop_file_edit -k Exec -v /usr/bin/pkg -f path/to/file.desktop
@@ -259,9 +263,11 @@ end}
 %desktop_file_edit(f:k:v:u:) %{lua:
 if (opt.k and not opt.v) or (opt.v and not opt.k) then
   error("Keys set with -k must have a corresponding value set with -v!")
-elseif opt.k then
-  dfe = macros["__desktop_file_edit"]
-  file = macros["-f*"] or arg[1]
+elseif not opt.k or not opt.v then
+  error("No arguments to edit desktop file were passed!")
+else
+  local dfe = macros["__desktop_file_edit"]
+  local file = macros["-f*"] or arg[1]
 
   if macros["-k*"]:find(",") then
     if not macros["-v*"]:find(",") then
@@ -274,10 +280,10 @@ elseif opt.k then
       return arg_list
     end
 
-    key = split(macros["-k*"], ",")
-    value = split(macros["-v*"], ",")
-    keys = #key
-    values = #value
+    local key = split(macros["-k*"], ",")
+    local value = split(macros["-v*"], ",")
+    local keys = #key
+    local values = #value
 
     print(dfe)
     for i = 1, keys do
