@@ -98,7 +98,6 @@ fi
   %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo} \
   %{!?__tauri_bundles:--no-bundle}                        \
   %{?__tauri_bundles:--bundles %{__tauri_bundles}}        \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                    \
 }
 
 ## Build with Tauri.
@@ -110,6 +109,7 @@ fi
 %{shrink:                                                             \
     %{__tauri} build                                                  \
     %{__tauri_common_opts}                                            \
+    %{__cargo_parse_opts %{-f:-f%{-f*}}}                              \
     %{?__tauri_ignore_version_mismatches:--ignore-version-mismatches} \
     --                                                                \
     %{__cargo_common_opts}                                            \
