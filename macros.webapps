@@ -114,7 +114,7 @@ YARNFLAGS="${YARNFLAGS:-%{build_yarnflags} }" ; export YARNFLAGS
 ## For use in check section
 ## ONLY use if package uses bundled Node dependencies.
 ## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%deno_audit NPM_CONFIG_AUDIT_LEVEL=low %{__deno} audit --level=low --ignore-unfixable --socket
+%deno_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__deno} audit --level=low --ignore-unfixable --socket
 
 ## For use in check section
 ## ONLY use if package uses bundled Node dependencies.
