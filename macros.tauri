@@ -124,8 +124,8 @@ fi
 (\
 set -euo pipefail                                                   \
 cd %{tauri_subdir}                                                  \
-CRATE_NAME=$(%{__cargo_to_rpm} --path Cargo.toml name)              \
 if %{__cargo_is_lib} && [ %{cargo_install_lib} -eq 1 ] ; then       \
+  CRATE_NAME=$(%{__cargo_to_rpm} --path Cargo.toml name)            \
   CRATE_VERSION=$(%{__cargo_to_rpm} --path Cargo.toml version)      \
   REG_DIR=%{buildroot}%{cargo_registry}/$CRATE_NAME-$CRATE_VERSION  \
   %{__mkdir} -p $REG_DIR                                            \
