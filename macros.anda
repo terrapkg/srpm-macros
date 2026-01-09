@@ -218,6 +218,9 @@
 if (opt.k and not opt.v) or (opt.v and not opt.k) then
   error("Keys set with -k must have a corresponding value set with -v!")
 end
+if not opt.f and not arg[1] then
+  error("No desktop file passed to macro!")
+end
 
 local dfi = macros["__desktop_file_install"]
 local file = macros["-f*"] or arg[1]
@@ -265,6 +268,8 @@ if (opt.k and not opt.v) or (opt.v and not opt.k) then
   error("Keys set with -k must have a corresponding value set with -v!")
 elseif not opt.k or not opt.v then
   error("No arguments to edit desktop file were passed!")
+elseif not opt.f and not arg[1] then
+  error("No desktop file passed to macro!")
 else
   local dfe = macros["__desktop_file_edit"]
   local file = macros["-f*"] or arg[1]
@@ -304,7 +309,9 @@ end}
 
 # Accepts -f or $@, either works
 %desktop_file_validate(f:) %{lua:
-if opt.f then
+if not opt.f and not arg[1] then
+  error("No desktop file passed to macro!")
+elseif opt.f then
   print(macros["__desktop_file_validate"] .. " " .. macros["-f*"] .. "\\n")
 else
   for i, file in ipairs(arg) do
