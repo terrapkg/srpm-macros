@@ -296,7 +296,7 @@ elseif opt.k then
   end
 end}
 
-# Accepts -f or $#, either works
+# Accepts -f or $@, either works
 %desktop_file_validate(f:) %{lua:
 if opt.f then
   print(macros["__desktop_file_validate"] .. " " .. macros["-f*"] .. "\\n")
