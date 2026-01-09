@@ -5,7 +5,7 @@
 ## Usage if not using Mock with %%generate_buildrequires:
 # BuildRequires: %%{tauri_buildrequires}
 # BuildRequires: %%{tauri_buildrequires -a}
-# BuildRequires: %%{tauri_buildrequires -a}
+# BuildRequires: %%{tauri_buildrequires -t}
 # BuildRequires: %%{tauri_buildrequires -at}
 # -a: "Additional." Additional build deps that may be needed specifically for when building with NPM.
 # -t: "Tauri." Pull Tauri itself.
@@ -62,6 +62,7 @@ cd "$OLDPWD"
 
 ## Pulls in BuildRequires that should cover most Tauri builds and checks for non-Cargo dependencies.
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
+# -t: "Tauri." Pull Tauri itself.
 %tauri_generate_buildrequires(at)\
 %(echo '"%{tauri_buildrequires %{-a} %{-t}}"' | sed 's/ /" ; echo "/g;s/^"autoconf/echo "autoconf/g') \
 \

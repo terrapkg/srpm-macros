@@ -243,7 +243,6 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then
   %{__npm} run tauri build
   --
   %{__tauri_common_opts}
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}
   --
   %{__cargo_common_opts}
   %{__cargo_parse_opts %{-f:-f%{-f*}}}
