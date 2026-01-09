@@ -170,8 +170,8 @@ fi                                                                 \
 
     if macros["-I*"]:find(',') then
       if macros["-I*"]:find('.png') then
-      icons = split(macros["-I*"], ",")
-      sizes = {"16", "32", "48", "64", "128", "256", "512", "1024"}
+      local icons = split(macros["-I*"], ",")
+      local sizes = {"16", "32", "48", "64", "128", "256", "512", "1024"}
       for i, icon in ipairs(icons) do
         for i, size in ipairs(sizes) do
           if icon:find(size) then

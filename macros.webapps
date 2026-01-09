@@ -290,7 +290,7 @@ fi                                                                              
       return arg_list
     end
 
-    scripts = split(macros["-r*"], ",")
+    local scripts = split(macros["-r*"], ",")
     for i, script in ipairs(scripts) do
       print(macros["__bun"] .. " run " .. script .. "\\n")
     end
@@ -350,13 +350,13 @@ fi                                                                              
   end
 
     if opt.r then
-      files = split(macros["-r*"], ",")
+      local files = split(macros["-r*"], ",")
       for i, file in ipairs(files) do
         print(macros["__deno"] .. " run " .. file .. "\\n")
       end
     end
     if opt.t then
-      scripts = split(macros["-t*"], ",")
+      local scripts = split(macros["-t*"], ",")
       for i, script in ipairs(scripts) do
         print(macros["__deno"] .. " task " .. script .. "\\n")
       end
@@ -413,7 +413,7 @@ fi                                                                              
       return arg_list
     end
 
-    scripts = split(macros["-r*"], ",")
+    local scripts = split(macros["-r*"], ",")
     for i, script in ipairs(scripts) do
       print(macros["__pnpm"] .. " run " .. script .. "\\n")
     end
@@ -468,7 +468,7 @@ fi                                                                              
       return arg_list
     end
 
-    scripts = split(macros["-r*"], ",")
+    local scripts = split(macros["-r*"], ",")
     for i, script in ipairs(scripts) do
       print(macros["__yarn"] .. " run " .. script .. "\\n")
     end
