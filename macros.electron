@@ -182,25 +182,26 @@ fi                                                                 \
         end
       end
       end
-      rpm.define("__electron_icon_install %{expand:%{?install_icon_8} \\
-%{?install_icon_16} \\
-%{?install_icon_20} \\
-%{?install_icon_24} \\
-%{?install_icon_32} \\
-%{?install_icon_36} \\
-%{?install_icon_40} \\
-%{?install_icon_44} \\
-%{?install_icon_48} \\
-%{?install_icon_64} \\
-%{?install_icon_72} \\
-%{?install_icon_96} \\
-%{?install_icon_128} \\
-%{?install_icon_150} \\
-%{?install_icon_192} \\
-%{?install_icon_256} \\
-%{?install_icon_310} \\
-%{?install_icon_512} \\
-%{?install_icon_1024}}")
+      rpm.define("__electron_icon_install %{?install_icon_8:%{expand:\\
+%{install_icon_8}}} %{?install_icon_16:%{expand:\\
+%{install_icon_16}}} %{?install_icon_20:%{expand:\\
+%{install_icon_20}}} %{?install_icon_24:%{expand:\\
+%{install_icon_24}}} %{?install_icon_32:%{expand:\\
+%{install_icon_32}}} %{?install_icon_36:%{expand:\\
+%{install_icon_36}}} %{?install_icon_40:%{expand:\\
+%{install_icon_40}}} %{?install_icon_44:%{expand:\\
+%{install_icon_44}}} %{?install_icon_48:%{expand:\\
+%{install_icon_48}}} %{?install_icon_64:%{expand:\\
+%{install_icon_64}}} %{?install_icon_72:%{expand:\\
+%{install_icon_72}}} %{?install_icon_96:%{expand:\\
+%{install_icon_96}}} %{?install_icon_128:%{expand:\\
+%{install_icon_128}}} %{?install_icon_150:%{expand:\\
+%{install_icon_150}}} %{?install_icon_192:%{expand:\\
+%{install_icon_192}}} %{?install_icon_256:%{expand:\\
+%{install_icon_256}}} %{?install_icon_310:%{expand:\\
+%{install_icon_310}}} %{?install_icon_512:%{expand:\\
+%{install_icon_512}}} %{?install_icon_1024:%{expand:\\
+%{install_icon_1024}}}")
     elseif macros["-I*"]:find('.svg') then
       rpm.define("__electron_icon_install %{__install} -Dm644 %{-I*} %{buildroot}%{_scalableiconsdir}/%{-i:%{-i*}}%{!?-i:%{name}}.svg")
     end
@@ -208,8 +209,7 @@ fi                                                                 \
 %{-l:%{expand:BUNDLED_LICENSE_DIR="$PWD/bundled_licenses"
 %{__mkdir} -p "$BUNDLED_LICENSE_DIR"
 find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +}} %{-I:%{expand:
-if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then
-%{?__electron_icon_install:%{__electron_icon_install}} %{!?__electron_icon_install:%{expand:
+if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then %{?__electron_icon_install:%{__electron_icon_install}} %{!?__electron_icon_install:%{expand:
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
 for icon in %{!?-I*:dist/.icon-set}%{-I*:%{-I*}}/*${size}.png; do
 if file $icon | grep "$size x $size" &>/dev/null; then
@@ -217,8 +217,7 @@ if file $icon | grep "$size x $size" &>/dev/null; then
 fi
 done
 done}}
-elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then
-%{?__electron_icon_install:%{__electron_icon_install}} %{!?__electron_icon_install:%{expand:
+elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then %{?__electron_icon_install:%{__electron_icon_install}} %{!?__electron_icon_install:%{expand:
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
 for icon in %{!?-I*:assets}%{-I*:%{-I*}}/*icon.png; do
 if file $icon | grep "$size x $size" &>/dev/null; then
