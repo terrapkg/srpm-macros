@@ -158,7 +158,7 @@ fi                                                                 \
        macros["desktop_file_args"] = table.concat(arg, " --")
      end
    end
-     print("/usr/bin/desktop-file-install --set-key=Exec --set-value=\\"" .. installdir .. "/" .. bin .. rpm.expand("%{-E: --enable=features=%{-E*}}%{-O:%{!?-O*: --ozone-platform-hint=auto}}%{-O:%{-O*: --ozone-platform=%{-O*}}}%{?desktop_file_args: --%{desktop_file_args}}%{-U: %{-U*}}\\" squashfs-root/*.desktop"))
+     print(rpm.expand("%{__desktop_file_install} --set-key=Exec --set-value=\\"") .. installdir .. "/" .. bin .. rpm.expand("%{-E: --enable=features=%{-E*}}%{-O:%{!?-O*: --ozone-platform-hint=auto}}%{-O:%{-O*: --ozone-platform=%{-O*}}}%{?desktop_file_args: --%{desktop_file_args}}%{-U: %{-U*}}\\" squashfs-root/*.desktop"))
    end
    if rpm.isdefined("-I*") then
     function split(arguments, split_pattern)
