@@ -203,7 +203,7 @@ done}}
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then
 %{?__electron_icon_install:%{__electron_icon_install}} %{!?__electron_icon_install:%{expand:
 for size in 16 32 48 64 128 256 512 1024; do
-if file %{!?-I*:assets}%{-I*:%{-I*}}/*icon.png | grep $size &>/dev/null; then
+if %{__file} %{!?-I*:assets}%{-I*:%{-I*}}/*icon.png | grep "$size x $size" &>/dev/null; then
 %{__install} -Dm644 %{!?-I*:assets}%{-I*:%{-I*}}/*icon.png %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png}}
 fi
 done
