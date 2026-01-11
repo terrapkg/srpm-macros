@@ -234,7 +234,7 @@ done}")
       rpm.define("__electron_icon_install %{expand:\\
 %{__install} -Dm644 %{-I*} %{buildroot}%{_scalableiconsdir}/%{-i:%{-i*}}%{!?-i:%{name}}.svg}")
     end
-  end}                                                              \
+  end}                                                             \
 %{-l:%{expand:BUNDLED_LICENSE_DIR="$PWD/bundled_licenses"
 %{__mkdir} -p "$BUNDLED_LICENSE_DIR"
 find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +}} %{-I:%{expand:
