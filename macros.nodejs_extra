@@ -164,10 +164,10 @@ for test in %{?_nodetests}; do                                     \
   if [[ "$test" == /* ]]; then                                     \
     %{shrink:                                                      \
     NODE_ENV=test                                                  \
-    "$BUILDINSTALLDIR/bin/%{npm_name}$_js"                         \
+    $BUILDINSTALLDIR/bin/%{npm_name}$_js                           \
     %{-R}                                                          \
     %{-v}                                                          \
-    "%{_nodetestdir}$test"                                         \
+    %{_nodetestdir}$test                                           \
     %*}                                                            \
   fi                                                               \
 done
