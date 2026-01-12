@@ -133,7 +133,7 @@ fi                                                             \
 )
 
 ## Run tests with NPM
-%npm_test(-)   \
+%npm_test(-) \
 %{__npm} test
 
 ## Below require nodejs-license-checker as a build dep
