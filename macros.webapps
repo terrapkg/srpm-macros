@@ -188,7 +188,7 @@ end}
 # -B: "Builder." Directly execute Electron Builder, Electron Forge, or Tauri. Will NOT work in projects that need build commands executed via Node.js instead of NPM.
 # -c: "CI/clean install." Boolean to use npm ci instead of npm install. Needed for some projects with stricter build dependencies.
 # -C: "Config." Direct Electron Builder to the config file. May be necessary with NPM.
-# -e: "Exec." Execute commands though NPM directly. Note that some commands longer than one word MUST have -- follow the first word to be passed to the command, especially if they are passing arguments to a Node module.
+# -e: "Exec." Execute commands though NPM directly. Note that some commands longer than one word MUST have -- follow the first word to be passed to the command, especially if they are passing arguments to a Node module. You can use standard shell command separators, "&&" and ";", to separate commands.
 # -f: "Features." TAURI ONLY. Features to enable in Tauri/Cargo.
 # -M: "Mode." Mode to use in Electron Vite builds.
 # -n: "No package lock." Ignore the package lock.
@@ -211,22 +211,43 @@ elif cat package.json | grep tauri &>/dev/null; then                            
 fi                                                                                                                                               \
 %{__npm} %{!?-c:install}%{-c:ci} %{-n:--no-package-lock}                                                                                         \
 %{lua:
-  if opt.e then
-    print(rpm.expand("HOME=%{rpmbuilddir} %{__npm} exec"))
-    for i, cmd in ipairs(arg) do
-      print(" " .. cmd)
-    end
-    print("\\n")
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
   end
-  if opt.r then
-    function split(arguments, split_pattern)
-      local arg_list = {}
-      local pattern = '([^'..split_pattern..']+)'
-      string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
-      return arg_list
+
+  if opt.e then
+    local exec = rpm.expand("HOME=%{rpmbuilddir} %{__npm} exec")
+    local arg_string = table.concat(arg, " ")
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
+      end
     end
 
-    scripts = split(macros["-r*"], ",")
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(exec .. " " .. cmd .. "\\n")
+        else
+          print(exec .. cmd .. "\\n")
+        end
+      end
+    else
+      print(exec)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
+    local scripts = split(macros["-r*"], ",")
     for i, script in ipairs(scripts) do
       print(macros["__npm"] .. " run " .. script .. "\\n")
     end
@@ -252,7 +273,7 @@ fi}}
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
 # -c: "CI/clean install." Equivalent to using "bun install --frozen-lockfile".
-# -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
+# -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands. You can use standard shell command separators, "&&" and ";", to separate commands.
 # -f: "Features." TAURI ONLY. Features to enable in Tauri/Cargo.
 # -F: "Force." Always request the latest versions from the NPM Registry and reinstall all dependenices.
 # -N: "No save." Do not create a lockfile. Prevents freezing dependencies.
@@ -275,21 +296,42 @@ fi                                                                              
 %{-R:%{__rm} -f bun.lock}                                                                                                              \
 %{__bun} %{-c:ci}%{!?-c:install} %{-F:--force} %{-N:--no-save}                                                                         \
 %{lua:
-  if opt.e then
-    print(rpm.expand("%{__bun} exec"))
-    for i, cmd in ipairs(arg) do
-      print(" " .. cmd)
-    end
-    print("\\n")
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
   end
-  if opt.r then
-    function split(arguments, split_pattern)
-      local arg_list = {}
-      local pattern = '([^'..split_pattern..']+)'
-      string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
-      return arg_list
+
+  if opt.e then
+    local exec = rpm.expand("%{__bun} exec")
+    local arg_string = table.concat(arg, " ")
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
+      end
     end
 
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(exec .. " " .. cmd .. "\\n")
+        else
+          print(exec .. cmd .. "\\n")
+        end
+      end
+    else
+      print(exec)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
     local scripts = split(macros["-r*"], ",")
     for i, script in ipairs(scripts) do
       print(macros["__bun"] .. " run " .. script .. "\\n")
@@ -319,7 +361,7 @@ fi
 # -r: "Run." Files to execute with Deno. Needs full paths, comma separated for multiple files. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
 # -t: "Task." Project specific scripts to run. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
 # -v: "Vite." Run Electron Vite builds.
-# -x: "X." Run commands with Deno X.
+# -x: "X." Run commands with Deno X. You can use standard shell command separators, "&&" and ";", to separate commands.
 %deno_build(f:FNL::r:t:vx)                                                                                                           \
 %{-L:%{-F:%{error:Can't use both -L and -F}}}                                                                                        \
 %{-L:%{-N:%{error:Can't use both -L and -N}}}                                                                                        \
@@ -334,34 +376,53 @@ elif cat package.json | grep tauri &>/dev/null; then                            
 fi                                                                                                                                   \
 %{__deno} install %{-F:--force} %{-N:--no-lock}%{-L:%{!?-L*:--lock}}%{-L:%{-L*:--lock %{-L*}}}                                       \
 %{lua:
-  if opt.x then
-    print(rpm.expand("%{__dx}"))
-    for i, cmd in ipairs(arg) do
-      print(" " .. cmd)
-    end
-    print("\\n")
-  end
-  if opt.r or opt.t then
-    function split(arguments, split_pattern)
-      local arg_list = {}
-      local pattern = '([^'..split_pattern..']+)'
-      string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
-      return arg_list
-    end
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
   end
 
-    if opt.r then
-      local files = split(macros["-r*"], ",")
-      for i, file in ipairs(files) do
-        print(macros["__deno"] .. " run " .. file .. "\\n")
+  if opt.x then
+    local arg_string = table.concat(arg, " ")
+    local dx = macros["__dx"]
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
       end
     end
-    if opt.t then
-      local scripts = split(macros["-t*"], ",")
-      for i, script in ipairs(scripts) do
-        print(macros["__deno"] .. " task " .. script .. "\\n")
+
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(dx .. " " .. cmd .. "\\n")
+        else
+          print(dx .. cmd .. "\\n")
+        end
       end
-    end}                                                                                                                             \
+    else
+      print(dx)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
+    local files = split(macros["-r*"], ",")
+    for i, file in ipairs(files) do
+      print(macros["__deno"] .. " run " .. file .. "\\n")
+    end
+  end
+  if opt.t then
+    local scripts = split(macros["-t*"], ",")
+    for i, script in ipairs(scripts) do
+      print(macros["__deno"] .. " task " .. script .. "\\n")
+    end
+  end}                                                                                                                               \
 %{-v:HOME=%{rpmbuilddir} %{__dx} electron-vite build}                                                                                \
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                            \
 HOME=%{rpmbuilddir} %{__dx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
@@ -380,7 +441,7 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
-# -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands. Usually, the actual "exec" part of the command is optional. However, this macro calls it explicitly.
+# -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands. Usually, the actual "exec" part of the command is optional. However, this macro calls it explicitly. You can use standard shell command separators, "&&" and ";", to separate commands.
 # -f: "Features." TAURI ONLY. Features to enable in Tauri/Cargo.
 # -F: "Frozen lockfile." Build with a frozen lockfile.
 # -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
@@ -400,21 +461,42 @@ elif cat package.json | grep tauri &>/dev/null; then                            
 fi                                                                                                                                     \
 %{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                                                                    \
 %{lua:
-  if opt.e then
-    print(rpm.expand("%{__pnpm} %{-R:-r} exec"))
-    for i, cmd in ipairs(arg) do
-      print(" " .. cmd)
-    end
-    print("\\n")
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
   end
-  if opt.r then
-    function split(arguments, split_pattern)
-      local arg_list = {}
-      local pattern = '([^'..split_pattern..']+)'
-      string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
-      return arg_list
+
+  if opt.e then
+    local exec = rpm.expand("%{__pnpm}%{-R: -r} exec")
+    local arg_string = table.concat(arg, " ")
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
+      end
     end
 
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(exec .. " " .. cmd .. "\\n")
+        else
+          print(exec .. cmd .. "\\n")
+        end
+      end
+    else
+      print(exec)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
     local scripts = split(macros["-r*"], ",")
     for i, script in ipairs(scripts) do
       print(macros["__pnpm"] .. " run " .. script .. "\\n")
@@ -438,7 +520,7 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
-# -e: "Exec." Execute commands though Yarn directly. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
+# -e: "Exec." Execute commands though Yarn directly. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands. You can use standard shell command separators, "&&" and ";", to separate commands.
 # -f: "Features." TAURI ONLY. Features to enable in Tauri/Cargo.
 # -F: "Frozen lockfile." Build with a frozen lockfile.
 # -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
@@ -457,21 +539,42 @@ elif cat package.json | grep tauri &>/dev/null; then                            
 fi                                                                                                                                     \
 %{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                                                                           \
 %{lua:
-  if opt.e then
-    print(rpm.expand("%{__yarn} exec"))
-    for i, cmd in ipairs(arg) do
-      print(" " .. cmd)
-    end
-    print("\\n")
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
   end
-  if opt.r then
-    function split(arguments, split_pattern)
-      local arg_list = {}
-      local pattern = '([^'..split_pattern..']+)'
-      string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
-      return arg_list
+
+  if opt.e then
+    local exec = rpm.expand("%{__yarn} exec")
+    local arg_string = table.concat(arg, " ")
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
+      end
     end
 
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(exec .. " " .. cmd .. "\\n")
+        else
+          print(exec .. cmd .. "\\n")
+        end
+      end
+    else
+      print(exec)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
     local scripts = split(macros["-r*"], ",")
     for i, script in ipairs(scripts) do
       print(macros["__yarn"] .. " run " .. script .. "\\n")
