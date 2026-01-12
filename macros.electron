@@ -211,8 +211,8 @@ fi                                                                 \
           elseif not rpm.isdefined("install_icon_" .. size) and not rpm.isdefined("__electron_icon_install") then
             if arg[2] then
               rpm.define("__electron_icon_install %{expand:\\
-for icon in " .. table.concat(arg, " ") .. "; do \\
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
+for icon in " .. table.concat(arg, " ") .. "; do \\
 if file $icon | grep \\"$size x $size\\" &>/dev/null; then \\
 %{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png \\
 fi \\
