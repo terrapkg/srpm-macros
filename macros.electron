@@ -218,22 +218,22 @@ if file $icon | grep \\"$size x $size\\" &>/dev/null; then \\
 fi \\
 done \\
 done}")
-         else
+            else
           rpm.define("__electron_icon_install %{expand:\\
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
 if file " .. arg[1] .. " | grep \\"$size x $size\\" &>/dev/null; then \\
 %{__install} -Dm644 " .. arg[1] .. " %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png \\
 fi \\
 done}")
+            end
+          end
         end
-        end
-      end
-    elseif icon:find(".svg") then
+      elseif icon:find(".svg") then
       rpm.define("__electron_icon_install %{expand:\\
 %{__install} -Dm644 %{-I*} %{buildroot}%{_scalableiconsdir}/%{-i:%{-i*}}%{!?-i:%{name}}.svg}")
-    else
-      rpm.define("_app_icon_dir " .. arg[1])
-    end
+      else
+        rpm.define("_app_icon_dir " .. arg[1])
+      end
     end
   end}                                                             \
 %{-l:%{expand:BUNDLED_LICENSE_DIR="$PWD/bundled_licenses"
