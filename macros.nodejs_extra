@@ -169,6 +169,7 @@ for test in %{?_nodetests}; do                                     \
     NODE_ENV=test "$BUILDINSTALLDIR/bin/%{npm_name}$_js" %{shrink: \
     %{-R}                                                          \
     %{-v}                                                          \
-    } "%{_nodetestdir}$test"                                       \
+    "%{_nodetestdir}$test"                                         \
+    %*}                                                            \
    fi                                                              \
 done
