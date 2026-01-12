@@ -26,8 +26,9 @@
 
 ## ONLY use if Node.js is not usable from the repos for some reason (such as needing non-LTS Node.js)
 # -v: "Version." The version of Node.js to install. Required flag.
-%vendor_nodejs(v:)                                                                    \
+%vendor_nodejs(v:) %{shrink:                                                          \
 %{!?-v:%{error:Node.js version to install required to be passed using the -v flag.}}  \
+}                                                                                     \
 touch "$HOME/.bash_profile" &>/dev/null                                               \
 %{__nvm} install %{-v*} --save                                                        \
 %global __nodejs %{__nvm} run                                                         \
