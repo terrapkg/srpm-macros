@@ -135,36 +135,29 @@ YARNFLAGS="${YARNFLAGS:-%{build_yarnflags} }" ; export YARNFLAGS
 ## Approve dependency scripts with Bun if needed.
 # -a: "All." Approve all scripts. Use with caution.
 # Example: %%bun_pm_trust pkg1 pkg2
-%bun_pm_trust(a) \
-%{lua:
-if not opt.a and not arg[1] then
-  error("bun pm trust requires package names or -a for --all.")
-elseif not opt.a then
-  print(rpm.expand("%{__bun} pm trust"))
-  for i, cmd in ipairs(arg) do
-    print(" " .. cmd)
-  end
-  print("\\n")
-elseif opt.a then
-  print(rpm.expand("%{__bun} pm trust --all"))
-end}
+%bun_pm_trust(a) %{shrink: \
+  %{!?1:%{!?-a:%{error:bun pm trust requires package names or -a for --all.}}} \
+  %{!?-a:%{__bun} pm trust %*} \
+  %{-a:%{__bun} pm trust --all} \
+}
 
 ## Approve dependency scripts with Bun if needed.
 # -l: "Lockfile only." Only approve scripts of dependencies found in the lockfile.
-%deno_approve_scripts(l) %{lua:
-if not not arg[1] then
-  error("deno approve-scripts requires package names.")
-else
-  print(rpm.expand("%{__deno} approve-scripts %{-l:--lockfile-only}"))
-  for i, cmd in ipairs(arg) do
-    print(" " .. cmd)
-  end
-  print("\\n")
-end}
+%deno_approve_scripts(l) %{shrink: \
+  %{!?1:%{error:deno approve-scripts requires package names.}} \
+  %{__deno} approve-scripts \
+  %{-l:--lockfile-only} \
+  %* \
+}
 
 ## Approve dependency scripts with PNPM if needed.
 # -g: Direct duplicate of "-g" (global).
-%pnpm_approve_builds(g) %{__pnpm} approve-builds %{-g}
+%pnpm_approve_builds(g) %{shrink: \
+  %{!?1:%{error:pnpm approve-builds requires package names.}} \
+  %{__pnpm} approve-builds \
+  %{-g} \
+  %* \
+}
 
 ## Run tests with Bun
 %bun_test(-) \
