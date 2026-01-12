@@ -128,7 +128,7 @@ fi                                                             \
    %{-o:--omit=%{-o*}}          \
    %{-O:--only=%{-O*}}          \
    %{-p:--package-lock-only}    \
-   %{nil}                       \
+   %*                           \
 }                               \
 )
 
@@ -139,7 +139,7 @@ fi                                                             \
 ## Below require nodejs-license-checker as a build dep
 
 ## Make this a macro so it can be called on its own for any reason
-%__npm_license_checker() /usr/bin/license-checker
+%__npm_license_checker /usr/bin/license-checker
 
 ## Outputs a summary of the licenses used in the main package and bundled dependencies
 ## Useful for filling out the License section
