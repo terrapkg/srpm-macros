@@ -82,15 +82,10 @@ cd "$OLDPWD"
 
 ## Install package to %%nodejs_sitelib or %%nodejs_sitearch.
 # -s: "Symlink." Install bindir symlink as a different name than the %%npm_name.
-%npm_install(s:) %{lua:
-  if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
-    error("Package has not been prepped! Please run %npm_prep first.")
-  end
-  if opt.s then
-    rpm.define("__node_bin_symlink %{-s*}")
-  else
-    rpm.define("__node_bin_symlink %{npm_name}")
-  end}                                                         \
+%npm_install(s:) %{shrink: \
+  %{!?npm_name:%{error:Package has not been prepped! Please run %%npm_prep first.}} \
+  %{!?buildsubdir:%{error:Package has not been prepped! Please run %%npm_prep first.}} \
+}                                                              \
 if stat ./bin/%{npm_name}.js &>/dev/null; then                 \
   _js=".js"                                                    \
 fi                                                             \
@@ -104,7 +99,7 @@ fi                                                             \
 %{__mkdir} -p "$BUILDINSTALLDIR"                               \
 %{__mkdir} -p "%{buildroot}%{_bindir}"                         \
 %{__cp} -r ./* -t "$BUILDINSTALLDIR"                           \
-%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{__node_bin_symlink}
+%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{-s*}%{!?-s*:%{npm_name}}
 
 ## Best used in check section
 ## This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
