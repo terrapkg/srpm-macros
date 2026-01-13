@@ -96,7 +96,7 @@ set -euo pipefail\
     %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}}                \
     --prefix none                                                   \
     --format "# {l}"                                                \
-    | sed -e "s: / :/:g"-e "\\|/.*:|{s|/| OR |}"                    \
+    | sed -e "s: / :/:g" -e "\\|/.*:|{s|/| OR |}"                   \
     | sort -u                                                       \
 }\
 )
