@@ -172,19 +172,19 @@ set -euo pipefail\
 %tauri_cargo_license(f:)\
 (\
 set -euo pipefail\
-%{shrink:                                                                                  \
-    %{__cargo} tree                                                                        \
-    -Z avoid-dev-deps                                                                      \
-    --workspace                                                                            \
-    --manifest-path="%{tauri_subdir}/Cargo.toml"                                           \
-    --edges no-build,no-dev,no-proc-macro                                                  \
-    --no-dedupe                                                                            \
-    --target all                                                                           \
-    %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                   \
-    --prefix none                                                                          \
-    --format "{l}: {p}"                                                                    \
+%{shrink:                                                                  \
+    %{__cargo} tree                                                        \
+    -Z avoid-dev-deps                                                      \
+    --workspace                                                            \
+    --manifest-path="%{tauri_subdir}/Cargo.toml"                           \
+    --edges no-build,no-dev,no-proc-macro                                  \
+    --no-dedupe                                                            \
+    --target all                                                           \
+    %{__cargo_parse_opts %{-f:-f%{-f*}}}                                   \
+    --prefix none                                                          \
+    --format "{l}: {p}"                                                    \
     | sed -e "s: ($(pwd)[^)]*)::g" -e "s: / :/:g" -e "\\|/.*:|{s|/| OR |}" \
-    | sort -u                                                                              \
+    | sort -u                                                              \
 }\
 )
 
