@@ -49,7 +49,7 @@ valgrind \
 webkit2gtk4.1-devel \
 wget}
 
-%__tauri /usr/bin/env CARGO_HOME='%{_cargo_home}'%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1}%{?with_rust_nightly: RUSTUP_HOME='%{_rustup_home}'} RUSTFLAGS='%{build_rustflags}' /usr/bin/tauri
+%__tauri /usr/bin/env CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1}%{?with_rust_nightly: RUSTUP_HOME=%{_rustup_home}} RUSTFLAGS='%{build_rustflags}' /usr/bin/tauri
 
 ## Preps a Tauri build.
 ## Mostly a wrapper for %%cargo_prep_online that also sets the Tauri subdir but also changes directory to it before running %%cargo_prep_online as a test that the directory is correct.
