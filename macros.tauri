@@ -105,7 +105,7 @@ fi
 ## The macro %%__tauri_ignore_version_mismatches MAY be defined to force system Tauri even in case of a mismatch, but not advised.
 ## -f is parsed twice because the same features should ideally be passed to both Tauri and Cargo.
 %tauri_build(f:)\
-%{set_node_build_flags}                                               \
+%{set_javascript_build_flags}                                         \
 %{shrink:                                                             \
     %{__tauri} build                                                  \
     %{__tauri_common_opts}                                            \
