@@ -143,5 +143,5 @@ CRATE_NAME="$(%{__cargo_to_rpm} --path Cargo.toml name)" \
 %global __rustdoc %{_cargo_home}/bin/rustdoc \
 /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y -q --no-modify-path \
 . %{_cargo_home}/env \
-/usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} rustup override set nightly \
+CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} rustup override set nightly \
 %bcond rust_nightly 1
