@@ -204,6 +204,8 @@
 
 %_gnomeextensionsdir %{_datadir}/gnome-shell/extensions%{?uuid:/%{uuid}}
 
+%_dracut_confdir %{_prefix}/lib/dracut/dracut.conf.d
+
 %__desktop_file_install /usr/bin/desktop-file-install
 
 %__desktop_file_edit /usr/bin/desktop-file-edit
