@@ -43,13 +43,9 @@ touch "$HOME/.bash_profile" &>/dev/null                                         
 ## WARNING: Do NOT use in the prep section of projects using NPM that are not Node.js packages!
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM Registry
 # %%npm_prep -n nodepkgname
-%npm_prep(n:) %{lua:
-   if opt.n then
-     rpm.define("npm_name %{-n*}")
-   end
-   if not rpm.isdefined("npm_name") then
-     error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
-   end}                                                    \
+%npm_prep(n:) %{shrink:
+%{!?-n:%{!?npm_name:%{error:%%npm_name is not defined. Please define it using a global macro or with the -n flag.}}}
+%{-n:%global npm_name %{-n*}}}                             \
 %{__npm} install -g %{npm_name}@%{version} --prefix="$PWD" \
 %setup -T -D -n lib/node_modules/%{npm_name}
 
