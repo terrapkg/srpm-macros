@@ -154,7 +154,7 @@ set -euo pipefail\
     %{__cargo} tree                               \
     -Z avoid-dev-deps                             \
     --workspace                                   \
-    --manifest-path=%{tauri_subdir}/Cargo.toml    \
+    --manifest-path %{tauri_subdir}/Cargo.toml    \
     --edges no-build,no-dev,no-proc-macro         \
     --no-dedupe                                   \
     --target all                                  \
@@ -176,7 +176,7 @@ set -euo pipefail\
     %{__cargo} tree                                                        \
     -Z avoid-dev-deps                                                      \
     --workspace                                                            \
-    --manifest-path=%{tauri_subdir}/Cargo.toml                             \
+    --manifest-path %{tauri_subdir}/Cargo.toml                             \
     --edges no-build,no-dev,no-proc-macro                                  \
     --no-dedupe                                                            \
     --target all                                                           \
@@ -197,7 +197,7 @@ set -euo pipefail\
 %{shrink:                                                           \
     %{__cargo} tree                                                 \
     --workspace                                                     \
-    --manifest-path=%{tauri_subdir}/Cargo.toml                      \
+    --manifest-path %{tauri_subdir}/Cargo.toml                      \
     --edges normal,build,dev                                        \
     --no-dedupe                                                     \
     --target all                                                    \
