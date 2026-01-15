@@ -253,8 +253,8 @@ fi                                                                              
     for i, script in ipairs(scripts) do
       print(macros["__npm"] .. " run " .. script .. "\\n")
     end
-  end}                                                                                                                                           \
-%{-V:HOME=%{rpmbuilddir} %{__npm} exec electron-vite -- build %{-M:--mode %{-M*}}}                                                               \
+  end} %{-V:%{expand:
+HOME=%{rpmbuilddir} %{__npm} exec electron-vite -- build %{-M:--mode %{-M*}}}}                                                                   \
 %{-B:%{expand:
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then
 HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux --%{_electron_cpu} --publish=never %{-C:-c %{-C*}}
@@ -338,8 +338,8 @@ fi                                                                              
     for i, script in ipairs(scripts) do
       print(macros["__bun"] .. " run " .. script .. "\\n")
     end
-  end}                                                                                                                                 \
-%{-v:HOME=%{rpmbuilddir} %{__bunx} electron-vite build}                                                                                \
+  end} %{-v:%{expand:
+HOME=%{rpmbuilddir} %{__bunx} electron-vite build}}                                                                                    \
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
 HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
@@ -424,8 +424,8 @@ fi                                                                              
     for i, script in ipairs(scripts) do
       print(macros["__deno"] .. " task " .. script .. "\\n")
     end
-  end}                                                                                                                               \
-%{-v:HOME=%{rpmbuilddir} %{__dx} electron-vite build}                                                                                \
+  end} %{-v:%{expand:
+HOME=%{rpmbuilddir} %{__dx} electron-vite build}}                                                                                    \
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                            \
 HOME=%{rpmbuilddir} %{__dx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                            \
@@ -503,8 +503,8 @@ fi                                                                              
     for i, script in ipairs(scripts) do
       print(macros["__pnpm"] .. " run " .. script .. "\\n")
     end
-  end}                                                                                                                                 \
-%{-v:HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}                                                                                \
+  end} %{-v:%{expand:
+HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}}                                                                                    \
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
 HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
@@ -581,8 +581,8 @@ fi                                                                              
     for i, script in ipairs(scripts) do
       print(macros["__yarn"] .. " run " .. script .. "\\n")
     end
-  end}                                                                                                                                 \
-%{-v:HOME=%{rpmbuilddir} %{__yarn} electron-vite build}                                                                                \
+  end} %{-v:%{expand:
+HOME=%{rpmbuilddir} %{__yarn} electron-vite build}}                                                                                    \
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
 HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
