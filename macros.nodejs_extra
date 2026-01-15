@@ -127,9 +127,9 @@ fi                                                             \
 )
 
 ## Run tests with NPM
-%npm_test(-) %{shrink:
-  %{__npm} test
-  %*
+%npm_test(-) %{shrink: \
+  %{__npm} test \
+  %* \
 }
 
 ## Below require nodejs-license-checker as a build dep
