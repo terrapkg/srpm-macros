@@ -58,7 +58,7 @@ wget}
 %{!?-n:%{!?tauri_subdir:%global tauri_subdir src-tauri}}} \
 cd %{tauri_subdir}                                        \
 %cargo_prep_online                                        \
-cd "$OLDPWD"
+cd $OLDPWD
 
 ## Pulls in BuildRequires that should cover most Tauri builds and checks for non-Cargo dependencies.
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
@@ -142,7 +142,7 @@ if %{__cargo_is_bin %{-f:-f%{-f*}}} && [ %{cargo_install_bin} -eq 1 ] ; then \
       %*                                                            \
   }                                                                 \
 fi                                                                  \
-cd "$OLDPWD"                                                        \
+cd $OLDPWD                                                          \
 )
 
 ## Nearly identical to %%cargo_license_summary_online but points to the Tauri subdir.

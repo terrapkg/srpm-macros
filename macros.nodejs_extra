@@ -77,7 +77,7 @@
 %{__git} switch -c v%{version} -q                    \
 %{__git} sparse-checkout set --no-cone %{_nodetests} \
 %{__git} checkout -q                                 \
-cd "$OLDPWD"
+cd $OLDPWD
 
 ## Install package to %%nodejs_sitelib or %%nodejs_sitearch.
 # -s: "Symlink." Install bindir symlink as a different name than the %%npm_name.
