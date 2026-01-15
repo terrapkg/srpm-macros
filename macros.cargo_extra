@@ -17,7 +17,6 @@ codegen-units = %{rustflags_codegen_units}\
 debug = %{rustflags_debuginfo}\
 strip = "none"\
 \
-\
 [build]\
 rustc = "%{__rustc}"\
 rustdoc = "%{__rustdoc}"\
