@@ -32,7 +32,6 @@
 %vendor_nodejs(v:) %{shrink:                                                          \
 %{!?-v:%{error:Node.js version to install required to be passed using the -v flag.}}  \
 }                                                                                     \
-touch $HOME/.bash_profile &>/dev/null                                                 \
 %{__nvm} install %{-v*} --save                                                        \
 %global __nodejs %{__nvm} run                                                         \
 %bcond vendored_nodejs 1
