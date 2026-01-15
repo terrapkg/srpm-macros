@@ -1,26 +1,33 @@
+%__sccache %{_bindir}/sccache
 
+%__sccache_cc %{__sccache} %{__cc}
 
-%_sccache %{_bindir}/sccache
+%__sccache_cxx %{__sccache} %{__cxx}
 
-%sccache_prep (\
-export CC="%{_sccache} $CC" \
-export CXX="%{_sccache} $CXX" \
-export RUSTC_WRAPPER="sccache" \
-\
-export SCCACHE_BUCKET=%{?sccache_bucket}\
-export SCCACHE_ENDPOINT=%{?sccache_endpoint}\
-export AWS_SECRET_ACCESS_KEY=%{?sccache_secret}\
-export AWS_ACCESS_KEY_ID=%{?sccache_accesskey}\
-export SCCACHE_S3_USE_SSL=true\
-)
+%sccache_prep \
+%global __cc %{__sccache_cc} \
+%global __cxx %{__sccache_cxx}
 
-%cargo_prep_online_sccache (\
+%cargo_prep_online_sccache \
+%{!?_cargo_home:%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo} \
+(\
 set -eu \
-%{__mkdir} -p .cargo \
-cat > .cargo/config << EOF \
+%{__mkdir} -p target/rpm\
+%{__ln_s} rpm target/release\
+%{!?with_rust_nightly:%{expand:
+%{__rm} -rf {.cargo/,%{_cargo_home}/}
+%{__mkdir} -p %{_cargo_home}}}\
+cat > %{_cargo_home}/config.toml << EOF \
+[profile.rpm]\
+inherits = "release"\
+opt-level = %{rustflags_opt_level}\
+codegen-units = %{rustflags_codegen_units}\
+debug = %{rustflags_debuginfo}\
+strip = "none"\
+\
 [build]\
 rustc = "%{__rustc}"\
-rustc-wrapper = "%{_sccache}"\
+rustc-wrapper = "%{__sccache}"\
 rustdoc = "%{__rustdoc}"\
 \
 [env]\
@@ -40,6 +47,8 @@ verbose = true\
 directory = "%{cargo_registry}"\
 \
 EOF\
-%{__rm} -f Cargo.lock \
 %{__rm} -f Cargo.toml.orig \
-)
+)\
+%global build_rustflags %{terra_rustflags} \
+%{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTC_WRAPPER=%{__sccache} SCCACHE_BUCKET=%{?sccache_bucket} SCCACHE_ENDPOINT=%{?sccache_endpoint} AWS_SECRET_ACCESS_KEY=%{?sccache_secret} AWS_ACCESS_KEY_ID=%{?sccache_accesskey} SCCACHE_S3_USE_SSL=true RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo} \
+%{?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTC_WRAPPER=%{__sccache} SCCACHE_BUCKET=%{?sccache_bucket} SCCACHE_ENDPOINT=%{?sccache_endpoint} AWS_SECRET_ACCESS_KEY=%{?sccache_secret} AWS_ACCESS_KEY_ID=%{?sccache_accesskey} SCCACHE_S3_USE_SSL=true RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}
