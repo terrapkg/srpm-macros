@@ -135,53 +135,53 @@ YARN_OPTS="${YARN_OPTS:-%{yarn_config_opts} }" ; export YARN_OPTS
 ## Approve dependency scripts with Bun if needed.
 # -a: "All." Approve all scripts. Use with caution.
 # Example: %%bun_pm_trust pkg1 pkg2
-%bun_pm_trust(a) %{shrink: \
+%bun_pm_trust(a) %{shrink:                                                     \
   %{!?1:%{!?-a:%{error:bun pm trust requires package names or -a for --all.}}} \
-  %{!?-a:%{__bun} pm trust %*} \
-  %{-a:%{__bun} pm trust --all} \
+  %{!?-a:%{__bun} pm trust %*}                                                 \
+  %{-a:%{__bun} pm trust --all}                                                \
 }
 
 ## Approve dependency scripts with Bun if needed.
 # -l: "Lockfile only." Only approve scripts of dependencies found in the lockfile.
-%deno_approve_scripts(l) %{shrink: \
+%deno_approve_scripts(l) %{shrink:                             \
   %{!?1:%{error:deno approve-scripts requires package names.}} \
-  %{__deno} approve-scripts \
-  %{-l:--lockfile-only} \
-  %* \
+  %{__deno} approve-scripts                                    \
+  %{-l:--lockfile-only}                                        \
+  %*                                                           \
 }
 
 ## Approve dependency scripts with PNPM if needed.
 # -g: Direct duplicate of "-g" (global).
-%pnpm_approve_builds(g) %{shrink: \
+%pnpm_approve_builds(g) %{shrink:                             \
   %{!?1:%{error:pnpm approve-builds requires package names.}} \
-  %{__pnpm} approve-builds \
-  %{-g} \
-  %* \
+  %{__pnpm} approve-builds                                    \
+  %{-g}                                                       \
+  %*                                                          \
 }
 
 ## Run tests with Bun
 %bun_test(-) %{shrink: \
-  %{__bun} test \
-  %* \
+  %{__bun} test        \
+  %*                   \
 }
 
 ## Run tests with Deno
 %deno_test(-) %{shrink: \
-  %{__deno} test \
-  --parallel \
-  %* \
+  %{__deno} test        \
+  --parallel            \
+  %*                    \
 }
 
 ## Run tests with PNPM
 %pnpm_test(-) %{shrink: \
-  %{__pnpm} test \
-  %* \
+  %{__pnpm} test        \
+  %*                    \
 }
 
 ## Run tests with Yarn
 %yarn_test(-) %{shrink: \
-  %{__yarn} test \
-  %* \
+  %{__yarn} test        \
+  %*                    \
 }
 
 ## NPM is very limited compared to other JavaScript package managers. This macro has MANY flags to work around this and will fail if no necessary ones are detected. Capital letter flags are for use with calling Electron Builder, Electron Forge, Electron Vite, or Tauri.
