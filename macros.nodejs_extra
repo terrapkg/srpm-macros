@@ -32,7 +32,7 @@
 %vendor_nodejs(v:) %{shrink:                                                          \
 %{!?-v:%{error:Node.js version to install required to be passed using the -v flag.}}  \
 }                                                                                     \
-touch "$HOME/.bash_profile" &>/dev/null                                               \
+touch $HOME/.bash_profile &>/dev/null                                                 \
 %{__nvm} install %{-v*} --save                                                        \
 %global __nodejs %{__nvm} run                                                         \
 %bcond vendored_nodejs 1
@@ -86,7 +86,7 @@ cd "$OLDPWD"
   %{!?npm_name:%{error:Package has not been prepped! Please run %%npm_prep first.}} \
   %{!?buildsubdir:%{error:Package has not been prepped! Please run %%npm_prep first.}} \
 }                                                              \
-if stat ./bin/%{npm_name}.js &>/dev/null; then                 \
+if [ -e ./bin/%{npm_name}.js ]; then                           \
   _js=".js"                                                    \
 fi                                                             \
 if [[ "%{_target_cpu}" != "noarch" ]]; then                    \
@@ -96,10 +96,10 @@ else                                                           \
   BUILDINSTALLDIR="%{buildroot}%{nodejs_sitelib}/%{npm_name}"  \
   INSTALLDIR="%{nodejs_sitelib}/%{npm_name}"                   \
 fi                                                             \
-%{__mkdir} -p "$BUILDINSTALLDIR"                               \
-%{__mkdir} -p "%{buildroot}%{_bindir}"                         \
-%{__cp} -r ./* -t "$BUILDINSTALLDIR"                           \
-%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{-s*}%{!?-s:%{npm_name}}
+%{__mkdir} -p $BUILDINSTALLDIR                                 \
+%{__mkdir} -p %{buildroot}%{_bindir}                           \
+%{__cp} -r ./* -t $BUILDINSTALLDIR                             \
+%{__ln_s}f $INSTALLDIR/bin/%{npm_name}$_js %{buildroot}%{_bindir}/%{-s*}%{!?-s:%{npm_name}}
 
 ## Best used in check section
 ## This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
@@ -152,23 +152,23 @@ fi                                                             \
 ## Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
-%node_self_test(Rv)                                                \
-if stat ./bin/%{npm_name}.js &>/dev/null; then                     \
-  _js=".js"                                                        \
-fi                                                                 \
-if [[ "%{_target_cpu}" != "noarch" ]]; then                        \
-  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitearch}/%{npm_name}"     \
-else                                                               \
-  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitelib}/%{npm_name}"      \
-fi                                                                 \
-for test in %{?_nodetests}; do                                     \
-  if [[ "$test" == /* ]]; then                                     \
-    %{shrink:                                                      \
-    NODE_ENV=test                                                  \
-    $BUILDINSTALLDIR/bin/%{npm_name}$_js                           \
-    %{-R}                                                          \
-    %{-v}                                                          \
-    %{_nodetestdir}$test                                           \
-    %*}                                                            \
-  fi                                                               \
+%node_self_test(Rv)                                            \
+if [ -e ./bin/%{npm_name}.js ]; then                           \
+  _js=".js"                                                    \
+fi                                                             \
+if [[ "%{_target_cpu}" != "noarch" ]]; then                    \
+  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitearch}/%{npm_name}" \
+else                                                           \
+  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitelib}/%{npm_name}"  \
+fi                                                             \
+for test in %{?_nodetests}; do                                 \
+  if [[ "$test" == /* ]]; then                                 \
+    %{shrink:                                                  \
+    NODE_ENV=test                                              \
+    $BUILDINSTALLDIR/bin/%{npm_name}$_js                       \
+    %{-R}                                                      \
+    %{-v}                                                      \
+    %{_nodetestdir}$test                                       \
+    %*}                                                        \
+  fi                                                           \
 done
