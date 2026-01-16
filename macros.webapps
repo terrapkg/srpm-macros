@@ -200,14 +200,14 @@ YARN_OPTS="${YARN_OPTS:-%{yarn_config_opts} }" ; export YARN_OPTS
 %{!?-e:%{!?-r:%{!?-B:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -B.}}}}                                    \
 %{lua:
   if opt.B or opt.V then
-    print("set +x; echo -e \\"NOTE: Use of -B and -V may not work with all NPM built projects.\\"; set -x")
+    print("echo \\"NOTE: Use of -B and -V may not work with all NPM built projects.\\" >&2")
   end}                                                                                                                                           \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                                    \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri, ignoring."; set -x}}                                                                                \
+  echo "-f flag only works with Tauri, ignoring." >&2}}                                                                                          \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                                    \
   WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri, ignoring."; set -x}}                                                                                \
+  echo "-f flag only works with Tauri, ignoring." >&2}}                                                                                          \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                             \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                                      \
 fi                                                                                                                                               \
@@ -287,15 +287,15 @@ fi}}
 %{-c:%{-N:%{error:Can't use both -c and -N}}}                                                                                          \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri. Did you mean -F?"; set -x}}                                                               \
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
   WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri. Did you mean -F?"; set -x}}                                                               \
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
-fi                                                                                                                                     \
-%{-R:set +x; echo "WARNING: Removing bun.lock. This is not recommended unless absolutely necessary."; set -x}                          \
-%{-R:%{__rm} -f bun.lock}                                                                                                              \
+fi %{-R:%{expand:
+echo "WARNING: Removing bun.lock. This is not recommended unless absolutely necessary." >&2
+%{__rm} -f bun.lock}}                                                                                                                  \
 %{__bun} %{-c:ci}%{!?-c:install} %{-F:--force} %{-N:--no-save}                                                                         \
 %{lua:
   function split(arguments, split_pattern)
@@ -369,10 +369,10 @@ fi
 %{-L:%{-N:%{error:Can't use both -L and -N}}}                                                                                        \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                        \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri. Did you mean -F?"; set -x}}                                                             \
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                       \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                        \
   WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri. Did you mean -F?"; set -x}}                                                             \
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                       \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                 \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                          \
 fi                                                                                                                                   \
@@ -454,10 +454,10 @@ fi
 %{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri. Did you mean -F?"; set -x}}                                                               \
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
   WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri. Did you mean -F?"; set -x}}                                                               \
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
 fi                                                                                                                                     \
@@ -532,10 +532,10 @@ fi
 %{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri. Did you mean -F?"; set -x}}                                                               \
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
   WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
-set +x; echo "-f flag only works with Tauri. Did you mean -F?"; set -x}}                                                               \
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
 fi                                                                                                                                     \

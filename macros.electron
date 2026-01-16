@@ -111,31 +111,31 @@ ExclusiveArch: %{electron_arches}
 # -l: "Licenses." Use this if you want to collect all extra licenses into a directory called bundled_licenses automatically to package them via RPM. DOES NOT include build dep licenses. If using this macro you should add "%%license bundled_licenses/*" to the files section.
 # -s: "Symlink." Name of the symlink to the executable.
 # -S: Additional symlink to the binary. ONLY do this if a program has two common names, i.e, Heroic being called both "heroic" and "heroic-games-launcher"
-%electron_install(b:d:DE:F:i:IlO::s:S:U:) %{-i:%{!?-I:%{expand:
-%{error:Icon name provided but -I was not passed.}}}}              \
-if cat package.json | grep electron-builder &>/dev/null; then      \
-  WEBAPP_BUILD_TOOL="electron-builder"                             \
-  APPOUTDIR="./dist"                                               \
-  if [[ "%{_electron_cpu}" == "x64" ]]; then                       \
-    OUTDIR="./dist/linux-unpacked"                                 \
-    APPARCH="x86_64"                                               \
-  elif [[ "%{_electron_cpu}" == "ia32" ]]; then                    \
-    OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"                \
-    APPARCH="i386"                                                 \
-  else                                                             \
-    OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"                \
-    APPARCH="%{_electron_cpu}"                                     \
-  fi                                                               \
-elif cat package.json | grep electron-forge &>/dev/null; then      \
-  WEBAPP_BUILD_TOOL="electron-forge"                               \
-  OUTDIR="./out/*-linux-%{_electron_cpu}"                          \
-  APPOUTDIR="./out/make/AppImage/%{_electron_cpu}"                 \
-  APPARCH="%{_electron_cpu}"                                       \
-elif cat package.json | grep tauri &>/dev/null; then               \
-  set +x                                                           \
-  echo 'ERROR: This is a Tauri package, this macro will not work!' \
-  exit 1                                                           \
-fi                                                                 \
+# -v: "Verbose." Don't set +x for PNG icon installs. This WILL spam your terminal.
+%electron_install(b:d:DE:F:i:IlO::s:S:U:v) %{-i:%{!?-I:%{expand:
+%{error:Icon name provided but -I was not passed.}}}}                  \
+if cat package.json | grep electron-builder &>/dev/null; then          \
+  WEBAPP_BUILD_TOOL="electron-builder"                                 \
+  APPOUTDIR="./dist"                                                   \
+  if [[ "%{_electron_cpu}" == "x64" ]]; then                           \
+    OUTDIR="./dist/linux-unpacked"                                     \
+    APPARCH="x86_64"                                                   \
+  elif [[ "%{_electron_cpu}" == "ia32" ]]; then                        \
+    OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"                    \
+    APPARCH="i386"                                                     \
+  else                                                                 \
+    OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"                    \
+    APPARCH="%{_electron_cpu}"                                         \
+  fi                                                                   \
+elif cat package.json | grep electron-forge &>/dev/null; then          \
+  WEBAPP_BUILD_TOOL="electron-forge"                                   \
+  OUTDIR="./out/*-linux-%{_electron_cpu}"                              \
+  APPOUTDIR="./out/make/AppImage/%{_electron_cpu}"                     \
+  APPARCH="%{_electron_cpu}"                                           \
+elif cat package.json | grep tauri &>/dev/null; then                   \
+  echo 'ERROR: This is a Tauri package, this macro will not work!' >&2 \
+  exit 1                                                               \
+fi                                                                     \
 %{lua:
   local bin = macros["-b*"] or macros["name"]
   local dir = macros["-d*"] or macros["name"]
@@ -165,7 +165,7 @@ fi                                                                 \
       macros["desktop_file_args"] = macros["-F*"]
     end
   end
-    print(rpm.expand("%{__desktop_file_install} --set-key=Exec --set-value=\\"") .. installdir .. "/" .. bin .. rpm.expand("%{-E: --enable=features=%{-E*}}%{-O:%{!?-O*: --ozone-platform-hint=auto}}%{-O:%{-O*: --ozone-platform=%{-O*}}}%{?desktop_file_args: --%{desktop_file_args}}%{-U: %{-U*}}\\" squashfs-root/*.desktop"))
+    print(rpm.expand("%{__desktop_file_install} --set-key=Exec --set-value=\\"") .. installdir .. "/" .. bin .. rpm.expand("%{-E: --enable-features=%{-E*}}%{-O:%{!?-O*: --ozone-platform-hint=auto}}%{-O:%{-O*: --ozone-platform=%{-O*}}}%{?desktop_file_args: --%{desktop_file_args}}%{-U: %{-U*}}\\" squashfs-root/*.desktop"))
   end
   if opt.I then
     local sizes = {"8", "16", "20", "24", "32", "36", "40", "44", "48", "64", "72", "96", "128", "150", "192", "256", "310", "512", "1024"}
@@ -210,68 +210,75 @@ fi                                                                 \
 %{install_icon_1024}}}")
           elseif not rpm.isdefined("install_icon_" .. size) and not rpm.isdefined("__electron_icon_install") then
             if arg[2] then
-              rpm.define("__electron_icon_install %{expand:\\
-set +x \\
+              rpm.define("__electron_icon_install %{expand:%{!?-v:%{expand:\\
+set +x}} \\
 echo \\"Installing icons.\\" \\
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
 for icon in " .. table.concat(arg, " ") .. "; do \\
 if file $icon | grep \\"$size x $size\\" &>/dev/null; then \\
-echo \\"Found icon for size ${size}x${size}.\\" \\
-%{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png \\
+echo \\"Found icon for size ${size}x${size}.\\" >&2 %{!?-v:%{expand:\\
+set -x}} \\
+%{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png %{!?-v:%{expand:\\
+set +x}} \\
 fi \\
 done \\
-done \\
-set -x}")
+done %{!?-v:%{expand:\\
+set -x}}}")
             else
           rpm.define("__electron_icon_install %{expand:\\
-set +x \\
-echo \\"Installing icons.\\" \\
+echo \\"Installing icons.\\" >&2 %{!?-v:%{expand:\\
+set +x}} \\
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
 if file " .. arg[1] .. " | grep \\"$size x $size\\" &>/dev/null; then \\
-echo \\"Found icon for size ${size}x${size}.\\" \\
-%{__install} -Dm644 " .. arg[1] .. " %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png \\
+echo \\"Found icon for size ${size}x${size}.\\" >&2 %{!?-v:%{expand:\\
+set -x}} \\
+%{__install} -Dm644 " .. arg[1] .. " %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png %{!?-v:%{expand:\\
+set +x}} \\
 fi \\
-done \\
-set -x}")
+done %{!?-v:%{expand:\\
+set -x}}}")
             end
           end
         end
       elseif icon:find(".svg") then
       rpm.define("__electron_icon_install %{expand:\\
-set +x \\
-echo \\"Installing icons.\\" \\
-echo \\"Found scalable (SVG) icon.\\" \\
-%{__install} -Dm644 %{-I*} %{buildroot}%{_scalableiconsdir}/%{-i:%{-i*}}%{!?-i:%{name}}.svg \\
-set -x}")
+echo \\"Installing icons.\\" >&2 \\
+echo \\"Found scalable (SVG) icon.\\" >&2 \\
+%{__install} -Dm644 %{-I*} %{buildroot}%{_scalableiconsdir}/%{-i:%{-i*}}%{!?-i:%{name}}.svg}")
       else
         rpm.define("_app_icon_dir " .. arg[1])
       end
     end
-  end}                                                             \
+  end}                                                                 \
 %{-l:%{expand:BUNDLED_LICENSE_DIR="$PWD/bundled_licenses"
-%{__mkdir} -p "$BUNDLED_LICENSE_DIR"
-find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +}} %{-I:%{expand:
-if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then %{?__electron_icon_install:%{__electron_icon_install}} %{!?__electron_icon_install:%{expand:
-set +x
-echo "Installing icons."
+%{__mkdir} -p $BUNDLED_LICENSE_DIR
+find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t $BUNDLED_LICENSE_DIR {} +}} %{-I:%{expand:
+if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then %{?__electron_icon_install}%{!?__electron_icon_install:%{expand:
+echo "Installing icons." >&2 %{!?-v:%{expand:
+set +x}}
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
 for icon in %{!?_app_icon_dir:dist/.icon-set}%{?_app_icon_dir}/*.png; do
 if file $icon | grep "$size x $size" &>/dev/null; then
-echo "Found icon for size ${size}x${size}."
-%{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png
+echo "Found icon for size ${size}x${size}." >&2 %{!?-v:%{expand:
+set -x}}
+%{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png %{!?-v:%{expand:
+set +x}}
 fi
 done
-done
-set -x}}
-elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then %{?__electron_icon_install:%{__electron_icon_install}} %{!?__electron_icon_install:%{expand:
-set +x
+done %{!?-v:%{expand:
+set -x}}}}
+elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then %{?__electron_icon_install}%{!?__electron_icon_install:%{expand:
+echo "Installing icons." >&2 %{!?-v:%{expand:
+set +x}}
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
 for icon in %{!?_app_icon_dir:assets}%{?_app_icon_dir}/*icon.png; do
 if file $icon | grep "$size x $size" &>/dev/null; then
-echo "Found icon for size ${size}x${size}."
-%{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png
+echo "Found icon for size ${size}x${size}." >&2 %{!?-v:%{expand:
+set -x}}
+%{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png %{!?-v:%{expand:
+set +x}}
 fi
 done
-done
-set -x}}
+done %{!?-v:%{expand:
+set -x}}}}
 fi}}
