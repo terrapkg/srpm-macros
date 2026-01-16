@@ -196,11 +196,11 @@ YARN_OPTS="${YARN_OPTS:-%{yarn_config_opts} }" ; export YARN_OPTS
 # -n: "No package lock." Ignore the package lock.
 # -r: "Run." Project-specific scripts to run.
 # -V: "Vite." Directly execute Electron Vite. Has the same limitation as -E.
-%npm_build(BcC:ef:M:nr:V)                                                                                                                        \
-%{!?-e:%{!?-r:%{!?-B:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -B.}}}}                                    \
+%npm_build(BcC:ef:M:nr:V) %{shrink:
+%{!?-e:%{!?-r:%{!?-B:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -B.}}}}}                                   \
 %{lua:
   if opt.B or opt.V then
-    print("echo \\"NOTE: Use of -B and -V may not work with all NPM built projects.\\" >&2")
+    print("echo -e \\"\\\\e[33mNOTE:\\\\e[0m Use of -B and -V may not work with all NPM built projects.\\" >&2")
   end}                                                                                                                                           \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                                    \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
@@ -294,7 +294,7 @@ elif cat package.json | grep electron-forge &>/dev/null; then                   
 elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
 fi %{-R:%{expand:
-echo "WARNING: Removing bun.lock. This is not recommended unless absolutely necessary." >&2
+echo -e "\\e[33mWARNING:\\e[0m Removing bun.lock. This is not recommended unless absolutely necessary." >&2
 %{__rm} -f bun.lock}}                                                                                                                  \
 %{__bun} %{-c:ci}%{!?-c:install} %{-F:--force} %{-N:--no-save}                                                                         \
 %{lua:
