@@ -211,20 +211,26 @@ fi                                                                 \
           elseif not rpm.isdefined("install_icon_" .. size) and not rpm.isdefined("__electron_icon_install") then
             if arg[2] then
               rpm.define("__electron_icon_install %{expand:\\
+set +x \\
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
 for icon in " .. table.concat(arg, " ") .. "; do \\
 if file $icon | grep \\"$size x $size\\" &>/dev/null; then \\
+echo \\"Found icon for size ${size}x${size}.\\" \\
 %{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png \\
 fi \\
 done \\
-done}")
+done \\
+set -x}")
             else
           rpm.define("__electron_icon_install %{expand:\\
+set +x \\
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
 if file " .. arg[1] .. " | grep \\"$size x $size\\" &>/dev/null; then \\
+echo \\"Found icon for size ${size}x${size}.\\" \\
 %{__install} -Dm644 " .. arg[1] .. " %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png \\
 fi \\
-done}")
+done \\
+set -x}")
             end
           end
         end
@@ -240,19 +246,26 @@ done}")
 %{__mkdir} -p "$BUNDLED_LICENSE_DIR"
 find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t "$BUNDLED_LICENSE_DIR" {} +}} %{-I:%{expand:
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then %{?__electron_icon_install:%{__electron_icon_install}} %{!?__electron_icon_install:%{expand:
+set +x
+echo "Installing icons."
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
 for icon in %{!?_app_icon_dir:dist/.icon-set}%{?_app_icon_dir}/*.png; do
 if file $icon | grep "$size x $size" &>/dev/null; then
+echo "Found icon for size ${size}x${size}."
 %{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png
 fi
 done
-done}}
+done
+set -x}}
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then %{?__electron_icon_install:%{__electron_icon_install}} %{!?__electron_icon_install:%{expand:
+set +x
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
 for icon in %{!?_app_icon_dir:assets}%{?_app_icon_dir}/*icon.png; do
 if file $icon | grep "$size x $size" &>/dev/null; then
+echo "Found icon for size ${size}x${size}."
 %{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png
 fi
 done
-done}}
+done
+set -x}}
 fi}}
