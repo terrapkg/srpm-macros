@@ -212,6 +212,7 @@ fi                                                                 \
             if arg[2] then
               rpm.define("__electron_icon_install %{expand:\\
 set +x \\
+echo \\"Installing icons.\\" \\
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
 for icon in " .. table.concat(arg, " ") .. "; do \\
 if file $icon | grep \\"$size x $size\\" &>/dev/null; then \\
@@ -224,6 +225,7 @@ set -x}")
             else
           rpm.define("__electron_icon_install %{expand:\\
 set +x \\
+echo \\"Installing icons.\\" \\
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
 if file " .. arg[1] .. " | grep \\"$size x $size\\" &>/dev/null; then \\
 echo \\"Found icon for size ${size}x${size}.\\" \\
