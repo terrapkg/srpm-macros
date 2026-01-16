@@ -197,9 +197,10 @@ YARN_OPTS="${YARN_OPTS:-%{yarn_config_opts} }" ; export YARN_OPTS
 # -r: "Run." Project-specific scripts to run.
 # -V: "Vite." Directly execute Electron Vite. Has the same limitation as -E.
 %npm_build(BcC:ef:M:nr:V) %{shrink:
-%{!?-e:%{!?-r:%{!?-B:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -B.}}}}
-%{-V:echo -e "\\e[33mNOTE:\\e[0m Use of -B and -V may not work with all NPM built projects." >&2}
-%{-B:echo -e "\\e[33mNOTE:\\e[0m Use of -B and -V may not work with all NPM built projects." >&2}}                                               \
+%{!?-e:%{!?-r:%{!?-B:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -B.}}}} %{lua:
+  if opt.B or opt.V then
+    print("echo -e \\"\\\\e[33mNOTE:\\\\e[0m Use of -B and -V may not work with all NPM built projects.\\" >&2")
+  end}}                                                                                                                                          \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                                    \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
   echo "-f flag only works with Tauri, ignoring." >&2}}                                                                                          \
