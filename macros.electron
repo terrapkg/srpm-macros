@@ -97,7 +97,7 @@ Provides:      bundled(ffmpeg)                                                  
 Provides:      bundled(vulkan-loader)                                                                                              \
 ExclusiveArch: %{electron_arches}
 
-## Capital letters denote use in desktop file install process. These are capitalized differently for organizational purposes.
+## Capital letters denote use in desktop file or icon install process. These are capitalized differently for organizational purposes.
 # If no alternative names are provided via flag everything, falls back to the name set by the spec
 # -b: "Binary." Name of the actual executable file.
 # -d: "Directory." Choose a different name for the install directory in /usr/lib(64)
