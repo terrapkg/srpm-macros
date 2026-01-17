@@ -9,7 +9,7 @@
   if not url then error("%url is not defined") end
   local ref = macros["2"] or macros.commit or macros.version
   if not ref then error("%commit / %version is not defined") end
-  if (#ref ~= 40) and not (ref:find("%X")) then
+  if (#ref ~= 40) and not (ref:find("%X")) and not (ref == macros.version) then
     error("Please provide the full commit sha")
   end
   local dir = (url:gsub("/(%.git)?$", "")):gsub("^.+/", ""):gsub("%.git", "")
