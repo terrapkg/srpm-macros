@@ -197,7 +197,9 @@ YARN_OPTS="${YARN_OPTS:-%{yarn_config_opts} }" ; export YARN_OPTS
 # -r: "Run." Project-specific scripts to run.
 # -V: "Vite." Directly execute Electron Vite. Has the same limitation as -E.
 %npm_build(BcC:ef:M:nr:V) %{shrink:
-%{!?-e:%{!?-r:%{!?-B:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -B.}}}} %{lua:
+%{!?-e:%{!?-r:%{!?-B:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -B.}}}}                                    \
+%{-c:%{-n:%{error:Cannot use both -c and -n.}}}                                                                                                  \
+%{lua:
   if opt.B or opt.V then
     print("echo -e \\"\\\\e[33mNOTE:\\\\e[0m Use of -B and -V may not work with all NPM built projects.\\" >&2")
   end}}                                                                                                                                          \
@@ -210,7 +212,10 @@ elif cat package.json | grep electron-forge &>/dev/null; then                   
 elif cat package.json | grep tauri &>/dev/null; then                                                                                             \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                                      \
 fi                                                                                                                                               \
-%{__npm} %{!?-c:install}%{-c:ci} %{-n:--no-package-lock}                                                                                         \
+%{__npm} %{shrink:                                                                                                                               \
+  %{!?-c:install}                                                                                                                                \
+  %{-c:ci}                                                                                                                                       \
+  %{-n:--no-package-lock}}                                                                                                                       \
 %{lua:
   function split(arguments, split_pattern)
     local arg_list = {}
@@ -281,9 +286,9 @@ fi}}
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
 # -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it).
 # -v: "Vite." Run Electron Vite builds.
-%bun_build(cef:FNRr:v)                                                                                                                 \
+%bun_build(cef:FNRr:v) %{shrink:                                                                                                       \
 %{-c:%{-R:%{error:Can't use both -c and -R}}}                                                                                          \
-%{-c:%{-N:%{error:Can't use both -c and -N}}}                                                                                          \
+%{-c:%{-N:%{error:Can't use both -c and -N}}}}                                                                                         \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
@@ -295,7 +300,11 @@ elif cat package.json | grep tauri &>/dev/null; then                            
 fi %{-R:%{expand:
 echo -e "\\e[33mWARNING:\\e[0m Removing bun.lock. This is not recommended unless absolutely necessary." >&2
 %{__rm} -f bun.lock}}                                                                                                                  \
-%{__bun} %{-c:ci}%{!?-c:install} %{-F:--force} %{-N:--no-save}                                                                         \
+%{__bun} %{shrink:                                                                                                                     \
+  %{!?-c:install}                                                                                                                      \
+  %{-c:ci}                                                                                                                             \
+  %{-F:--force}                                                                                                                        \
+  %{-N:--no-save}}                                                                                                                     \
 %{lua:
   function split(arguments, split_pattern)
     local arg_list = {}
@@ -363,9 +372,9 @@ fi
 # -t: "Task." Project specific scripts to run. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
 # -v: "Vite." Run Electron Vite builds.
 # -x: "X." Run commands with Deno X. You can use standard shell command separators, "&&" and ";", to separate commands.
-%deno_build(f:FNL::r:t:vx)                                                                                                           \
+%deno_build(f:FNL::r:t:vx) %{shrink:                                                                                                 \
 %{-L:%{-F:%{error:Can't use both -L and -F}}}                                                                                        \
-%{-L:%{-N:%{error:Can't use both -L and -N}}}                                                                                        \
+%{-L:%{-N:%{error:Can't use both -L and -N}}}}                                                                                       \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                        \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                       \
@@ -375,7 +384,11 @@ elif cat package.json | grep electron-forge &>/dev/null; then                   
 elif cat package.json | grep tauri &>/dev/null; then                                                                                 \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                          \
 fi                                                                                                                                   \
-%{__deno} install %{-F:--force} %{-N:--no-lock}%{-L:%{!?-L*:--lock}}%{-L:%{-L*:--lock %{-L*}}}                                       \
+%{__deno} install %{shrink:                                                                                                          \
+  %{-F:--force}                                                                                                                      \
+  %{-N:--no-lock}                                                                                                                    \
+  %{-L:%{!?-L*:--lock}}                                                                                                              \
+  %{-L*:--lock %{-L*}}}                                                                                                              \
 %{lua:
   function split(arguments, split_pattern)
     local arg_list = {}
@@ -449,8 +462,8 @@ fi
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
 # -R: "Recursive." For use with PNPM exec. Runs on every project in the workspace so use with caution.
 # -v: "Vite." Run electron-vite builds.
-%pnpm_build(ef:FNr:Rv)                                                                                                                 \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
+%pnpm_build(ef:FNr:Rv) %{shrink:                                                                                                       \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}}                                                                                         \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
@@ -460,7 +473,9 @@ elif cat package.json | grep electron-forge &>/dev/null; then                   
 elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
 fi                                                                                                                                     \
-%{__pnpm} install %{-F:--frozen-lockfile}%{-N:--no-frozen-lockfile}                                                                    \
+%{__pnpm} install %{shrink:                                                                                                            \
+  %{-F:--frozen-lockfile}                                                                                                              \
+  %{-N:--no-frozen-lockfile}}                                                                                                          \
 %{lua:
   function split(arguments, split_pattern)
     local arg_list = {}
@@ -527,8 +542,8 @@ fi
 # -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
 # -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
 # -v: "Vite." Run electron-vite builds.
-%yarn_build(ef:FNr:v)                                                                                                                  \
-%{-F:%{-N:%{error:Can't use both -F and -N}}}                                                                                          \
+%yarn_build(ef:FNr:v) %{shrink:                                                                                                        \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}}                                                                                         \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
   WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
@@ -538,7 +553,9 @@ elif cat package.json | grep electron-forge &>/dev/null; then                   
 elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
   WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
 fi                                                                                                                                     \
-%{__yarn} install %{-F:--frozen-lockfile}%{-N:--no-lockfile}                                                                           \
+%{__yarn} install %{shrink:                                                                                                            \
+  %{-F:--frozen-lockfile}                                                                                                              \
+  %{-N:--no-lockfile}}                                                                                                                 \
 %{lua:
   function split(arguments, split_pattern)
     local arg_list = {}

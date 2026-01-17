@@ -165,7 +165,7 @@ fi                                                                              
       macros["desktop_file_args"] = macros["-F*"]
     end
   end
-    print(rpm.expand("%{__desktop_file_install} --set-key=Exec --set-value=\\"") .. installdir .. "/" .. bin .. rpm.expand("%{-E: --enable-features=%{-E*}}%{-O:%{!?-O*: --ozone-platform-hint=auto}}%{-O:%{-O*: --ozone-platform=%{-O*}}}%{?desktop_file_args: --%{desktop_file_args}}%{-U: %{-U*}}\\" squashfs-root/*.desktop"))
+    print(rpm.expand("%{__desktop_file_install} --set-key=Exec --set-value=\\"") .. installdir .. "/" .. bin .. rpm.expand("%{-E: --enable-features=%{-E*}}%{-O:%{!?-O*: --ozone-platform-hint=auto}}%{-O*: --ozone-platform=%{-O*}}%{?desktop_file_args: --%{desktop_file_args}}%{-U: %{-U*}}\\" squashfs-root/*.desktop"))
   end
   if opt.I then
     local sizes = {"8", "16", "20", "24", "32", "36", "40", "44", "48", "64", "72", "96", "128", "150", "192", "256", "310", "512", "1024"}
