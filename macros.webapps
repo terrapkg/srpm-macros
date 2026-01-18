@@ -13,7 +13,7 @@
 
 ## Common env vars for Bun
 ## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
-%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{_bun_home} BUN_INSTALL_CACHE_DIR=%{_bun_cache_dir} BUN_RUNTIME_TRANSPILER_CACHE_PATH=%{_bun_cache_dir}%{!?_cargo_home: FORCE_COLOR=1}
+%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{_bun_home} BUN_INSTALL_CACHE_DIR=%{_bun_cache_dir} BUN_RUNTIME_TRANSPILER_CACHE_PATH=%{_bun_cache_dir} FORCE_COLOR=1
 
 ## Build flags for Bun so they can be called independently to force our build config.
 %bun_config_opts --cache-dir=%{_bun_cache_dir}
@@ -21,7 +21,7 @@
 ## Common env vars for Deno
 ## While Deno itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
 ## Preferably, DENO_JOBS would be set via something like a -j flag, but Deno only supports setting this via environment variable.
-%deno_common_envvars %{npm_common_envvars} DENO_DIR=%{_deno_dir} DENO_INSTALL_ROOT=%{_deno_install_root} DENO_NO_UPDATE_CHECK=1 DENO_JOBS=${RPM_BUILD_NCPUS}%{!?_cargo_home: FORCE_COLOR=1}
+%deno_common_envvars %{npm_common_envvars} DENO_DIR=%{_deno_dir} DENO_INSTALL_ROOT=%{_deno_install_root} DENO_NO_UPDATE_CHECK=1 DENO_JOBS=${RPM_BUILD_NCPUS} FORCE_COLOR=1
 
 ## Define home for PNPM files
 %_pnpm_home %{rpmbuilddir}/.pnpm
@@ -87,8 +87,8 @@ NPM_CONFIG_GLOBALCONFIG="${NPM_CONFIG_GLOBALCONFIG:-%{rpmbuilddir}/npmrc}" ; exp
 NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-%{_npm_cache_dir}}" ; export NPM_CONFIG_CACHE ; \
 NPM_CONFIG_LOGLEVEL="${NPM_CONFIG_LOGLEVEL:-%{__npm_log_level}}" ; export NPM_CONFIG_LOGLEVEL ; \
 NPM_CONFIG_FUND="${NPM_CONFIG_FUND:-false}" ; export NPM_CONFIG_FUND ; \
-NPM_CONFIG_UPDATE_NOTIFIER="${NPM_CONFIG_UPDATE_NOTIFIER:-false}" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \ %{!?_cargo_home:%{expand:
-NPM_CONFIG_COLOR="${NPM_CONFIG_COLOR:-always}" ; export NPM_CONFIG_COLOR ;}} \
+NPM_CONFIG_UPDATE_NOTIFIER="${NPM_CONFIG_UPDATE_NOTIFIER:-false}" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \
+NPM_CONFIG_COLOR="${NPM_CONFIG_COLOR:-always}" ; export NPM_CONFIG_COLOR ; \
 NPM_CONFIG_INIT_MODULE="${NPM_CONFIG_INIT_MODULE:-%{rpmbuilddir}/.npm-init.js}" ; export NPM_CONFIG_INIT_MODULE ; \
 BUN_HOME="${BUN_HOME:-%{_bun_home}}" ; export BUN_HOME ; \
 BUN_INSTALL_CACHE_DIR="${BUN_INSTALL_CACHE_DIR:-%{_bun_cache_dir}}" ; export BUN_INSTALL_CACHE_DIR \

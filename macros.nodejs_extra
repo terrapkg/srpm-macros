@@ -9,7 +9,7 @@
 ## Checks if our %%cargo_prep_online macro has been run, and if it has, appends Cargo env vars.
 ## For more information on the differences between uppercase and lowercase environment variables in Node.js and NPM, see https://github.com/npm/npm/issues/14528
 ## Reference: https://docs.npmjs.com/cli/v11/using-npm/config
-%npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{_npm_cache_dir} NPM_CONFIG_LOGLEVEL=%{__npm_log_level} NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1%{!?_cargo_home: NPM_CONFIG_COLOR=always} NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js%{?_cargo_home: CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1}%{?with_rust_nightly: RUSTUP_HOME=%{_rustup_home}} RUSTFLAGS='%{build_rustflags}'}
+%npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{_npm_cache_dir} NPM_CONFIG_LOGLEVEL=%{__npm_log_level} NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_COLOR=always NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js%{?_cargo_home: CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1}%{?with_rust_nightly: RUSTUP_HOME=%{_rustup_home}} RUSTFLAGS='%{build_rustflags}'}
 
 ## Build flags for NPM so they can be called independently to force our build config.
 %npm_config_opts --userconfig=%{rpmbuilddir}/.npmrc --globalconfig=%{rpmbuilddir}/npmrc --cache=%{_npm_cache_dir} --loglevel=%{__npm_log_level} --fund=false --update-notifier=false --color=always --init-module=%{rpmbuilddir}/.npm-init.js
