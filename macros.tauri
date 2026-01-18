@@ -123,8 +123,8 @@ if %{__cargo_is_lib} && [ %{cargo_install_lib} -eq 1 ] ; then       \
 fi                                                                  \
 if %{__cargo_is_bin %{-f:-f%{-f*}}} && [ %{cargo_install_bin} -eq 1 ] ; then \
   %{shrink:                                                         \
-    %crate_install_bin                                              \
-    %*
+    %{crate_install_bin}                                            \
+    %*                                                              \
   }                                                                 \
 fi                                                                  \
 cd $OLDPWD                                                          \
