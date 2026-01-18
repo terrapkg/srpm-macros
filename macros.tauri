@@ -10,42 +10,27 @@
 # -a: "Additional." Additional build deps that may be needed specifically for when building with NPM.
 # -t: "Tauri." Pull Tauri itself.
 %tauri_buildrequires(at) %{shrink:\
-autoconf \
-automake \
-binutils \
-bison \
-byacc \
 cargo \
 cargo-rpm-macros \
-cscope \
-ctags \
 curl \
 desktop-file-utils \
-elfutils \
 gcc \
 gcc-c++ \
 glibc-devel \
-flex \
-indent \
 libappindicator-gtk3-devel \
 librsvg2-devel \
-libtool \
 libxdo-devel \
-ltrace \
 nodejs \
 %{-a:nodejs-devel} \
 nodejs-npm \
 %{-a:nodejs-packaging} \
 make \
 openssl-devel \
-perf \
 pkgconf \
 rust \
 rust-srpm-macros \
-strace \
 %{-t:tauri} \
 %{-a:typescript} \
-valgrind \
 webkit2gtk4.1-devel \
 wget}
 
@@ -64,7 +49,7 @@ cd $OLDPWD
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
 # -t: "Tauri." Pull Tauri itself.
 %tauri_generate_buildrequires(at)\
-%(echo '"%{tauri_buildrequires %{-a} %{-t}}"' | sed 's/ /" ; echo "/g;s/^"autoconf/echo "autoconf/g') \
+%(echo '"%{tauri_buildrequires %{-a} %{-t}}"' | sed 's/ /" ; echo "/g;s/^"cargo/echo "cargo/g') \
 \
 if cat %{tauri_subdir}/Cargo.lock | grep "glib-sys" &>/dev/null; then \
   echo "glib2-devel" \
