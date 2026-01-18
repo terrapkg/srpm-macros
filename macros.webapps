@@ -267,7 +267,7 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then
 HOME=%{rpmbuilddir} %{__npm} exec electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"
 elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then
 %{shrink:
-  %{__npm} run tauri build
+  %{__npm} exec tauri build
   --
   %{__tauri_common_opts}
   %{__cargo_parse_opts %{-f:-f%{-f*}}}
