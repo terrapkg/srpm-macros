@@ -1,43 +1,18 @@
 ## Define cache directory for NPM
 %_npm_cache_dir %{rpmbuilddir}/.npm
 
+## Control log verbosity if desired. Defaults to "error" because NPM has a tendency to spam.
+%__npm_log_level error
+
 ## Common env vars to be used for all NPM and descendents' macros
-## NPM will default to the PROJECT SET config when environment variables are set in uppercase. This is intentional behavior and we don't override it as some build scripts rely on setting these variables to specific values. If you want to explicitly override all commands with these build flags, please use %%npm_buildflags in your calls to NPM.
+## NPM will default to the PROJECT SET config when environment variables are set in uppercase. This is intentional behavior and we don't override it as some build scripts rely on setting these variables to specific values. If you want to explicitly override all commands with these build flags, please use %%npm_config_opts in your calls to NPM.
+## Checks if our %%cargo_prep_online macro has been run, and if it has, appends Cargo env vars.
 ## For more information on the differences between uppercase and lowercase environment variables in Node.js and NPM, see https://github.com/npm/npm/issues/14528
 ## Reference: https://docs.npmjs.com/cli/v11/using-npm/config
-%npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{_npm_cache_dir} NPM_CONFIG_LOGLEVEL=error NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_COLOR=always NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js
-
-## Define home for Bun files
-## Currently Bun doesn't respect this, tracking issue here: https://github.com/oven-sh/bun/issues/10152
-%_bun_home %{rpmbuilddir}/.bun
-
-## Define cache directory for Bun
-%_bun_cache_dir %{_bun_home}/install/cache
-
-## Common env vars for Bun
-## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
-%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{_bun_home} BUN_INSTALL_CACHE_DIR=%{_bun_cache_dir} BUN_RUNTIME_TRANSPILER_CACHE_PATH=%{_bun_cache_dir} FORCE_COLOR=1
-
-## Define home for PNPM files
-%_pnpm_home %{rpmbuilddir}/.pnpm
-
-## Define store directory for PNPM
-## SHOULD be unused but some builds may produce this
-%_pnpm_store %{_pnpm_home}/store
-
-## Common env vars for PNPM
-## While PNPM itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
-%pnpm_common_envvars %{npm_common_envvars} PNPM_HOME=%{_pnpm_home}
-
-## Define cache directory for Yarn
-%_yarn_cache_dir %{rpmbuilddir}/.yarn
-
-## Common env vars for Yarn
-## While Yarn itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
-%yarn_common_envvars %{npm_common_envvars} YARN_CACHE_FOLDER=%{_yarn_cache_dir}
+%npm_common_envvars NPM_CONFIG_USERCONFIG=%{rpmbuilddir}/.npmrc NPM_CONFIG_GLOBALCONFIG=%{rpmbuilddir}/npmrc NPM_CONFIG_CACHE=%{_npm_cache_dir} NPM_CONFIG_LOGLEVEL=%{__npm_log_level} NPM_CONFIG_FUND=false NPM_CONFIG_UPDATE_NOTIFIER=false NO_UPDATE_NOTIFIER=1 NPM_CONFIG_COLOR=always NPM_CONFIG_INIT_MODULE=%{rpmbuilddir}/.npm-init.js%{?_cargo_home: CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1}%{?with_rust_nightly: RUSTUP_HOME=%{_rustup_home}} RUSTFLAGS='%{build_rustflags}'}
 
 ## Build flags for NPM so they can be called independently to force our build config.
-%npm_buildflags --userconfig=%{rpmbuilddir}/.npmrc --globalconfig=%{rpmbuilddir}/npmrc --cache=%{rpmbuilddir}/.npm --loglevel=error --fund=false --update-notifier=false --color=always --init-module=%{rpmbuilddir}/.npm-init.js
+%npm_config_opts --userconfig=%{rpmbuilddir}/.npmrc --globalconfig=%{rpmbuilddir}/npmrc --cache=%{_npm_cache_dir} --loglevel=%{__npm_log_level} --fund=false --update-notifier=false --color=always --init-module=%{rpmbuilddir}/.npm-init.js
 
 ## Define NVM cache/vendored Node.js install directory
 %_nvm_dir %{rpmbuilddir}/.nvm
@@ -45,69 +20,21 @@
 ## Call NPM with our build env vars
 %__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{__nvm} exec npm --}%{!?with_vendored_nodejs:/usr/bin/npm}
 
-## Remotely execute a Node module from the NPM Registry with NPM
-## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_buildflags set for consistent behavior.
+## Remotely execute a Node module from the NPM Registry or JavaScript Registry with NPM
+## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_config_opts set for consistent behavior.
 %__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{__nvm} exec npx --}%{!?with_vendored_nodejs:/usr/bin/npx}
 
 ## Macro to make sure system installed NVM uses the correct directory when used in %%vendor_nodejs.
 %__nvm /usr/bin/env NVM_DIR=%{_nvm_dir} /usr/bin/nvm
 
-## Call Bun with our build env vars
-%__bun /usr/bin/env %{bun_common_envvars} /usr/bin/bun
-
-## Execute a Node module in the Bun build environment (installing it if it isn't present)
-%__bunx /usr/bin/env %{bun_common_envvars} /usr/bin/bunx
-
-## Call PNPM with our build env vars
-%__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_home}/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
-
-## Remotely execute a Node module from the NPM Registry with PNPM
-%__pnpx /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_home}/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
-
-## Call Yarn with our build env vars
-%__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
-
-## Remotely execute a Node module from the NPM Registry with Yarn
-## NOTE: Yarn DLX (Yarn's equivalent to NPX, PNPX, and Bunx) only exists in Yarn Berry!
-## If you need to use this feature, make sure you use BuildRequires: yarnpkg-berry
-%__yarn_dlx %{__yarn} dlx
-
 ## ONLY use if Node.js is not usable from the repos for some reason (such as needing non-LTS Node.js)
 # -v: "Version." The version of Node.js to install. Required flag.
-%vendor_nodejs(v:)                                                                    \
-%{!?-v*:%{error:Node.js version to install required to be passed using the -v flag.}} \
-touch "$HOME/.bash_profile" &>/dev/null                                               \
+%vendor_nodejs(v:) %{shrink:                                                          \
+%{!?-v:%{error:Node.js version to install required to be passed using the -v flag.}}  \
+}                                                                                     \
 %{__nvm} install %{-v*} --save                                                        \
 %global __nodejs %{__nvm} run                                                         \
 %bcond vendored_nodejs 1
-
-## ONLY use if PNPM is not usable from the repos for some reason
-# -v "Version." Choose a specific version of PNPM to vendor
-%vendor_pnpm(v:)                                                 \
-export PNPM_HOME="%{_pnpm_home}"                                 \
-curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
-%{-v:%{_pnpm_home}/pnpm env use --global %{-v*}}                 \
-%bcond vendored_pnpm 1
-
-## Export Node module related build flags globally if necessary for any reason.
-## Based on Fedora's %%set_build_flags and can be used the same way or in combination with it.
-## Also creates a variable that can be called for our NPM build flags, similar to how Fedora supplies buildflags in both variables and macros.
-%set_node_build_flags \
-NPM_CONFIG_USERCONFIG="%{rpmbuilddir}/.npmrc" ; export NPM_CONFIG_USERCONFIG ; \
-NPM_CONFIG_GLOBALCONFIG="%{rpmbuilddir}/npmrc" ; export NPM_CONFIG_GLOBALCONFIG ; \
-NPM_CONFIG_CACHE="%{_npm_cache_dir}" ; export NPM_CONFIG_CACHE ; \
-NPM_CONFIG_LOGLEVEL="error" ; export NPM_CONFIG_LOGLEVEL ; \
-NPM_CONFIG_FUND="false" ; export NPM_CONFIG_FUND ; \
-NPM_CONFIG_UPDATE_NOTIFIER="false" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \
-NO_UPDATE_NOTIFIER="1" ; export NO_UPDATE_NOTIFIER ; \
-NPM_CONFIG_COLOR="always" ; export NPM_CONFIG_COLOR ; \
-NPM_CONFIG_INIT_MODULE="%{rpmbuilddir}/.npm-init.js" ; export NPM_CONFIG_INIT_MODULE ; \
-BUN_HOME="%{_bun_home}" ; export BUN_HOME ; \
-BUN_INSTALL_CACHE_DIR="%{_bun_cache_dir}" ; export BUN_INSTALL_CACHE_DIR \
-BUN_RUNTIME_TRANSPILER_CACHE_PATH="%{_bun_cache_dir}" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
-PNPM_HOME="%{_pnpm_home}" ; export PNPM_HOME ; \
-YARN_CACHE_FOLDER="%{_yarn_cache_dir}" ; export YARN_CACHE_FOLDER ; \
-NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 
 ## These macros REQUIRE that the macro %%npm_name be defined or the module be passed to them
 
@@ -115,13 +42,9 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 ## WARNING: Do NOT use in the prep section of projects using NPM that are not Node.js packages!
 # -n: "Name." Must be the CANONICAL name of the Node module as hosted on the NPM Registry
 # %%npm_prep -n nodepkgname
-%npm_prep(n:) %{lua:
-   if opt.n then
-     rpm.define("npm_name %{-n*}")
-   end
-   if not rpm.isdefined("npm_name") then
-     error("%npm_name is not defined. Please define it using a global macro or with the -n flag.")
-   end}                                                    \
+%npm_prep(n:) %{shrink:
+%{!?-n:%{!?npm_name:%{error:%%npm_name is not defined. Please define it using a global macro or with the -n flag.}}}
+%{-n:%global npm_name %{-n*}}}                             \
 %{__npm} install -g %{npm_name}@%{version} --prefix="$PWD" \
 %setup -T -D -n lib/node_modules/%{npm_name}
 
@@ -154,20 +77,15 @@ NPMFLAGS="${NPMFLAGS:-%{npm_buildflags} }" ; export NPMFLAGS
 %{__git} switch -c v%{version} -q                    \
 %{__git} sparse-checkout set --no-cone %{_nodetests} \
 %{__git} checkout -q                                 \
-cd "$OLDPWD"
+cd $OLDPWD
 
 ## Install package to %%nodejs_sitelib or %%nodejs_sitearch.
 # -s: "Symlink." Install bindir symlink as a different name than the %%npm_name.
-%npm_install(s:) %{lua:
-  if not rpm.isdefined("npm_name") or not (rpm.isdefined("buildsubdir") and not rpm.isdefined("_buildsubdir")) then
-    error("Package has not been prepped! Please run %npm_prep first.")
-  end
-  if opt.s then
-    rpm.define("__node_bin_symlink %{-s*}")
-  else
-    rpm.define("__node_bin_symlink %{npm_name}")
-  end}                                                         \
-if stat ./bin/%{npm_name}.js &>/dev/null; then                 \
+%npm_install(s:) %{shrink: \
+  %{!?npm_name:%{error:Package has not been prepped! Please run %%npm_prep first.}} \
+  %{!?buildsubdir:%{error:Package has not been prepped! Please run %%npm_prep first.}} \
+}                                                              \
+if [ -e ./bin/%{npm_name}.js ]; then                           \
   _js=".js"                                                    \
 fi                                                             \
 if [[ "%{_target_cpu}" != "noarch" ]]; then                    \
@@ -177,10 +95,10 @@ else                                                           \
   BUILDINSTALLDIR="%{buildroot}%{nodejs_sitelib}/%{npm_name}"  \
   INSTALLDIR="%{nodejs_sitelib}/%{npm_name}"                   \
 fi                                                             \
-%{__mkdir} -p "$BUILDINSTALLDIR"                               \
-%{__mkdir} -p "%{buildroot}%{_bindir}"                         \
-%{__cp} -r ./* -t "$BUILDINSTALLDIR"                           \
-%{__ln_s}f "$INSTALLDIR/bin/%{npm_name}$_js" %{buildroot}%{_bindir}/%{__node_bin_symlink}
+%{__mkdir} -p $BUILDINSTALLDIR                                 \
+%{__mkdir} -p %{buildroot}%{_bindir}                           \
+%{__cp} -r ./* -t $BUILDINSTALLDIR                             \
+%{__ln_s}f $INSTALLDIR/bin/%{npm_name}$_js %{buildroot}%{_bindir}/%{-s*}%{!?-s:%{npm_name}}
 
 ## Best used in check section
 ## This will fail if ANY security vulnerabilities are found. It SHOULD NOT fail for other issues.
@@ -204,59 +122,20 @@ fi                                                             \
    %{-o:--omit=%{-o*}}          \
    %{-O:--only=%{-O*}}          \
    %{-p:--package-lock-only}    \
-   %{nil}                       \
+   %*                           \
 }                               \
 )
 
-## For use in check section
-## ONLY use if package uses bundled Node dependencies.
-## NOTE: Technically Bun audit is a wrapper for NPM audit, however it unfortunately lacks the ability to FIX vulnerabilities
-## There is no timeline for this being implemented, but there is a tracking issue: https://github.com/oven-sh/bun/issues/20238
-## For now, you need to fix vulnerabilities, please see %%npm_audit_fix
-# NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%bun_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__bun} audit
-
-## For use in check section
-## ONLY use if package uses bundled Node dependencies.
-## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%pnpm_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit
-
-## Fix dependencies using PNPM.
-## WARNING: Does NOT support all the options NPM audit fix does. It may be preferable to use that instead as this will also fix build dependencies.
-%pnpm_audit_fix() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit --fix
-
-## Approve dependency scripts with Bun if needed.
-# -a: "All." Approve all scripts. Use with caution.
-# Example: %%bun_pm_trust pkg1 pkg2
-%bun_pm_trust(a) \
-%{lua:
-if not opt.a and not arg[1] then
-  error("bun pm trust requires package names or -a for --all")
-elseif not opt.a then
-  print(rpm.expand("%{__bun} pm trust"))
-  for i, cmd in ipairs(arg) do
-    print(" " .. cmd)
-  end
-  print("\\n")
-elseif opt.a then
-  print(rpm.expand("%{__bun} pm trust --all"))
-end}
-
-## Approve dependency scripts with PNPM if needed.
-# -g: Direct duplicate of "-g" (global).
-%pnpm_approve_builds(g) %{__pnpm} approve-builds %{-g:-g}
-
-## For use in check section
-## ONLY use if package uses bundled Node dependencies.
-## Unfortunately, like Bun, Yarn lacks a built in way to fix vulnerabilities.
-## If you need to fix vulnerabilities, please see %%npm_audit_fix
-## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
-%yarn_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__yarn} audit
+## Run tests with NPM
+%npm_test(-) %{shrink: \
+  %{__npm} test        \
+  %*                   \
+}
 
 ## Below require nodejs-license-checker as a build dep
 
 ## Make this a macro so it can be called on its own for any reason
-%__npm_license_checker() /usr/bin/license-checker
+%__npm_license_checker /usr/bin/license-checker
 
 ## Outputs a summary of the licenses used in the main package and bundled dependencies
 ## Useful for filling out the License section
@@ -272,24 +151,23 @@ end}
 ## Other tests include Mocha, Yarn, ESLint, and more that MAY be possible to accomodate with some more research and testing
 # -R: Direct duplicate of -R flag. Project dependent.
 # -v: Direct duplicate of -v flag. Project dependent.
-%node_self_test(Rv)                                                \
-if stat ./bin/%{npm_name}.js &>/dev/null; then                     \
-  _js=".js"                                                        \
-fi                                                                 \
-if [[ "%{_target_cpu}" != "noarch" ]]; then                        \
-  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitearch}/%{npm_name}"     \
-else                                                               \
-  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitelib}/%{npm_name}"      \
-fi                                                                 \
-for test in %{?_nodetests}; do                                     \
-  if [[ "$test" == /* ]]; then                                     \
-    NODE_ENV=test "$BUILDINSTALLDIR/bin/%{npm_name}$_js" %{shrink: \
-    %{-R:-R}                                                       \
-    %{-v:-v}                                                       \
-    } "%{_nodetestdir}$test"                                       \
-   fi                                                              \
+%node_self_test(Rv)                                            \
+if [ -e ./bin/%{npm_name}.js ]; then                           \
+  _js=".js"                                                    \
+fi                                                             \
+if [[ "%{_target_cpu}" != "noarch" ]]; then                    \
+  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitearch}/%{npm_name}" \
+else                                                           \
+  BUILDINSTALLDIR="%{buildroot}%{nodejs_sitelib}/%{npm_name}"  \
+fi                                                             \
+for test in %{?_nodetests}; do                                 \
+  if [[ "$test" == /* ]]; then                                 \
+    %{shrink:                                                  \
+    NODE_ENV=test                                              \
+    $BUILDINSTALLDIR/bin/%{npm_name}$_js                       \
+    %{-R}                                                      \
+    %{-v}                                                      \
+    %{_nodetestdir}$test                                       \
+    %*}                                                        \
+  fi                                                           \
 done
-
-## Generic NPM tests
-%npm_test()   \
-%{__npm} test

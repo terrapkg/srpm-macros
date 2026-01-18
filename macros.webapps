@@ -1,0 +1,616 @@
+## Define home for Bun files
+## Currently Bun doesn't respect this, tracking issue here: https://github.com/oven-sh/bun/issues/10152
+%_bun_home %{rpmbuilddir}/.bun
+
+## Define cache directory for Bun
+%_bun_cache_dir %{_bun_home}/install/cache
+
+## Define directory for Deno files
+%_deno_dir %{rpmbuilddir}/.deno
+
+## Define dependency install dir for Deno
+%_deno_install_root %{_deno_dir}/bin
+
+## Common env vars for Bun
+## While Bun itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
+%bun_common_envvars %{npm_common_envvars} BUN_HOME=%{_bun_home} BUN_INSTALL_CACHE_DIR=%{_bun_cache_dir} BUN_RUNTIME_TRANSPILER_CACHE_PATH=%{_bun_cache_dir} FORCE_COLOR=1
+
+## Build flags for Bun so they can be called independently to force our build config.
+%bun_config_opts --cache-dir=%{_bun_cache_dir}
+
+## Common env vars for Deno
+## While Deno itself doesn't use NPM env vars directly (and is its own JavaScript runtime independent to Node.js), some Node module build deps such as Electron Builder do
+## Preferably, DENO_JOBS would be set via something like a -j flag, but Deno only supports setting this via environment variable.
+%deno_common_envvars %{npm_common_envvars} DENO_DIR=%{_deno_dir} DENO_INSTALL_ROOT=%{_deno_install_root} DENO_NO_UPDATE_CHECK=1 DENO_JOBS=${RPM_BUILD_NCPUS} FORCE_COLOR=1
+
+## Define home for PNPM files
+%_pnpm_home %{rpmbuilddir}/.pnpm
+
+## Define store directory for PNPM
+## SHOULD be unused but some builds may produce this
+%_pnpm_store %{_pnpm_home}/store
+
+## Common env vars for PNPM
+## While PNPM itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
+%pnpm_common_envvars %{npm_common_envvars} PNPM_HOME=%{_pnpm_home}
+
+## Define cache directory for Yarn
+%_yarn_cache_dir %{rpmbuilddir}/.yarn
+
+## Common env vars for Yarn
+## While Yarn itself doesn't use NPM env vars directly, some Node module build deps such as Electron Builder do
+%yarn_common_envvars %{npm_common_envvars} YARN_CACHE_FOLDER=%{_yarn_cache_dir}
+
+## Build flags for Yarn so they can be called independently to force our build config.
+%yarn_config_opts --cache-folder=%{_yarn_cache_dir}
+
+## Call Bun with our build env vars
+%__bun /usr/bin/env %{bun_common_envvars} /usr/bin/bun
+
+## Execute a JavaScript module in the Bun build environment (installing it if it isn't present)
+%__bunx /usr/bin/env %{bun_common_envvars} /usr/bin/bunx
+
+## Call Deno with our build env vars
+%__deno /usr/bin/env %{deno_common_envvars} /usr/bin/deno
+
+## Remotely execute a JavaScript module from the NPM Registry or JavaScript Registry with Deno
+%__dx /usr/bin/env %{deno_common_envvars} /usr/bin/dx
+
+## Call PNPM with our build env vars
+%__pnpm /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_home}/pnpm}%{!?with_vendored_pnpm:/usr/bin/pnpm}
+
+## Remotely execute a JavaScript module from the NPM Registry with PNPM
+%__pnpx /usr/bin/env %{pnpm_common_envvars} %{?with_vendored_pnpm:%{_pnpm_home}/pnpx}%{!?with_vendored_pnpm:/usr/bin/pnpx}
+
+## Call Yarn with our build env vars
+%__yarn /usr/bin/env %{yarn_common_envvars} /usr/bin/yarn
+
+## Remotely execute a JavaScript module from the NPM Registry or JavaScript Registry with Yarn
+## NOTE: Yarn DLX (Yarn's equivalent to NPX, PNPX, Bunx, and DX/Deno X) only exists in Yarn Berry!
+## If you need to use this feature, make sure you use BuildRequires: yarnpkg-berry
+%__yarn_dlx %{__yarn} dlx
+
+## ONLY use if PNPM is not usable from the repos for some reason
+# -v "Version." Choose a specific version of PNPM to vendor
+%vendor_pnpm(v:)                                                 \
+export PNPM_HOME="%{_pnpm_home}"                                 \
+curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
+%{-v:%{_pnpm_home}/pnpm env use --global %{-v*}}                 \
+%bcond vendored_pnpm 1
+
+## Export JavaScript module related build flags globally if necessary for any reason.
+## Based on Fedora's %%set_build_flags and can be used the same way or in combination with it.
+## Also creates a variable that can be called for our NPM, Bun, and Yarn build/config flags, similar to how Fedora supplies buildflags in both variables and macros.
+%set_javascript_build_flags \
+NPM_CONFIG_USERCONFIG="${NPM_CONFIG_USERCONFIG:-%{rpmbuilddir}/.npmrc}" ; export NPM_CONFIG_USERCONFIG ; \
+NPM_CONFIG_GLOBALCONFIG="${NPM_CONFIG_GLOBALCONFIG:-%{rpmbuilddir}/npmrc}" ; export NPM_CONFIG_GLOBALCONFIG ; \
+NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-%{_npm_cache_dir}}" ; export NPM_CONFIG_CACHE ; \
+NPM_CONFIG_LOGLEVEL="${NPM_CONFIG_LOGLEVEL:-%{__npm_log_level}}" ; export NPM_CONFIG_LOGLEVEL ; \
+NPM_CONFIG_FUND="${NPM_CONFIG_FUND:-false}" ; export NPM_CONFIG_FUND ; \
+NPM_CONFIG_UPDATE_NOTIFIER="${NPM_CONFIG_UPDATE_NOTIFIER:-false}" ; export NPM_CONFIG_UPDATE_NOTIFIER ; \
+NPM_CONFIG_COLOR="${NPM_CONFIG_COLOR:-always}" ; export NPM_CONFIG_COLOR ; \
+NPM_CONFIG_INIT_MODULE="${NPM_CONFIG_INIT_MODULE:-%{rpmbuilddir}/.npm-init.js}" ; export NPM_CONFIG_INIT_MODULE ; \
+BUN_HOME="${BUN_HOME:-%{_bun_home}}" ; export BUN_HOME ; \
+BUN_INSTALL_CACHE_DIR="${BUN_INSTALL_CACHE_DIR:-%{_bun_cache_dir}}" ; export BUN_INSTALL_CACHE_DIR \
+BUN_RUNTIME_TRANSPILER_CACHE_PATH="${BUN_RUNTIME_TRANSPILER_CACHE_PATH:-%{_bun_cache_dir}}" ; export BUN_RUNTIME_TRANSPILER_CACHE_PATH ; \
+DENO_DIR="${DENO_DIR:-%{_deno_dir}}" ; export DENO_DIR ; \
+DENO_INSTALL_ROOT="${DENO_INSTALL_ROOT:-%{_deno_install_root}}" ; export DENO_INSTALL_ROOT ; \
+DENO_NO_UPDATE_CHECK="${DENO_NO_UPDATE_CHECK:-1}" ; export DENO_NO_UPDATE_CHECK ; \
+DENO_JOBS="${DENO_JOBS:-${RPM_BUILD_NCPUS}}" ; export DENO_JOBS ; \
+PNPM_HOME="${PNPM_HOME:-%{_pnpm_home}}" ; export PNPM_HOME ; \
+YARN_CACHE_FOLDER="${YARN_CACHE_FOLDER:-%{_yarn_cache_dir}}" ; export YARN_CACHE_FOLDER ; \
+NPM_OPTS="${NPM_OPTS:-%{npm_config_opts} }" ; export NPM_OPTS ; \
+BUN_OPTS="${BUN_OPTS:-%{bun_config_opts} }" ; export BUN_OPTS ; \
+YARN_OPTS="${YARN_OPTS:-%{yarn_config_opts} }" ; export YARN_OPTS
+
+## For use in check section
+## ONLY use if package uses bundled Node dependencies.
+## NOTE: Technically Bun audit is a wrapper for NPM audit, however it unfortunately lacks the ability to FIX vulnerabilities
+## There is no timeline for this being implemented, but there is a tracking issue: https://github.com/oven-sh/bun/issues/20238
+## For now, you need to fix vulnerabilities, please see %%npm_audit_fix
+# NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
+%bun_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__bun} audit
+
+## For use in check section
+## ONLY use if package uses bundled Node dependencies.
+## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
+%deno_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__deno} audit --level=low --ignore-unfixable --socket
+
+## For use in check section
+## ONLY use if package uses bundled Node dependencies.
+## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
+%pnpm_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit
+
+## Fix dependencies using PNPM.
+## WARNING: Does NOT support all the options NPM audit fix does. It may be preferable to use that instead as this will also fix build dependencies.
+%pnpm_audit_fix() NPM_CONFIG_AUDIT_LEVEL=low %{__pnpm} audit --fix
+
+## For use in check section
+## ONLY use if package uses bundled Node dependencies.
+## Unfortunately, like Bun, Yarn lacks a built in way to fix vulnerabilities.
+## If you need to fix vulnerabilities, please see %%npm_audit_fix
+## NOTE: While alarming, if the audit fails on a dependency that is NOT bundled in the final program, you can ignore it.
+%yarn_audit() NPM_CONFIG_AUDIT_LEVEL=low %{__yarn} audit
+
+## Approve dependency scripts with Bun if needed.
+# -a: "All." Approve all scripts. Use with caution.
+# Example: %%bun_pm_trust pkg1 pkg2
+%bun_pm_trust(a) %{shrink:                                                     \
+  %{!?1:%{!?-a:%{error:bun pm trust requires package names or -a for --all.}}} \
+  %{!?-a:%{__bun} pm trust %*}                                                 \
+  %{-a:%{__bun} pm trust --all}                                                \
+}
+
+## Approve dependency scripts with Bun if needed.
+# -l: "Lockfile only." Only approve scripts of dependencies found in the lockfile.
+%deno_approve_scripts(l) %{shrink:                             \
+  %{!?1:%{error:deno approve-scripts requires package names.}} \
+  %{__deno} approve-scripts                                    \
+  %{-l:--lockfile-only}                                        \
+  %*                                                           \
+}
+
+## Approve dependency scripts with PNPM if needed.
+# -g: Direct duplicate of "-g" (global).
+%pnpm_approve_builds(g) %{shrink:                             \
+  %{!?1:%{error:pnpm approve-builds requires package names.}} \
+  %{__pnpm} approve-builds                                    \
+  %{-g}                                                       \
+  %*                                                          \
+}
+
+## Run tests with Bun
+%bun_test(-) %{shrink: \
+  %{__bun} test        \
+  %*                   \
+}
+
+## Run tests with Deno
+%deno_test(-) %{shrink: \
+  %{__deno} test        \
+  --parallel            \
+  %*                    \
+}
+
+## Run tests with PNPM
+%pnpm_test(-) %{shrink: \
+  %{__pnpm} test        \
+  %*                    \
+}
+
+## Run tests with Yarn
+%yarn_test(-) %{shrink: \
+  %{__yarn} test        \
+  %*                    \
+}
+
+## NPM is very limited compared to other JavaScript package managers. This macro has MANY flags to work around this and will fail if no necessary ones are detected. Capital letter flags are for use with calling Electron Builder, Electron Forge, Electron Vite, or Tauri.
+## Generally, -e and -r should be used. However, -B and -V can also be used if a project has a relatively simple build process.
+## Because of the way NPM projects are sometimes set up, -B and -V issue a warning.
+# -B: "Builder." Directly execute Electron Builder, Electron Forge, or Tauri. Will NOT work in projects that need build commands executed via Node.js instead of NPM.
+# -c: "CI/clean install." Boolean to use npm ci instead of npm install. Needed for some projects with stricter build dependencies.
+# -C: "Config." Direct Electron Builder to the config file. May be necessary with NPM.
+# -e: "Exec." Execute commands though NPM directly. Note that some commands longer than one word MUST have -- follow the first word to be passed to the command, especially if they are passing arguments to a Node module. You can use standard shell command separators, "&&" and ";", to separate commands.
+# -f: "Features." TAURI ONLY. Features to enable in Tauri/Cargo.
+# -M: "Mode." Mode to use in Electron Vite builds.
+# -n: "No package lock." Ignore the package lock.
+# -r: "Run." Project-specific scripts to run.
+# -V: "Vite." Directly execute Electron Vite. Has the same limitation as -E.
+%npm_build(BcC:ef:M:nr:V) %{shrink:
+%{!?-e:%{!?-r:%{!?-B:%{error:Necessary build args not detected! This macro REQUIRES use of -e, -r, or -B.}}}}                                    \
+%{-c:%{-n:%{error:Cannot use both -c and -n.}}}                                                                                                  \
+%{lua:
+  if opt.B or opt.V then
+    print("echo -e \\"\\\\e[33mNOTE:\\\\e[0m Use of -B and -V may not work with all NPM built projects.\\" >&2")
+  end}}                                                                                                                                          \
+if cat package.json | grep electron-builder &>/dev/null; then                                                                                    \
+  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  echo "-f flag only works with Tauri, ignoring." >&2}}                                                                                          \
+elif cat package.json | grep electron-forge &>/dev/null; then                                                                                    \
+  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  echo "-f flag only works with Tauri, ignoring." >&2}}                                                                                          \
+elif cat package.json | grep tauri &>/dev/null; then                                                                                             \
+  WEBAPP_BUILD_TOOL="tauri"                                                                                                                      \
+fi                                                                                                                                               \
+%{__npm} %{shrink:                                                                                                                               \
+  %{!?-c:install}                                                                                                                                \
+  %{-c:ci}                                                                                                                                       \
+  %{-n:--no-package-lock}}                                                                                                                       \
+%{lua:
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
+  end
+
+  if opt.e then
+    local exec = rpm.expand("HOME=%{rpmbuilddir} %{__npm} exec")
+    local arg_string = table.concat(arg, " ")
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
+      end
+    end
+
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(exec .. " " .. cmd .. "\\n")
+        else
+          print(exec .. cmd .. "\\n")
+        end
+      end
+    else
+      print(exec)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
+    local scripts = split(macros["-r*"], ",")
+    for i, script in ipairs(scripts) do
+      print(macros["__npm"] .. " run " .. script .. "\\n")
+    end
+  end} %{-V:%{expand:
+HOME=%{rpmbuilddir} %{__npm} exec electron-vite -- build %{-M:--mode %{-M*}}}}                                                                   \
+%{-B:%{expand:
+if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then
+HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux --%{_electron_cpu} --publish=never %{-C:-c %{-C*}}
+elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then
+%{__npm} install @reforged/maker-appimage --no-save --no-audit
+HOME=%{rpmbuilddir} %{__npm} exec electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"
+elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then
+%{shrink:
+  %{__npm} exec tauri build
+  --
+  %{__tauri_common_opts}
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}
+  --
+  %{__cargo_common_opts}
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}
+  --profile rpm}
+fi}}
+
+## Capital letters denote potentially risky build options as they may change intended build behavior.
+# -c: "CI/clean install." Equivalent to using "bun install --frozen-lockfile".
+# -e: "Exec." Execute commands though Bun directly. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands. You can use standard shell command separators, "&&" and ";", to separate commands.
+# -f: "Features." TAURI ONLY. Features to enable in Tauri/Cargo.
+# -F: "Force." Always request the latest versions from the NPM Registry and reinstall all dependenices.
+# -N: "No save." Do not create a lockfile. Prevents freezing dependencies.
+# -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
+# -R: "Remove lockfile." Remove the lockfile if it is causing issues (i.e., the project has forgotten to update a dependency in it).
+# -v: "Vite." Run Electron Vite builds.
+%bun_build(cef:FNRr:v) %{shrink:                                                                                                       \
+%{-c:%{-R:%{error:Can't use both -c and -R}}}                                                                                          \
+%{-c:%{-N:%{error:Can't use both -c and -N}}}}                                                                                         \
+if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
+  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
+elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
+  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
+elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
+  WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
+fi %{-R:%{expand:
+echo -e "\\e[33mWARNING:\\e[0m Removing bun.lock. This is not recommended unless absolutely necessary." >&2
+%{__rm} -f bun.lock}}                                                                                                                  \
+%{__bun} %{shrink:                                                                                                                     \
+  %{!?-c:install}                                                                                                                      \
+  %{-c:ci}                                                                                                                             \
+  %{-F:--force}                                                                                                                        \
+  %{-N:--no-save}}                                                                                                                     \
+%{lua:
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
+  end
+
+  if opt.e then
+    local exec = rpm.expand("%{__bun} exec")
+    local arg_string = table.concat(arg, " ")
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
+      end
+    end
+
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(exec .. " " .. cmd .. "\\n")
+        else
+          print(exec .. cmd .. "\\n")
+        end
+      end
+    else
+      print(exec)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
+    local scripts = split(macros["-r*"], ",")
+    for i, script in ipairs(scripts) do
+      print(macros["__bun"] .. " run " .. script .. "\\n")
+    end
+  end} %{-v:%{expand:
+HOME=%{rpmbuilddir} %{__bunx} electron-vite build}}                                                                                    \
+if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
+HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
+%{__bun} install @reforged/maker-appimage --no-save --no-verify                                                                        \
+HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
+elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
+%{shrink:                                                                                                                              \
+  %{__bunx} tauri build                                                                                                                \
+  %{__tauri_common_opts}                                                                                                               \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
+  --                                                                                                                                   \
+  %{__cargo_common_opts}                                                                                                               \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
+  --profile rpm}                                                                                                                       \
+fi
+
+## Capital letters denote potentially risky build options as they may change intended build behavior.
+# -f: "Features." TAURI ONLY. Features to enable in Tauri/Cargo.
+# -F: "Force." Overwite existing installation (if any exists).
+# -N: "No lock." Do not create check or update lockfile.
+# -r: "Run." Files to execute with Deno. Needs full paths, comma separated for multiple files. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
+# -t: "Task." Project specific scripts to run. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
+# -v: "Vite." Run Electron Vite builds.
+# -x: "X." Run commands with Deno X. You can use standard shell command separators, "&&" and ";", to separate commands.
+%deno_build(f:FNL::r:t:vx) %{shrink:                                                                                                 \
+%{-L:%{-F:%{error:Can't use both -L and -F}}}                                                                                        \
+%{-L:%{-N:%{error:Can't use both -L and -N}}}}                                                                                       \
+if cat package.json | grep electron-builder &>/dev/null; then                                                                        \
+  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                       \
+elif cat package.json | grep electron-forge &>/dev/null; then                                                                        \
+  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                       \
+elif cat package.json | grep tauri &>/dev/null; then                                                                                 \
+  WEBAPP_BUILD_TOOL="tauri"                                                                                                          \
+fi                                                                                                                                   \
+%{__deno} install %{shrink:                                                                                                          \
+  %{-F:--force}                                                                                                                      \
+  %{-N:--no-lock}                                                                                                                    \
+  %{-L:%{!?-L*:--lock}}                                                                                                              \
+  %{-L*:--lock %{-L*}}}                                                                                                              \
+%{lua:
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
+  end
+
+  if opt.x then
+    local arg_string = table.concat(arg, " ")
+    local dx = macros["__dx"]
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
+      end
+    end
+
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(dx .. " " .. cmd .. "\\n")
+        else
+          print(dx .. cmd .. "\\n")
+        end
+      end
+    else
+      print(dx)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
+    local files = split(macros["-r*"], ",")
+    for i, file in ipairs(files) do
+      print(macros["__deno"] .. " run " .. file .. "\\n")
+    end
+  end
+  if opt.t then
+    local scripts = split(macros["-t*"], ",")
+    for i, script in ipairs(scripts) do
+      print(macros["__deno"] .. " task " .. script .. "\\n")
+    end
+  end} %{-v:%{expand:
+HOME=%{rpmbuilddir} %{__dx} electron-vite build}}                                                                                    \
+if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                            \
+HOME=%{rpmbuilddir} %{__dx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                            \
+%{__deno} install @reforged/maker-appimage --no-lock --no-verify                                                                     \
+HOME=%{rpmbuilddir} %{__dx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
+elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                     \
+%{shrink:                                                                                                                            \
+  %{__dx} tauri build                                                                                                                \
+  %{__tauri_common_opts}                                                                                                             \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                               \
+  --                                                                                                                                 \
+  %{__cargo_common_opts}                                                                                                             \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                               \
+  --profile rpm}                                                                                                                     \
+fi
+
+## Capital letters denote potentially risky build options as they may change intended build behavior.
+# -e: "Exec." Execute commands though PNPM directly. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands. Usually, the actual "exec" part of the command is optional. However, this macro calls it explicitly. You can use standard shell command separators, "&&" and ";", to separate commands.
+# -f: "Features." TAURI ONLY. Features to enable in Tauri/Cargo.
+# -F: "Frozen lockfile." Build with a frozen lockfile.
+# -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
+# -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
+# -R: "Recursive." For use with PNPM exec. Runs on every project in the workspace so use with caution.
+# -v: "Vite." Run electron-vite builds.
+%pnpm_build(ef:FNr:Rv) %{shrink:                                                                                                       \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}}                                                                                         \
+if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
+  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
+elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
+  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
+elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
+  WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
+fi                                                                                                                                     \
+%{__pnpm} install %{shrink:                                                                                                            \
+  %{-F:--frozen-lockfile}                                                                                                              \
+  %{-N:--no-frozen-lockfile}}                                                                                                          \
+%{lua:
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
+  end
+
+  if opt.e then
+    local exec = rpm.expand("%{__pnpm}%{-R: -r} exec")
+    local arg_string = table.concat(arg, " ")
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
+      end
+    end
+
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(exec .. " " .. cmd .. "\\n")
+        else
+          print(exec .. cmd .. "\\n")
+        end
+      end
+    else
+      print(exec)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
+    local scripts = split(macros["-r*"], ",")
+    for i, script in ipairs(scripts) do
+      print(macros["__pnpm"] .. " run " .. script .. "\\n")
+    end
+  end} %{-v:%{expand:
+HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}}                                                                                    \
+if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
+HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
+%{__pnpm} install @reforged/maker-appimage --no-lockfile                                                                               \
+HOME=%{rpmbuilddir} %{__pnpm} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
+elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
+%{shrink:                                                                                                                              \
+  %{__pnpm} tauri build                                                                                                                \
+  %{__tauri_common_opts}                                                                                                               \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
+  --                                                                                                                                   \
+  %{__cargo_common_opts}                                                                                                               \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
+  --profile rpm}                                                                                                                       \
+fi
+
+## Capital letters denote potentially risky build options as they may change intended build behavior.
+# -e: "Exec." Execute commands though Yarn directly. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands. You can use standard shell command separators, "&&" and ";", to separate commands.
+# -f: "Features." TAURI ONLY. Features to enable in Tauri/Cargo.
+# -F: "Frozen lockfile." Build with a frozen lockfile.
+# -N: "No frozen lockfile." Override a project's frozen lockfile to build with an unfrozen one.
+# -r: "Run." Project-specific scripts to run. Not recommended for Electron Builder, Electron Forge, Electron Vite, or Tauri commands.
+# -v: "Vite." Run electron-vite builds.
+%yarn_build(ef:FNr:v) %{shrink:                                                                                                        \
+%{-F:%{-N:%{error:Can't use both -F and -N}}}}                                                                                         \
+if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
+  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
+elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
+  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
+elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
+  WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
+fi                                                                                                                                     \
+%{__yarn} install %{shrink:                                                                                                            \
+  %{-F:--frozen-lockfile}                                                                                                              \
+  %{-N:--no-lockfile}}                                                                                                                 \
+%{lua:
+  function split(arguments, split_pattern)
+    local arg_list = {}
+    local pattern = '([^'..split_pattern..']+)'
+    string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
+    return arg_list
+  end
+
+  if opt.e then
+    local exec = rpm.expand("%{__yarn} exec")
+    local arg_string = table.concat(arg, " ")
+
+    for i, entry in ipairs(arg) do
+      if entry:find("&&") then
+        cmds = split(arg_string, "&&")
+      elseif entry:find(";") then
+        cmds = split(arg_string, ";")
+      end
+    end
+
+    if cmds then
+      for i, cmd in ipairs(cmds) do
+        if not cmd:find("^ ") then
+          print(exec .. " " .. cmd .. "\\n")
+        else
+          print(exec .. cmd .. "\\n")
+        end
+      end
+    else
+      print(exec)
+      for i, cmd in ipairs(arg) do
+        print(" " .. cmd)
+      end
+      print("\\n")
+    end
+  end
+  if opt.r then
+    local scripts = split(macros["-r*"], ",")
+    for i, script in ipairs(scripts) do
+      print(macros["__yarn"] .. " run " .. script .. "\\n")
+    end
+  end} %{-v:%{expand:
+HOME=%{rpmbuilddir} %{__yarn} electron-vite build}}                                                                                    \
+if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
+HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
+%{__yarn} install @reforged/maker-appimage --no-lockfile                                                                               \
+HOME=%{rpmbuilddir} %{__yarn} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
+elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
+%{shrink:                                                                                                                              \
+  %{__yarn} tauri build                                                                                                                \
+  %{__tauri_common_opts}                                                                                                               \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
+  --                                                                                                                                   \
+  %{__cargo_common_opts}                                                                                                               \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
+  --profile rpm}                                                                                                                       \
+fi
