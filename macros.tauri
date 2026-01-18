@@ -107,7 +107,7 @@ fi
 ## MAY be used for Fedora style Rust Crate packaging with the build files
 %tauri_install(t:f:)\
 (\
-set -euo pipefail                                                    \
+set -euo pipefail                                                   \
 cd %{tauri_subdir}                                                  \
 CRATE_NAME=$(%{__cargo_to_rpm} --path Cargo.toml name)              \
 if %{__cargo_is_lib} && [ %{cargo_install_lib} -eq 1 ] ; then       \
