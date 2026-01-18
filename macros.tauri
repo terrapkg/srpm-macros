@@ -128,7 +128,7 @@ if %{__cargo_is_bin %{-f:-f%{-f*}}} && [ %{cargo_install_bin} -eq 1 ] ; then \
   }                                                                 \
 fi                                                                  \
 cd $OLDPWD                                                          \
-)\
+)
 
 ## Wrapper for %%crate_install_bin for Tauri
 %tauri_install_bin() \
