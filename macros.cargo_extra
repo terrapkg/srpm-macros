@@ -7,16 +7,15 @@ set -eu \
 %{__mkdir} -p target/rpm\
 %{__ln_s} rpm target/release\
 %{!?with_rust_nightly:%{expand:
-%{__rm} -rf {.cargo/,'%{_cargo_home}/'}
-%{__mkdir} -p '%{_cargo_home}'}}\
-cat > '%{_cargo_home}/config.toml' << EOF \
+%{__rm} -rf {.cargo/,%{_cargo_home}/}
+%{__mkdir} -p %{_cargo_home}}}\
+cat > %{_cargo_home}/config.toml << EOF \
 [profile.rpm]\
 inherits = "release"\
 opt-level = %{rustflags_opt_level}\
 codegen-units = %{rustflags_codegen_units}\
 debug = %{rustflags_debuginfo}\
 strip = "none"\
-\
 \
 [build]\
 rustc = "%{__rustc}"\
@@ -42,7 +41,7 @@ EOF\
 %{__rm} -f Cargo.toml.orig \
 )\
 %global build_rustflags %{terra_rustflags} \
-%{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME='%{_cargo_home}' RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}
+%{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}
 
 
 
@@ -62,18 +61,18 @@ EOF\
 %cargo_license_online(naf:)\
 (\
 set -euo pipefail\
-%{shrink:                                                                                  \
-    %{__cargo} tree                                                                        \
-    -Z avoid-dev-deps                                                                      \
-    --workspace                                                                            \
-    --edges no-build,no-dev,no-proc-macro                                                  \
-    --no-dedupe                                                                            \
-    --target all                                                                           \
-    %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}}                                       \
-    --prefix none                                                                          \
-    --format "{l}: {p}"                                                                    \
-    | sed -e "s: ($(pwd)[^)]*)::g" -e "s: / :/:g" -e "s:/: OR :g" -e "\\|/.*:|{s|/| OR |}" \
-    | sort -u                                                                              \
+%{shrink:                                                                  \
+    %{__cargo} tree                                                        \
+    -Z avoid-dev-deps                                                      \
+    --workspace                                                            \
+    --edges no-build,no-dev,no-proc-macro                                  \
+    --no-dedupe                                                            \
+    --target all                                                           \
+    %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}}                       \
+    --prefix none                                                          \
+    --format "{l}: {p}"                                                    \
+    | sed -e "s: ($(pwd)[^)]*)::g" -e "s: / :/:g" -e "\\|/.*:|{s|/| OR |}" \
+    | sort -u                                                              \
 }\
 )
 
@@ -96,7 +95,7 @@ set -euo pipefail\
     %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}}                \
     --prefix none                                                   \
     --format "# {l}"                                                \
-    | sed -e "s: / :/:g" -e "s:/: OR :g" -e "\\|/.*:|{s|/| OR |}"   \
+    | sed -e "s: / :/:g" -e "\\|/.*:|{s|/| OR |}"                   \
     | sort -u                                                       \
 }\
 )
@@ -136,12 +135,12 @@ CRATE_NAME="$(%{__cargo_to_rpm} --path Cargo.toml name)" \
 %rustup_nightly \
 %{?_cargo_home:%{error:%%rustup_nightly must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
 %global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo \
-%{__rm} -rf {.cargo/,'%{_cargo_home}/'} \
+%{__rm} -rf {.cargo/,%{_cargo_home}/} \
 %global _rustup_home %{rpmbuilddir}/.rustup \
-%global __cargo /usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTFLAGS='%{terra_rustflags}' %{_cargo_home}/bin/cargo \
+%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTFLAGS='%{terra_rustflags}' %{_cargo_home}/bin/cargo \
 %global __rustc %{_cargo_home}/bin/rustc \
 %global __rustdoc %{_cargo_home}/bin/rustdoc \
-/usr/bin/env RUSTUP_HOME='%{_rustup_home}' CARGO_HOME='%{_cargo_home}' RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y -q --no-modify-path \
-source "%{_cargo_home}/env' \
-rustup override set nightly \
+/usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y -q --no-modify-path \
+. %{_cargo_home}/env \
+CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} rustup override set nightly \
 %bcond rust_nightly 1
