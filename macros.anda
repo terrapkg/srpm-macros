@@ -247,7 +247,7 @@ if opt.k then
     print(dfi)
     for i = 1, keys do
       if key[i] == "Exec" and macros["-u*"] then
-        print(" --set-key=\\"" .. key[i]  .. "\\" --set-value=\\"" .. value[i] .. " " .. macros["-u*"] .. "\\"")
+        print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. " " .. macros["-u*"] .. "\\"")
       else
         print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
       end
@@ -295,7 +295,7 @@ else
     print(dfe)
     for i = 1, keys do
       if key[i] == "Exec" and macros["-u*"] then
-        print(" --set-key=\\"" .. key[i]  .. "\\" --set-value=\\"" .. value[i] .. " " .. macros["-u*"] .. "\\"")
+        print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. " " .. macros["-u*"] .. "\\"")
       else
         print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
       end
