@@ -79,6 +79,7 @@ BuildRequires: nodejs-devel}}
 BuildRequires: nodejs-npm%{-a:%{expand:
 BuildRequires: nodejs-packaging}}
 BuildRequires: python3%{-a:%{expand:
+BuildRequires: squashfs-tools
 BuildRequires: typescript}}}}%{!?with_bundled_electron:%{expand:
 BuildRequires: unzip}}                                                                                                             \
 Requires:      at-spi2-core                                                                                                        \
