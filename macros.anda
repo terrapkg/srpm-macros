@@ -247,7 +247,7 @@ if opt.k then
     print(dfi)
     for i = 1, keys do
       if key[i] == "Exec" and macros["-u*"] then
-        print(" --set-key=\\"" .. key[i] .. " " .. macros["-u*"] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
+        print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. " " .. macros["-u*"] .. "\\"")
       else
         print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
       end
@@ -257,7 +257,7 @@ if opt.k then
     if macros["-v*"]:find(",") then
       error("Too many arguments to -v when only one was found for -k!")
     end
-    print(dfi .. rpm.expand(" --set-key=\\"%{-k*}%{?-u*: %{-u*}}\\" --set-value=\\"%{-v*}\\" " .. file .. "\\n"))
+    print(dfi .. rpm.expand(" --set-key=\\"%{-k*}\\" --set-value=\\"%{-v*}%{-u*: %{-u*}}\\" " .. file .. "\\n"))
   end
 else
   print(dfi .. " " .. file .. "\\n")
@@ -295,7 +295,7 @@ else
     print(dfe)
     for i = 1, keys do
       if key[i] == "Exec" and macros["-u*"] then
-        print(" --set-key=\\"" .. key[i] .. " " .. macros["-u*"] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
+        print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. " " .. macros["-u*"] .. "\\"")
       else
         print(" --set-key=\\"" .. key[i] .. "\\" --set-value=\\"" .. value[i] .. "\\"")
       end
@@ -305,7 +305,7 @@ else
     if macros["-v*"]:find(",") then
       error("Too many arguments to -v when only one was found for -k!")
     end
-    print(dfe .. rpm.expand(" --set-key=\\"%{-k*}%{?-u*: %{-u*}}\\" --set-value=\\"%{-v*}\\" " .. file .. "\\n"))
+    print(dfe .. rpm.expand(" --set-key=\\"%{-k*}\\" --set-value=\\"%{-v*}%{-u*: %{-u*}}\\" " .. file .. "\\n"))
   end
 end}
 
