@@ -305,7 +305,7 @@ else
     if macros["-v*"]:find(",") then
       error("Too many arguments to -v when only one was found for -k!")
     end
-    print(dfe .. rpm.expand(" --set-key=\\"%{-k*}%{?-u*: %{-u*}}\\" --set-value=\\"%{-v*}%{-u*: %{-u*}}\\" " .. file .. "\\n"))
+    print(dfe .. rpm.expand(" --set-key=\\"%{-k*}\\" --set-value=\\"%{-v*}%{-u*: %{-u*}}\\" " .. file .. "\\n"))
   end
 end}
 
