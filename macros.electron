@@ -113,7 +113,7 @@ ExclusiveArch: %{electron_arches}
 # -s: "Symlink." Name of the symlink to the executable.
 # -S: Additional symlink to the binary. ONLY do this if a program has two common names, i.e, Heroic being called both "heroic" and "heroic-games-launcher"
 # -v: "Verbose." Don't set +x for PNG icon installs. This WILL spam your terminal.
-%electron_install_test(b:d:DE:F:i:IlO::s:S:U:v) %{-i:%{!?-I:%{expand:
+%electron_install(b:d:DE:F:i:IlO::s:S:U:v) %{-i:%{!?-I:%{expand:
 %{error:Icon name provided but -I was not passed.}}}}                                  \
 if cat package.json | grep electron-builder &>/dev/null; then                          \
   WEBAPP_BUILD_TOOL="electron-builder"                                                 \
