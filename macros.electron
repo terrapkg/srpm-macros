@@ -4,100 +4,6 @@
 
 %electron_arches %{x86_64} %{ix86} %{arm64} armv7l armv7hl armv7hnl %{mips64}
 
-## NOTE: Best for pure Electron programs. If packages use binaries not made with Electron Builder, when using this Macro care must be taken to not cause overlapping licenses.
-## The SOURCE LICENSE of Electron is MIT. However, as it uses Chromium code, the Chromium license comes bundled with it and all Electron apps. Electron ALSO bundles FFmpeg and code from vulkan-loader.
-## REMEMBER to add the license of the app itself if it is not covered here!
-## In order, the bundled licenses:
-# vulkan-loader: Apache-2.0
-# FFmpeg: LGPL-3.0-or-later
-# Electron itself: MIT
-# Bundled Electron: MIT AND (BSD-3-Clause AND LGPL-2.1-or-later AND Apache-2.0 AND IJG AND MIT AND GPL-2.0-or-later AND ISC AND OpenSSL AND (MPL-1.1 OR GPL-2.0-only OR LGPL-2.0-only))
-# Chromium: BSD-3-Clause AND LGPL-2.1-or-later AND Apache-2.0 AND IJG AND MIT AND GPL-2.0-or-later AND ISC AND OpenSSL AND (MPL-1.1 OR GPL-2.0-only OR LGPL-2.0-only)
-%electron_license %{is_electron_bundled}%{?with_bundled_electron:%{shrink:
-Apache-2.0
-AND
-LGPL-3.0-or-later
-AND
-MIT
-AND
-(MIT AND (BSD-3-Clause AND LGPL-2.1-or-later AND Apache-2.0 AND IJG AND MIT AND GPL-2.0-or-later AND ISC AND OpenSSL AND (MPL-1.1 OR GPL-2.0-only OR LGPL-2.0-only)))}}%{!?with_bundled_electron:%{shrink:
-Apache-2.0
-AND
-LGPL-3.0-or-later
-AND
-MIT
-AND
-(BSD-3-Clause AND LGPL-2.1-or-later AND Apache-2.0 AND IJG AND MIT AND GPL-2.0-or-later AND ISC AND OpenSSL AND (MPL-1.1 OR GPL-2.0-only OR LGPL-2.0-only))}}
-
-## Note: This does NOT automatically pull Bun/PNPM/Yarn or any other build dependencies. Those must be specified, this meta macro only sets the bare minimum that is consistently needed for Electron builds.
-## nodejs-packaging is REQUIRED if using Fedora Node.js macros such as %%{__nodejs}
-## Package requirements are only the requirements for Electron itself. Electron apps may have additional requirements.
-# -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
-# -D: "Disable debug." Disable debug packages. Needed for most Electron apps.
-%electronmeta(aD)                                                                                                                  \
-%{-D:%global debug_package %{nil}}                                                                                                 \
-%global __provides_exclude  libffmpeg\\.so.*|libEGL\\.so.*|libGLESv2\\.so.*|libvk_swiftshader\\.so.*|libvulkan\\.so.*              \
-%{lua:
-  if not macros["_target_cpu"]:find('armv7') then
-    for arch in string.gmatch(macros["x86_64"], "%S+") do
-      if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = 'libffmpeg\\\\.so.*|libGLESv2\\\\.so.*|libEGL\\\\.so.*|libvk_swiftshader\\\\.so.*|libvulkan\\\\.so.*|.*\\\\aarch64*\\\\.so.*|.*x86-32.*|.*\\\\armhf*\\\\.so.*|libc\\\\.musl.*\\\\.so.*|.*_ARM_.*|.*aarch-64.*|.*mips64.*|ld\\\\.so\\\\.[[:digit:]+]'
-        macros["_electron_cpu"] = 'x64'
-      end
-    end
-    for arch in string.gmatch(macros["ix86"], "%S+") do
-      if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = 'libffmpeg\\\\.so.*|libGLESv2\\\\.so.*|libEGL\\\\.so.*|libvk_swiftshader\\\\.so.*|libvulkan\\\\.so.*|.*\\\\x86_64*\\\\.so.*|.*x86-64.*|.*\\\\aarch64*\\\\.so.*|.*\\\\armhf*\\\\.so.*|libc\\\\.musl.*\\\\.so.*|.*_ARM_.*|.*64bit.*|.*aarch-64.*|.*mips64.*|ld\\\\.so\\\\.[[:digit:]+]'
-        macros["_electron_cpu"] = 'ia32'
-      end
-    end
-    for arch in string.gmatch(macros["arm64"], "%S+") do
-      if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = 'libffmpeg\\\\.so.*|libGLESv2\\\\.so.*|libEGL\\\\.so.*|libvk_swiftshader\\\\.so.*|libvulkan\\\\.so.*|.*\\\\x86_64*\\\\.so.*|.*x86-64.*|.*x86-32.*|.*\\\\armhf*\\\\.so.*|libc\\\\.musl.*\\\\.so.*|.*_ARM_.*|.*mips64.*|ld\\\\.so\\\\.[[:digit:]+]'
-        macros["_electron_cpu"] = 'arm64'
-        print("BuildRequires: zlib-ng-compat-devel")
-      end
-    end
-    for arch in string.gmatch(macros["mips64"], "%S+") do
-      if macros["_target_cpu"] == arch then
-        macros["__requires_exclude"] = '^((libffmpeg\\\\.so.*)|(libGLESv2\\\\.so.*)|(libvk_swiftshader\\\\.so.*)|(libvulkan\\\\.so.*)|(.*\\\\x86_64*\\\\.so.*)|(.*x86-64.*)|(.*\\\\aarch64*\\\\.so.*)|(.*x86-32.*)|(.*\\\\armhf*\\\\.so.*)|(libc\\\\.musl.*\\\\.so.*)|(libgcc_s\\\\.so.*)|(libpthread\\\\.so.*)|(.*64bit.*)|(.*aarch-64.*)|(.*_ARM_.*))$'
-        macros["_electron_cpu"] = 'mips64el'
-      end
-    end
-  elseif macros["_target_cpu"]:find('armv7') then
-    macros["__requires_exclude"] = 'libffmpeg\\\\.so.*|libGLES.*\\\\.so.*|libEGL\\\\.so.*|libvk_swiftshader\\\\.so.*|libvulkan\\\\.so.*|.*\\\\x86_64*\\\\.so.*|.*x86-64.*|.*\\\\aarch64*\\\\.so.*|.*x86-32.*|libc\\\\.musl.*\\\\.so.*|.*64bit.*|.*aarch-64.*|.*mips64.*|ld\\\\.so\\\\.[[:digit:]+]'
-    macros["_electron_cpu"] = 'armv7l'
-    print("BuildRequires: zlib-ng-compat-devel")
-  end}                                                                                                                             \
-%{is_electron_bundled}%{?with_bundled_electron:%{expand:BuildRequires: desktop-file-utils
-BuildRequires: gcc
-BuildRequires: gcc-c++
-BuildRequires: git-core
-BuildRequires: make
-BuildRequires: nodejs%{-a:%{expand:
-BuildRequires: nodejs-devel}}
-BuildRequires: nodejs-npm%{-a:%{expand:
-BuildRequires: nodejs-packaging}}
-BuildRequires: python3%{-a:%{expand:
-BuildRequires: squashfs-tools
-BuildRequires: typescript}}}}%{!?with_bundled_electron:%{expand:
-BuildRequires: unzip}}                                                                                                             \
-Requires:      at-spi2-core                                                                                                        \
-Requires:      c-ares                                                                                                              \
-Requires:      gtk3%{!?with_bundled_electron:%{expand:
-Requires:      minizip}}                                                                                                           \
-Requires:      (libuuid or libuuid1)                                                                                               \
-Requires:      libnotify                                                                                                           \
-Requires:      libXScrnSaver                                                                                                       \
-Requires:      (libXtst or libXtst6)                                                                                               \
-Requires:      nss                                                                                                                 \
-Requires:      re2                                                                                                                 \
-Requires:      xdg-utils                                                                                                           \
-%{?with_bundled_electron:Provides:      bundled(electron)}%{!?with_bundled_electron:Provides:      bundled(chromium)}              \
-Provides:      bundled(ffmpeg)                                                                                                     \
-Provides:      bundled(vulkan-loader)                                                                                              \
-ExclusiveArch: %{electron_arches}
-
 ## Capital letters denote use in desktop file or icon install process. These are capitalized differently for organizational purposes.
 # If no alternative names are provided via flag everything, falls back to the name set by the spec
 # -b: "Binary." Name of the actual executable file.
@@ -113,7 +19,7 @@ ExclusiveArch: %{electron_arches}
 # -s: "Symlink." Name of the symlink to the executable.
 # -S: Additional symlink to the binary. ONLY do this if a program has two common names, i.e, Heroic being called both "heroic" and "heroic-games-launcher"
 # -v: "Verbose." Don't set +x for PNG icon installs. This WILL spam your terminal.
-%electron_install(b:d:DE:F:i:IlO::s:S:U:v) %{-i:%{!?-I:%{expand:
+%electron_install_test(b:d:DE:F:i:IlO::s:S:U:v) %{-i:%{!?-I:%{expand:
 %{error:Icon name provided but -I was not passed.}}}}                                  \
 if cat package.json | grep electron-builder &>/dev/null; then                          \
   WEBAPP_BUILD_TOOL="electron-builder"                                                 \
@@ -173,7 +79,7 @@ fi                                                                              
     local icons = tonumber(rpm.expand("%#"))
 
     for i, icon in ipairs(arg) do
-      if icon:find("\\\\.png") then
+      if icon:find("%.png") then
         for i, size in ipairs(sizes) do
           if icon:find(size) and arg[2] then
               if (size == "8" or size == "24") and not (icon:find("%d" .. size) or icon:find(size .. "%d")) then
@@ -241,7 +147,7 @@ set -x}}}")
             end
           end
         end
-      elseif icon:find("\\\\.svg") then
+      elseif icon:find("%.svg") then
       rpm.define("__electron_icon_install %{expand:\\
 echo \\"Installing icons.\\" >&2 \\
 echo -e \\"Found \\\\\\\\e[32mscalable (SVG)\\\\\\\\e[0m icon.\\" >&2 \\
