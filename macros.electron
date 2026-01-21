@@ -4,7 +4,6 @@
 
 %electron_arches %{x86_64} %{ix86} %{arm64} armv7l armv7hl armv7hnl %{mips64}
 
-
 ## NOTE: Best for pure Electron programs. If packages use binaries not made with Electron Builder, when using this Macro care must be taken to not cause overlapping licenses.
 ## The SOURCE LICENSE of Electron is MIT. However, as it uses Chromium code, the Chromium license comes bundled with it and all Electron apps. Electron ALSO bundles FFmpeg and code from vulkan-loader.
 ## REMEMBER to add the license of the app itself if it is not covered here!
