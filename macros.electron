@@ -174,7 +174,7 @@ fi                                                                              
     local icons = tonumber(rpm.expand("%#"))
 
     for i, icon in ipairs(arg) do
-      if icon:find(".png") then
+      if icon:find("%.png") then
         for i, size in ipairs(sizes) do
           if icon:find(size) and arg[2] then
               if (size == "8" or size == "24") and not (icon:find("%d" .. size) or icon:find(size .. "%d")) then
@@ -242,11 +242,11 @@ set -x}}}")
             end
           end
         end
-      elseif icon:find(".svg") then
+      elseif icon:find("%.svg") then
       rpm.define("__electron_icon_install %{expand:\\
 echo \\"Installing icons.\\" >&2 \\
 echo -e \\"Found \\\\\\\\e[32mscalable (SVG)\\\\\\\\e[0m icon.\\" >&2 \\
-%{__install} -Dm644 %{-I*} %{buildroot}%{_scalableiconsdir}/%{-i:%{-i*}}%{!?-i:%{name}}.svg}")
+%{__install} -Dm644 " .. arg[1] .. " %{buildroot}%{_scalableiconsdir}/%{-i:%{-i*}}%{!?-i:%{name}}.svg}")
       else
         rpm.define("_app_icon_dir " .. arg[1])
       end
