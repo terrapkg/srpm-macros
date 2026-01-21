@@ -75,7 +75,8 @@ BuildRequires: gcc-c++
 BuildRequires: git-core
 BuildRequires: make
 BuildRequires: nodejs%{-a:%{expand:
-BuildRequires: nodejs-devel}}
+BuildRequires: nodejs-devel
+BuildRequires: nodejs-full-i18n}}
 BuildRequires: nodejs-npm%{-a:%{expand:
 BuildRequires: nodejs-packaging}}
 BuildRequires: python3%{-a:%{expand:
