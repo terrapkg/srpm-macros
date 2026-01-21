@@ -261,7 +261,7 @@ fi                                                                              
 HOME=%{rpmbuilddir} %{__npm} exec electron-vite -- build %{-M:--mode %{-M*}}}}                                                                   \
 %{-B:%{expand:
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then
-HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux --%{_electron_cpu} --publish=never %{-C:-c %{-C*}}
+HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux AppImage --%{_electron_cpu} --publish=never %{-C:-c %{-C*}}
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then
 %{__npm} install @reforged/maker-appimage --no-save --no-audit
 HOME=%{rpmbuilddir} %{__npm} exec electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"
@@ -349,7 +349,7 @@ echo -e "\\e[33mWARNING:\\e[0m Removing bun.lock. This is not recommended unless
   end} %{-v:%{expand:
 HOME=%{rpmbuilddir} %{__bunx} electron-vite build}}                                                                                    \
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
-HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux AppImage --%{_electron_cpu} --publish=never                                     \
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
 %{__bun} install @reforged/maker-appimage --no-save --no-verify                                                                        \
 HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
@@ -439,7 +439,7 @@ fi                                                                              
   end} %{-v:%{expand:
 HOME=%{rpmbuilddir} %{__dx} electron-vite build}}                                                                                    \
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                            \
-HOME=%{rpmbuilddir} %{__dx} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+HOME=%{rpmbuilddir} %{__dx} electron-builder --linux AppImage --%{_electron_cpu} --publish=never                                     \
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                            \
 %{__deno} install @reforged/maker-appimage --no-lock --no-verify                                                                     \
 HOME=%{rpmbuilddir} %{__dx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
@@ -520,7 +520,7 @@ fi                                                                              
   end} %{-v:%{expand:
 HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}}                                                                                    \
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
-HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux AppImage --%{_electron_cpu} --publish=never                                     \
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
 %{__pnpm} install @reforged/maker-appimage --no-lockfile                                                                               \
 HOME=%{rpmbuilddir} %{__pnpm} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
@@ -600,7 +600,7 @@ fi                                                                              
   end} %{-v:%{expand:
 HOME=%{rpmbuilddir} %{__yarn} electron-vite build}}                                                                                    \
 if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
-HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux --%{_electron_cpu} --publish=never                                              \
+HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux AppImage --%{_electron_cpu} --publish=never                                     \
 elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
 %{__yarn} install @reforged/maker-appimage --no-lockfile                                                                               \
 HOME=%{rpmbuilddir} %{__yarn} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
