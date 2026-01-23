@@ -188,25 +188,25 @@ fi                                                                              
           end
         end -- for size in sizes
       elseif icon:find("%.svg") then
-        rpm.define([[__electron_icon_install
+        rpm.define([[__electron_icon_install %{quote: 
           echo "Installing icons." >&2
           echo -e "Found \\\\e[32mscalable (SVG)\\\\e[0m icon." >&2
           %{__install} -Dm644 " .. arg[1] .. " %{buildroot}%{_scalableiconsdir}/%["%{?-i*}" || "%name"].svg
-        ]])
+        }]])
       end -- icon match ext
     end -- for arg
     if not rpm.isdefined("__electron_icon_install") then
-      rpm.define([[__electron_icon_install
+      rpm.define([[__electron_icon_install %{quote:
         %{!?-v:set +x;} echo "Installing icons."
         for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
-          for icon in ]] .. macros["%*"] .. [[; do
+          for icon in ]] .. macros["*"] .. [[; do
             if file $icon | grep "$size x $size" &>/dev/null; then
               echo -e "Found icon for size \\\\e[32m${size}x${size}\\\\e[0m." >&2 %{!?-v:;set -x}
               %{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%["%{?-i*}" || "%name"].png %{!?-v:;set +x}
             fi
           done
         done %{!?-v:;set -x}
-      ]]) -- rpm.define
+      }]]) -- rpm.define
     end -- if not defined __electron_icon_install
   end -- -I
 }\
