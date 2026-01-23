@@ -9,38 +9,38 @@
 # BuildRequires: %%{tauri_buildrequires -at}
 # -a: "Additional." Additional build deps that may be needed specifically for when building with NPM.
 # -t: "Tauri." Pull Tauri itself.
-%tauri_buildrequires(at) %{shrink:
-cargo
-cargo-rpm-macros
-curl
-desktop-file-utils
-gcc
-gcc-c++
-glibc-devel
-libappindicator-gtk3-devel
-librsvg2-devel
-libxdo-devel
-nodejs
-nodejs-npm
-%{-a:nodejs-devel}
-%{-a:nodejs-full-i18n}
-%{-a:nodejs-packaging}
-make
-openssl-devel
-pkgconf
-rust
-rust-srpm-macros
-%{-t:tauri}
-%{-a:typescript}
-webkit2gtk4.1-devel
+%tauri_buildrequires(at) %{shrink:\
+cargo \
+cargo-rpm-macros \
+curl \
+desktop-file-utils \
+gcc \
+gcc-c++ \
+glibc-devel \
+libappindicator-gtk3-devel \
+librsvg2-devel \
+libxdo-devel \
+nodejs \
+%{-a:nodejs-devel} \
+%{-a:nodejs-full-i18n} \
+nodejs-npm \
+%{-a:nodejs-packaging} \
+make \
+openssl-devel \
+pkgconf \
+rust \
+rust-srpm-macros \
+%{-t:tauri} \
+%{-a:typescript} \
+webkit2gtk4.1-devel \
 wget}
 
 %__tauri /usr/bin/env CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1}%{?with_rust_nightly: RUSTUP_HOME=%{_rustup_home}} RUSTFLAGS='%{build_rustflags}' /usr/bin/tauri
 
 ## Preps a Tauri build.
 ## Mostly a wrapper for %%cargo_prep_online that also sets the Tauri subdir but also changes directory to it before running %%cargo_prep_online as a test that the directory is correct.
-%tauri_prep(n:) %{shrink:
-%{-n:%global tauri_subdir %{-n*}}
+%tauri_prep(n:) %{shrink:                                 \
+%{-n:%global tauri_subdir %{-n*}}                         \
 %{!?-n:%{!?tauri_subdir:%global tauri_subdir src-tauri}}} \
 cd %{tauri_subdir}                                        \
 %cargo_prep_online                                        \
@@ -78,12 +78,12 @@ fi
 ## Build opts for Tauri.
 ## The macro %%__tauri_bundles may be defined to choose if Tauri builds binaries (in some cases, AppImages may be useful for extracting .desktop files). Defaults to no bundles.
 ## --ci is passed so these opts are also compatible with Tauri JS without setting the JavaScript build env to CI entirely.
-%__tauri_common_opts %{shrink:
-  --verbose
-  --ci
-  %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo}
-  %{!?__tauri_bundles:--no-bundle}
-  %{?__tauri_bundles:--bundles %{__tauri_bundles}}
+%__tauri_common_opts %{shrink:                            \
+  --verbose                                               \
+  --ci                                                    \
+  %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo} \
+  %{!?__tauri_bundles:--no-bundle}                        \
+  %{?__tauri_bundles:--bundles %{__tauri_bundles}}        \
 }
 
 ## Build with Tauri.
@@ -99,7 +99,7 @@ fi
     %{?__tauri_ignore_version_mismatches:--ignore-version-mismatches} \
     --                                                                \
     %{__cargo_common_opts}                                            \
-    %{__cargo_parse_opts %{-f}}                                       \
+    %{__cargo_parse_opts %{-f:-f%{-f*}}}                              \
     --profile rpm                                                     \
     %*                                                                \
 }
@@ -122,7 +122,7 @@ if %{__cargo_is_lib} && [ %{cargo_install_lib} -eq 1 ] ; then       \
   %{__rm} -f $REG_DIR/Cargo.toml.deps                               \
   echo '{"files":{},"package":""}' > $REG_DIR/.cargo-checksum.json  \
 fi                                                                  \
-if %{__cargo_is_bin %{-f}} && [ %{cargo_install_bin} -eq 1 ] ; then \
+if %{__cargo_is_bin %{-f:-f%{-f*}}} && [ %{cargo_install_bin} -eq 1 ] ; then \
   %{shrink:                                                         \
     %{crate_install_bin}                                            \
     %*                                                              \
@@ -206,8 +206,8 @@ set -euo pipefail\
 ## Wrapper around %%tauri_build that also handles licenses
 ## Port of %%cargo_build_crate, does not check if the Crate is a binary because Tauri ALWAYS makes binaries
 %tauri_build_crate(f:)\
-%tauri_build %{-f}\
+%tauri_build %{-f:-f%{-f*}}\
 if [ %{cargo_install_bin} -eq 1 ] ; then\
-    %{tauri_cargo_license_summary %{-f}}\
-    %{tauri_cargo_license %{-f}} > LICENSE.dependencies\
+    %{tauri_cargo_license_summary %{-f:-f%{-f*}}}\
+    %{tauri_cargo_license %{-f:-f%{-f*}}} > LICENSE.dependencies\
 fi
