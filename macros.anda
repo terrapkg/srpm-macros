@@ -323,3 +323,25 @@ end}
 
 # A post/postun script, probably not needed but in case some cursed package needs it...
 %update_desktop_database() %{__update_desktop_database} --quiet || :
+
+# %{dedent:…} removes useless indentation and starting/ending empty lines
+# -i<#>: specify number of spaces for indentation
+# -n: add new line at the end
+%dedent(i:n) %{lua:
+  local len = 0
+  local content = arg[1]:gsub("%s*$", rpm.expand("%{?-n:\\n}")):gsub("^ *\\n", "")
+  while len ~= #content:gsub("^ *\\n", "") do
+    content = content:gsub("^ *\\n", "")
+    len = #content
+  end
+  local min = -1
+  for line in content:gmatch".-\\n" do
+    local len = #line:match"^ *"
+    if len == nil then len = 0 end
+    if min == -1 or len < min then min = len end
+  end
+  local space = string.rep(" ", min)
+  local indent = string.rep(" ", tonumber(rpm.expand('%[%{?-i*} || 0]')))
+  content = content:gsub("\\n"..space, "\\n"..indent):gsub("^"..space, "\\n"..indent)
+  print(content)
+}
