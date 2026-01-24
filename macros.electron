@@ -190,7 +190,7 @@ fi                                                                              
         rpm.define([[__electron_icon_install() %{dedent: 
           echo "Installing icons." >&2
           echo -e "Found \\\\e[32mscalable (SVG)\\\\e[0m icon." >&2
-          %{__install} -Dm644 " .. arg[1] .. " %{buildroot}%{_scalableiconsdir}/%["%{?-i*}" || "%name"].svg
+          %{__install} -Dm644 ]] .. arg[1] .. [[ %{buildroot}%{_scalableiconsdir}/%["%{?-i*}" || "%name"].svg
         }]])
       end -- icon match ext
     end -- for arg
@@ -200,8 +200,8 @@ fi                                                                              
   %{__mkdir} -p $BUNDLED_LICENSE_DIR
   find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t $BUNDLED_LICENSE_DIR {} +
 }}%{-I:%{dedent:
-  [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]] && icons=%1/*.png
-  [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]] && icons=%1/*icon.png
+  [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]] && icons=%["%?1" || "dist/.icon-set"]/*.png
+  [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]] && icons=%["%?1" || "assets"]/*icon.png
   if [ -n "$icons" ]; then %{dedent -i4 %{quote:%{__electron_icon_install $icons}}}
   fi
 }}
