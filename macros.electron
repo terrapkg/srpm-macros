@@ -153,132 +153,55 @@ fi                                                                              
   if opt.D then
     print(rpm.expand("$APPOUTDIR/*$APPARCH.AppImage --appimage-extract '*.desktop'\\n"))
     print(rpm.expand("%{__sed} -i '/.*AppImage.*/d' squashfs-root/*.desktop\\n"))
-  if opt.F then
-    function split(arguments, split_pattern)
-      local arg_list = {}
-      local pattern = '([^'..split_pattern..']+)'
-      string.gsub(arguments, pattern, function(value) arg_list[#arg_list + 1] =     value;  end);
-      return arg_list
+    if opt.F then
+      macros["desktop_file_args"] = ' --' .. macros["-F*"]:gsub(',', ' --')
     end
-    if macros["-F*"]:find(",") then
-      local flags = split(macros["-F*"], ",")
-      macros["desktop_file_args"] = table.concat(flags, " --")
-    else
-      macros["desktop_file_args"] = macros["-F*"]
-    end
-  end
-    print(rpm.expand("%{__desktop_file_install} --set-key=Exec --set-value=\\"") .. installdir .. "/" .. bin .. rpm.expand("%{-E: --enable-features=%{-E*}}%{-O:%{!?-O*: --ozone-platform-hint=auto}}%{-O*: --ozone-platform=%{-O*}}%{?desktop_file_args: --%{desktop_file_args}}%{-U: %{-U*}}\\" squashfs-root/*.desktop"))
+    print(rpm.expand('%{__desktop_file_install} --set-key=Exec --set-value="') .. installdir .. "/" .. bin .. rpm.expand('%{-E: --enable-features=%{-E*}}%{-O: --ozone-platform%["%{?-O*}" ? "=%{-O*}" : "-hint=auto"]}%{?desktop_file_args}%{-U: %{-U*}}" squashfs-root/*.desktop'))
   end
   if opt.I then
     local sizes = {"8", "16", "20", "24", "32", "36", "40", "44", "48", "64", "72", "96", "128", "150", "192", "256", "310", "512", "1024"}
-    local icons = tonumber(rpm.expand("%#"))
-
-    for i, icon in ipairs(arg) do
-      if icon:find("%.png") then
-        for i, size in ipairs(sizes) do
-          if icon:find(size) and arg[2] then
-              if (size == "8" or size == "24") and not (icon:find("%d" .. size) or icon:find(size .. "%d")) then
-                rpm.define("install_icon_" .. size .. " %{__install} -Dm644 " .. icon .. " %{buildroot}%{_hicolordir}/" .. size .. "x" .. size .. "/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png")
-              elseif not (size == "8" or size == "24") and not (icon:find("%d" .. size) or icon:find(size .. "%d")) then
-                rpm.define("install_icon_" .. size .. " %{__install} -Dm644 " .. icon .. " %{buildroot}%{_hicolordir}/" .. size .. "x" .. size .. "/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png")
+    rpm.define([[__electron_icon_install() %{dedent:
+      %{!?-v:set +x;} echo "Installing icons."
+      for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
+        for icon in %["%?__electron_icons_glob" || "%*"]; do
+          if file $icon | grep "$size x $size" &>/dev/null; then
+            echo -e "Found icon for size \\\\e[32m${size}x${size}\\\\e[0m." >&2 %{!?-v:;set -x}
+            %{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%["%{?-i*}" || "%name"].png %{!?-v:;set +x}
+          fi
+        done
+      done %{!?-v:;set -x}
+    }]])
+    for _, icon in ipairs(arg) do
+      if icon:match"%.png$" then
+        macros['__electron_icons_glob'] = macros['*']
+        for _, size in ipairs(sizes) do
+          if icon:find(size) and not (icon:find("%d" .. size) or icon:find(size .. "%d")) then
+            macros['install_icon_'..size] = "%{__install} -Dm644 " .. icon .. " %{buildroot}%{_hicolordir}/" .. size .. "x" .. size .. '/apps/%["%{?-i*}" || "%name"].png'
+            if icon_install_macro == nil then
+              icon_install_macro = ''
+              for _, size in ipairs(sizes) do
+                icon_install_macro = icon_install_macro .. '%{?install_icon_'..size..':%{expand:\\n%{install_icon_'..size..'}}}'
               end
-          elseif icon:find(size) and not arg[2] then
-            if (size == "8" or size == "24") and not (icon:find("%d" .. size) or icon:find(size .. "%d")) then
-                rpm.define("install_icon_" .. size .. " %{__install} -Dm644 " .. icon .. " %{buildroot}%{_hicolordir}/" .. size .. "x" .. size .. "/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png")
-              elseif not (size == "8" or size == "24") and not (icon:find("%d" .. size) or icon:find(size .. "%d")) then
-                rpm.define("install_icon_" .. size .. " %{__install} -Dm644 " .. icon .. " %{buildroot}%{_hicolordir}/" .. size .. "x" .. size .. "/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png")
-              end
-            end
-          if rpm.isdefined("install_icon_" .. size) then
-            rpm.define("__electron_icon_install %{?install_icon_8:%{expand:\\
-%{install_icon_8}}} %{?install_icon_16:%{expand:\\
-%{install_icon_16}}} %{?install_icon_20:%{expand:\\
-%{install_icon_20}}} %{?install_icon_24:%{expand:\\
-%{install_icon_24}}} %{?install_icon_32:%{expand:\\
-%{install_icon_32}}} %{?install_icon_36:%{expand:\\
-%{install_icon_36}}} %{?install_icon_40:%{expand:\\
-%{install_icon_40}}} %{?install_icon_44:%{expand:\\
-%{install_icon_44}}} %{?install_icon_48:%{expand:\\
-%{install_icon_48}}} %{?install_icon_64:%{expand:\\
-%{install_icon_64}}} %{?install_icon_72:%{expand:\\
-%{install_icon_72}}} %{?install_icon_96:%{expand:\\
-%{install_icon_96}}} %{?install_icon_128:%{expand:\\
-%{install_icon_128}}} %{?install_icon_150:%{expand:\\
-%{install_icon_150}}} %{?install_icon_192:%{expand:\\
-%{install_icon_192}}} %{?install_icon_256:%{expand:\\
-%{install_icon_256}}} %{?install_icon_310:%{expand:\\
-%{install_icon_310}}} %{?install_icon_512:%{expand:\\
-%{install_icon_512}}} %{?install_icon_1024:%{expand:\\
-%{install_icon_1024}}}")
-          elseif not rpm.isdefined("install_icon_" .. size) and not rpm.isdefined("__electron_icon_install") then
-            if arg[2] then
-              rpm.define("__electron_icon_install %{expand:%{!?-v:%{expand:\\
-set +x}} \\
-echo \\"Installing icons.\\" \\
-for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
-for icon in " .. table.concat(arg, " ") .. "; do \\
-if file $icon | grep \\"$size x $size\\" &>/dev/null; then \\
-echo -e \\"Found icon for size \\\\\\\\e[32m${size}x${size}\\\\\\\\e[0m.\\" >&2 %{!?-v:%{expand:\\
-set -x}} \\
-%{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png %{!?-v:%{expand:\\
-set +x}} \\
-fi \\
-done \\
-done %{!?-v:%{expand:\\
-set -x}}}")
-            else
-          rpm.define("__electron_icon_install %{expand:\\
-echo \\"Installing icons.\\" >&2 %{!?-v:%{expand:\\
-set +x}} \\
-for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do \\
-if file " .. arg[1] .. " | grep \\"$size x $size\\" &>/dev/null; then \\
-echo -e \\"Found icon for size \\\\\\\\e[32m${size}x${size}\\\\\\\\e[0m.\\" >&2 %{!?-v:%{expand:\\
-set -x}} \\
-%{__install} -Dm644 " .. arg[1] .. " %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png %{!?-v:%{expand:\\
-set +x}} \\
-fi \\
-done %{!?-v:%{expand:\\
-set -x}}}")
+              macros['__electron_icon_install()'] = icon_install_macro
             end
           end
-        end
+        end -- for size in sizes
       elseif icon:find("%.svg") then
-      rpm.define("__electron_icon_install %{expand:\\
-echo \\"Installing icons.\\" >&2 \\
-echo -e \\"Found \\\\\\\\e[32mscalable (SVG)\\\\\\\\e[0m icon.\\" >&2 \\
-%{__install} -Dm644 " .. arg[1] .. " %{buildroot}%{_scalableiconsdir}/%{-i:%{-i*}}%{!?-i:%{name}}.svg}")
-      else
-        rpm.define("_app_icon_dir " .. arg[1])
-      end
-    end
-  end}                                                                                 \
-%{-l:%{expand:BUNDLED_LICENSE_DIR="$PWD/bundled_licenses"
-%{__mkdir} -p $BUNDLED_LICENSE_DIR
-find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t $BUNDLED_LICENSE_DIR {} +}} %{-I:%{expand:
-if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then %{?__electron_icon_install}%{!?__electron_icon_install:%{expand:
-echo "Installing icons." >&2 %{!?-v:%{expand:
-set +x}}
-for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
-for icon in %{!?_app_icon_dir:dist/.icon-set}%{?_app_icon_dir}/*.png; do
-if file $icon | grep "$size x $size" &>/dev/null; then
-echo -e "Found icon for size \\e[32m${size}x${size}\\e[0m." >&2
-%{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png
-fi
-done
-done %{!?-v:%{expand:
-set -x}}}}
-elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then %{?__electron_icon_install}%{!?__electron_icon_install:%{expand:
-echo "Installing icons." >&2 %{!?-v:%{expand:
-set +x}}
-for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
-for icon in %{!?_app_icon_dir:assets}%{?_app_icon_dir}/*icon.png; do
-if file $icon | grep "$size x $size" &>/dev/null; then
-echo -e "Found icon for size \\e[32m${size}x${size}\\e[0m." >&2 %{!?-v:%{expand:
-set -x}}
-%{__install} -Dm644 $icon %{buildroot}%{_hicolordir}/${size}x${size}/apps/%{-i:%{-i*}}%{!?-i:%{name}}.png %{!?-v:%{expand:
-set +x}}
-fi
-done
-done %{!?-v:%{expand:
-set -x}}}}
-fi}}
+        rpm.define([[__electron_icon_install() %{dedent: 
+          echo "Installing icons." >&2
+          echo -e "Found \\\\e[32mscalable (SVG)\\\\e[0m icon." >&2
+          %{__install} -Dm644 ]] .. arg[1] .. [[ %{buildroot}%{_scalableiconsdir}/%["%{?-i*}" || "%name"].svg
+        }]])
+      end -- icon match ext
+    end -- for arg
+  end -- -I
+}%{-l:%{dedent:
+  BUNDLED_LICENSE_DIR="$PWD/bundled_licenses"
+  %{__mkdir} -p $BUNDLED_LICENSE_DIR
+  find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t $BUNDLED_LICENSE_DIR {} +
+}}%{-I:%{dedent:
+  [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]] && icons=%["%?1" || "dist/.icon-set"]/*.png
+  [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]] && icons=%["%?1" || "assets"]/*icon.png
+  if [ -n "$icons" ]; then %{dedent -i4 %{quote:%{__electron_icon_install $icons}}}
+  fi
+}}
