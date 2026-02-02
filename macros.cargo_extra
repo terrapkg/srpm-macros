@@ -40,7 +40,7 @@ directory = "%{cargo_registry}"\
 EOF\
 %{__rm} -f Cargo.toml.orig \
 )\
-%global build_rustflags %{terra_rustflags} \
+%{!?rhel:%global build_rustflags %{terra_rustflags}} \
 %{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}
 
 
