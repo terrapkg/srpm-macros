@@ -8,8 +8,8 @@
 %global __cc %{__sccache_cc} \
 %global __cxx %{__sccache_cxx}
 
-%cargo_prep_online_sccache \
-%{!?_cargo_home:%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo} \
+%cargo_prep_online_sccache %{expand:
+%{!?_cargo_home:%%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo}} \
 (\
 set -eu \
 %{__mkdir} -p target/rpm\
@@ -49,6 +49,6 @@ directory = "%{cargo_registry}"\
 EOF\
 %{__rm} -f Cargo.toml.orig \
 )\
-%{!?rhel:%global build_rustflags %{terra_rustflags}} \
-%{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTC_WRAPPER=%{__sccache} SCCACHE_BUCKET=%{?sccache_bucket} SCCACHE_ENDPOINT=%{?sccache_endpoint} AWS_SECRET_ACCESS_KEY=%{?sccache_secret} AWS_ACCESS_KEY_ID=%{?sccache_accesskey} SCCACHE_S3_USE_SSL=true RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo} \
-%{?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTC_WRAPPER=%{__sccache} SCCACHE_BUCKET=%{?sccache_bucket} SCCACHE_ENDPOINT=%{?sccache_endpoint} AWS_SECRET_ACCESS_KEY=%{?sccache_secret} AWS_ACCESS_KEY_ID=%{?sccache_accesskey} SCCACHE_S3_USE_SSL=true RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}
+%{expand:%{!?rhel:%%global build_rustflags %{terra_rustflags}}
+%{!?with_rust_nightly:%%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTC_WRAPPER=%{__sccache} SCCACHE_BUCKET=%{?sccache_bucket} SCCACHE_ENDPOINT=%{?sccache_endpoint} AWS_SECRET_ACCESS_KEY=%{?sccache_secret} AWS_ACCESS_KEY_ID=%{?sccache_accesskey} SCCACHE_S3_USE_SSL=true RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}
+%{?with_rust_nightly:%%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTC_WRAPPER=%{__sccache} SCCACHE_BUCKET=%{?sccache_bucket} SCCACHE_ENDPOINT=%{?sccache_endpoint} AWS_SECRET_ACCESS_KEY=%{?sccache_secret} AWS_ACCESS_KEY_ID=%{?sccache_accesskey} SCCACHE_S3_USE_SSL=true RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}}
