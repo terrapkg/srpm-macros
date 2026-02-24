@@ -132,6 +132,16 @@ CRATE_NAME="$(%{__cargo_to_rpm} --path Cargo.toml name)" \
 %{__install} -m 0755 target/rpm/$CRATE_NAME -D %{buildroot}%{_bindir}/$CRATE_NAME \
 )
 
+# Install all found Cargo binaries
+%install_cargo_bins() \
+find target/rpm \\\
+    -maxdepth 1 -type f -executable ! -name '*.so' \\\
+    -exec install -Dm755 -t %{buildroot}%{_bindir} {} +
+
+# Install all found Cargo devel libs
+%install_cargo_devel_libs() \
+install -Dm755 target/rpm/*.so -t %{buildroot}%{_libdir}
+
 %rustup_nightly \
 %{?_cargo_home:%{error:%%rustup_nightly must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
 %global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo \
