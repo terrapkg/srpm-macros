@@ -204,13 +204,13 @@ YARN_OPTS="${YARN_OPTS:-%{yarn_config_opts} }" ; export YARN_OPTS
     print("echo -e \\"\\\\e[33mNOTE:\\\\e[0m Use of -B and -V may not work with all NPM built projects.\\" >&2")
   end}}                                                                                                                                          \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                                    \
-  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Builder" %{-f:%{expand:
   echo "-f flag only works with Tauri, ignoring." >&2}}                                                                                          \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                                    \
-  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Forge" %{-f:%{expand:
   echo "-f flag only works with Tauri, ignoring." >&2}}                                                                                          \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                             \
-  WEBAPP_BUILD_TOOL="tauri"                                                                                                                      \
+  WEBAPP_BUILD_TOOL="Tauri"                                                                                                                      \
 fi                                                                                                                                               \
 %{__npm} %{shrink:                                                                                                                               \
   %{!?-c:install}                                                                                                                                \
@@ -260,12 +260,12 @@ fi                                                                              
   end} %{-V:%{expand:
 HOME=%{rpmbuilddir} %{__npm} exec electron-vite -- build %{-M:--mode %{-M*}}}}                                                                   \
 %{-B:%{expand:
-if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then
-HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux AppImage --%{_electron_cpu} --publish=never %{-C:-c %{-C*}}
-elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then
-%{__npm} install @reforged/maker-appimage --no-save --no-audit
-HOME=%{rpmbuilddir} %{__npm} exec electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage"
-elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then
+if [[ "$WEBAPP_BUILD_TOOL" == "Electron Builder" ]]; then
+HOME=%{rpmbuilddir} %{__npm} exec electron-builder -- --linux %{?__electron_target}%{!?__electron_target:--dir} --%{_electron_cpu}%{?__electron_builder_publish: --publish=%{__electron_builder_publish}} %{-C:-c %{-C*}}
+elif [[ "$WEBAPP_BUILD_TOOL" == "Electron Forge" ]]; then %{?__set_electron_forge_targets} %{?__forge_prepare_appimage:%{expand:
+%{__npm} install @reforged/maker-appimage --no-save --no-audit}}
+HOME=%{rpmbuilddir} %{__npm} exec electron-forge %{?__electron_target:make}%{!?__electron_target:package} -- --platform="linux" --arch="%{_electron_cpu}" %{?__electron_target:--targets="%{__forge_maker}"}
+elif [[ "$WEBAPP_BUILD_TOOL" == "Tauri" ]]; then
 %{shrink:
   %{__npm} exec tauri build
   --
@@ -290,14 +290,15 @@ fi}}
 %{-c:%{-R:%{error:Can't use both -c and -R}}}                                                                                          \
 %{-c:%{-N:%{error:Can't use both -c and -N}}}}                                                                                         \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
-  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Builder" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
-  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Forge" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
-  WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
-fi %{-R:%{expand:
+  WEBAPP_BUILD_TOOL="Tauri"                                                                                                            \
+fi                                                                                                                                     \
+echo "$WEBAPP_BUILD_TOOL" > %{rpmbuilddir}/webapp-tool.txt %{-R:%{expand:
 echo -e "\\e[33mWARNING:\\e[0m Removing bun.lock. This is not recommended unless absolutely necessary." >&2
 %{__rm} -f bun.lock}}                                                                                                                  \
 %{__bun} %{shrink:                                                                                                                     \
@@ -347,21 +348,21 @@ echo -e "\\e[33mWARNING:\\e[0m Removing bun.lock. This is not recommended unless
       print(macros["__bun"] .. " run " .. script .. "\\n")
     end
   end} %{-v:%{expand:
-HOME=%{rpmbuilddir} %{__bunx} electron-vite build}}                                                                                    \
-if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
-HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux AppImage --%{_electron_cpu} --publish=never                                     \
-elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
-%{__bun} install @reforged/maker-appimage --no-save --no-verify                                                                        \
-HOME=%{rpmbuilddir} %{__bunx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
-elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
-%{shrink:                                                                                                                              \
-  %{__bunx} tauri build                                                                                                                \
-  %{__tauri_common_opts}                                                                                                               \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
-  --                                                                                                                                   \
-  %{__cargo_common_opts}                                                                                                               \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
-  --profile rpm}                                                                                                                       \
+HOME=%{rpmbuilddir} %{__bunx} electron-vite build}}                                                                                                                 \
+if [[ "$WEBAPP_BUILD_TOOL" == "Electron Builder" ]]; then                                                                                                           \
+HOME=%{rpmbuilddir} %{__bunx} electron-builder --linux %{?__electron_target}%{!?__electron_target:--dir} --%{_electron_cpu}%{?__electron_builder_publish: --publish=%{__electron_builder_publish}}                                                                                                                                       \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Electron Forge" ]]; then %{?__set_electron_forge_targets} %{?__forge_prepare_appimage:%{expand:
+%{__bun} install @reforged/maker-appimage --no-save --no-verify}}                                                                                                   \
+HOME=%{rpmbuilddir} %{__bunx} electron-forge %{?__electron_target:make}%{!?__electron_target:package} -- --platform="linux" --arch="%{_electron_cpu}" %{?__electron_target:--targets="%{__forge_maker}"}                                                                                                                                         \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Tauri" ]]; then                                                                                                                    \
+%{shrink:                                                                                                                                                           \
+  %{__bunx} tauri build                                                                                                                                             \
+  %{__tauri_common_opts}                                                                                                                                            \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                                              \
+  --                                                                                                                                                                \
+  %{__cargo_common_opts}                                                                                                                                            \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                                              \
+  --profile rpm}                                                                                                                                                    \
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
@@ -376,14 +377,15 @@ fi
 %{-L:%{-F:%{error:Can't use both -L and -F}}}                                                                                        \
 %{-L:%{-N:%{error:Can't use both -L and -N}}}}                                                                                       \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                        \
-  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Builder" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                       \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                        \
-  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Forge" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                       \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                 \
-  WEBAPP_BUILD_TOOL="tauri"                                                                                                          \
+  WEBAPP_BUILD_TOOL="Tauri"                                                                                                          \
 fi                                                                                                                                   \
+echo "$WEBAPP_BUILD_TOOL" > %{rpmbuilddir}/webapp-tool.txt                                                                           \
 %{__deno} install %{shrink:                                                                                                          \
   %{-F:--force}                                                                                                                      \
   %{-N:--no-lock}                                                                                                                    \
@@ -437,21 +439,21 @@ fi                                                                              
       print(macros["__deno"] .. " task " .. script .. "\\n")
     end
   end} %{-v:%{expand:
-HOME=%{rpmbuilddir} %{__dx} electron-vite build}}                                                                                    \
-if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                            \
-HOME=%{rpmbuilddir} %{__dx} electron-builder --linux AppImage --%{_electron_cpu} --publish=never                                     \
-elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                            \
-%{__deno} install @reforged/maker-appimage --no-lock --no-verify                                                                     \
-HOME=%{rpmbuilddir} %{__dx} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
-elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                     \
-%{shrink:                                                                                                                            \
-  %{__dx} tauri build                                                                                                                \
-  %{__tauri_common_opts}                                                                                                             \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                               \
-  --                                                                                                                                 \
-  %{__cargo_common_opts}                                                                                                             \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                               \
-  --profile rpm}                                                                                                                     \
+HOME=%{rpmbuilddir} %{__dx} electron-vite build}}                                                                                                                 \
+if [[ "$WEBAPP_BUILD_TOOL" == "Electron Builder" ]]; then                                                                                                         \
+HOME=%{rpmbuilddir} %{__dx} electron-builder --linux %{?__electron_target}%{!?__electron_target:--dir} --%{_electron_cpu}%{?__electron_builder_publish: --publish=%{__electron_builder_publish}}                                                                                                                                     \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Electron Forge" ]]; then %{?__set_electron_forge_targets} %{?__forge_prepare_appimage:%{expand:
+%{__deno} install @reforged/maker-appimage --no-lock --no-verify}}                                                                                                \
+HOME=%{rpmbuilddir} %{__dx} electron-forge %{?__electron_target:make}%{!?__electron_target:package} -- --platform="linux" --arch="%{_electron_cpu}" %{?__electron_target:--targets="%{__forge_maker}"}                                                                                                                                       \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Tauri" ]]; then                                                                                                                  \
+%{shrink:                                                                                                                                                         \
+  %{__dx} tauri build                                                                                                                                             \
+  %{__tauri_common_opts}                                                                                                                                          \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                                            \
+  --                                                                                                                                                              \
+  %{__cargo_common_opts}                                                                                                                                          \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                                            \
+  --profile rpm}                                                                                                                                                  \
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
@@ -465,14 +467,15 @@ fi
 %pnpm_build(ef:FNr:Rv) %{shrink:                                                                                                       \
 %{-F:%{-N:%{error:Can't use both -F and -N}}}}                                                                                         \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
-  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Builder" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
-  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Forge" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
-  WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
+  WEBAPP_BUILD_TOOL="Tauri"                                                                                                            \
 fi                                                                                                                                     \
+echo "$WEBAPP_BUILD_TOOL" > %{rpmbuilddir}/webapp-tool.txt                                                                             \
 %{__pnpm} install %{shrink:                                                                                                            \
   %{-F:--frozen-lockfile}                                                                                                              \
   %{-N:--no-frozen-lockfile}}                                                                                                          \
@@ -518,21 +521,21 @@ fi                                                                              
       print(macros["__pnpm"] .. " run " .. script .. "\\n")
     end
   end} %{-v:%{expand:
-HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}}                                                                                    \
-if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
-HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux AppImage --%{_electron_cpu} --publish=never                                     \
-elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
-%{__pnpm} install @reforged/maker-appimage --no-lockfile                                                                               \
-HOME=%{rpmbuilddir} %{__pnpm} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
-elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
-%{shrink:                                                                                                                              \
-  %{__pnpm} tauri build                                                                                                                \
-  %{__tauri_common_opts}                                                                                                               \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
-  --                                                                                                                                   \
-  %{__cargo_common_opts}                                                                                                               \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
-  --profile rpm}                                                                                                                       \
+HOME=%{rpmbuilddir} %{__pnpm} electron-vite build}}                                                                                                                 \
+if [[ "$WEBAPP_BUILD_TOOL" == "Electron Builder" ]]; then                                                                                                           \
+HOME=%{rpmbuilddir} %{__pnpm} electron-builder --linux %{?__electron_target}%{!?__electron_target:--dir} --%{_electron_cpu}%{?__electron_builder_publish: --publish=%{__electron_builder_publish}}                                                                                                                                       \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Electron Forge" ]]; then %{?__set_electron_forge_targets} %{?__forge_prepare_appimage:%{expand:
+%{__pnpm} install @reforged/maker-appimage --no-lockfile}}                                                                                                          \
+HOME=%{rpmbuilddir} %{__pnpm} electron-forge %{?__electron_target:make}%{!?__electron_target:package} -- --platform="linux" --arch="%{_electron_cpu}" %{?__electron_target:--targets="%{__forge_maker}"}                                                                                                                                         \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Tauri" ]]; then                                                                                                                    \
+%{shrink:                                                                                                                                                           \
+  %{__pnpm} tauri build                                                                                                                                             \
+  %{__tauri_common_opts}                                                                                                                                            \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                                              \
+  --                                                                                                                                                                \
+  %{__cargo_common_opts}                                                                                                                                            \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                                              \
+  --profile rpm}                                                                                                                                                    \
 fi
 
 ## Capital letters denote potentially risky build options as they may change intended build behavior.
@@ -545,14 +548,15 @@ fi
 %yarn_build(ef:FNr:v) %{shrink:                                                                                                        \
 %{-F:%{-N:%{error:Can't use both -F and -N}}}}                                                                                         \
 if cat package.json | grep electron-builder &>/dev/null; then                                                                          \
-  WEBAPP_BUILD_TOOL="electron-builder" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Builder" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep electron-forge &>/dev/null; then                                                                          \
-  WEBAPP_BUILD_TOOL="electron-forge" %{-f:%{expand:
+  WEBAPP_BUILD_TOOL="Electron Forge" %{-f:%{expand:
   echo "-f flag only works with Tauri. Did you mean -F?" >&2}}                                                                         \
 elif cat package.json | grep tauri &>/dev/null; then                                                                                   \
-  WEBAPP_BUILD_TOOL="tauri"                                                                                                            \
+  WEBAPP_BUILD_TOOL="Tauri"                                                                                                            \
 fi                                                                                                                                     \
+echo "$WEBAPP_BUILD_TOOL" > %{rpmbuilddir}/webapp-tool.txt                                                                             \
 %{__yarn} install %{shrink:                                                                                                            \
   %{-F:--frozen-lockfile}                                                                                                              \
   %{-N:--no-lockfile}}                                                                                                                 \
@@ -598,19 +602,19 @@ fi                                                                              
       print(macros["__yarn"] .. " run " .. script .. "\\n")
     end
   end} %{-v:%{expand:
-HOME=%{rpmbuilddir} %{__yarn} electron-vite build}}                                                                                    \
-if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then                                                                              \
-HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux AppImage --%{_electron_cpu} --publish=never                                     \
-elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then                                                                              \
-%{__yarn} install @reforged/maker-appimage --no-lockfile                                                                               \
-HOME=%{rpmbuilddir} %{__yarn} electron-forge make -- --platform="linux" --arch="%{_electron_cpu}" --targets="@reforged/maker-appimage" \
-elif [[ "$WEBAPP_BUILD_TOOL" == "tauri" ]]; then                                                                                       \
-%{shrink:                                                                                                                              \
-  %{__yarn} tauri build                                                                                                                \
-  %{__tauri_common_opts}                                                                                                               \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
-  --                                                                                                                                   \
-  %{__cargo_common_opts}                                                                                                               \
-  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                 \
-  --profile rpm}                                                                                                                       \
+HOME=%{rpmbuilddir} %{__yarn} electron-vite build}}                                                                                                                 \
+if [[ "$WEBAPP_BUILD_TOOL" == "Electron Builder" ]]; then                                                                                                           \
+HOME=%{rpmbuilddir} %{__yarn} electron-builder --linux %{?__electron_target}%{!?__electron_target:--dir} --%{_electron_cpu}%{?__electron_builder_publish: --publish=%{__electron_builder_publish}}                                                                                                                                       \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Electron Forge" ]]; then %{?__set_electron_forge_targets} %{?__forge_prepare_appimage:%{expand:
+%{__yarn} install @reforged/maker-appimage --no-lockfile}}                                                                                                          \
+HOME=%{rpmbuilddir} %{__yarn} electron-forge %{?__electron_target:make}%{!?__electron_target:package} -- --platform="linux" --arch="%{_electron_cpu}" %{?__electron_target:--targets="%{__forge_maker}"}                                                                                                                                         \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Tauri" ]]; then                                                                                                                    \
+%{shrink:                                                                                                                                                           \
+  %{__yarn} tauri build                                                                                                                                             \
+  %{__tauri_common_opts}                                                                                                                                            \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                                              \
+  --                                                                                                                                                                \
+  %{__cargo_common_opts}                                                                                                                                            \
+  %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                                              \
+  --profile rpm}                                                                                                                                                    \
 fi
