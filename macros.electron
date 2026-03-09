@@ -2,7 +2,7 @@
 ## %%with_bundled_electron alone does not work because the name macro is defined in the spec itself
 %is_electron_bundled() %bcond bundled_electron %["%{name}" != "electron"]
 
-%electron_arches %{x86_64} %{ix86} %{arm64} armv7l armv7hl armv7hnl %{mips64}
+%electron_arches x86_64 i386 i486 i586 i686 %{arm64} armv7l mips64el
 
 ## NOTE: Best for pure Electron programs. If packages use binaries not made with Electron Builder, when using this Macro care must be taken to not cause overlapping licenses.
 ## The SOURCE LICENSE of Electron is MIT. However, as it uses Chromium code, the Chromium license comes bundled with it and all Electron apps. Electron ALSO bundles FFmpeg and code from vulkan-loader.
@@ -99,6 +99,22 @@ Provides:      bundled(ffmpeg)                                                  
 Provides:      bundled(vulkan-loader)                                                                                              \
 ExclusiveArch: %{electron_arches}
 
+## Target for Electron Builder and Electron Forge. Unset this to only create an unpackaged directory (this may result in desired files not being generated). Defaults to AppImage due to low build dependencies and file generation.
+%__electron_target AppImage
+
+## Whether to "publish" the built Electron app. Should only be changed if necessary. Unset to default to the app's default config.
+%__electron_builder_publish never
+
+## Electron Forge maker options. Do not manually modify.
+%__set_electron_forge_targets %{lua:
+if rpm.expand("%{__electron_targets}"):find("AppImage") then
+  rpm.define("__forge_prepare_appimage 1")
+  rpm.define("__forge_maker @reforged/maker-appimage")
+else
+  local maker = rpm.expand("%{__electron_target}"):lower()
+  rpm.define("__forge_maker @electron-forge/maker-" .. maker)
+end}
+
 ## Capital letters denote use in desktop file or icon install process. These are capitalized differently for organizational purposes.
 # If no alternative names are provided via flag everything, falls back to the name set by the spec
 # -b: "Binary." Name of the actual executable file.
@@ -116,8 +132,8 @@ ExclusiveArch: %{electron_arches}
 # -v: "Verbose." Don't set +x for PNG icon installs. This WILL spam your terminal.
 %electron_install(b:d:DE:F:i:IlO::s:S:U:v) %{-i:%{!?-I:%{expand:
 %{error:Icon name provided but -I was not passed.}}}}                                  \
-if cat package.json | grep electron-builder &>/dev/null; then                          \
-  WEBAPP_BUILD_TOOL="electron-builder"                                                 \
+WEBAPP_BUILD_TOOL="$(cat %{rpmbuilddir}/webapp-tool.txt)"                              \
+if [[ "$WEBAPP_BUILD_TOOL" == "Electron Builder" ]]; then                              \
   APPOUTDIR="./dist"                                                                   \
   if [[ "%{_electron_cpu}" == "x64" ]]; then                                           \
     OUTDIR="./dist/linux-unpacked"                                                     \
@@ -129,12 +145,12 @@ if cat package.json | grep electron-builder &>/dev/null; then                   
     OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"                                    \
     APPARCH="%{_electron_cpu}"                                                         \
   fi                                                                                   \
-elif cat package.json | grep electron-forge &>/dev/null; then                          \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Electron Forge" ]]; then                              \
   WEBAPP_BUILD_TOOL="electron-forge"                                                   \
   OUTDIR="./out/*-linux-%{_electron_cpu}"                                              \
-  APPOUTDIR="./out/make/AppImage/%{_electron_cpu}"                                     \
+  APPOUTDIR="./out/make/%{__electron_target}/%{_electron_cpu}"                         \
   APPARCH="%{_electron_cpu}"                                                           \
-elif cat package.json | grep tauri &>/dev/null; then                                   \
+elif [[ "$WEBAPP_BUILD_TOOL" == "Tauri" ]]; then                                       \
   echo -e '\\e[31mERROR:\\e[0m This is a Tauri package, this macro will not work!' >&2 \
   exit 1                                                                               \
 fi                                                                                     \
@@ -150,7 +166,9 @@ fi                                                                              
   if opt.S then
     print(macros["__ln_s"] .. "f " .. installdir .. "/" .. bin .. rpm.expand(" %{buildroot}%{_bindir}/%{-S*}\\n"))
   end
-  if opt.D then
+  if opt.D and rpm.expand("%{__electron_target}") ~= 'AppImage' then
+    error("Cannot use -D option unless %{__electron_target} is defined as AppImage.")
+  elseif opt.D and rpm.expand("%{__electron_target}") == 'AppImage' then
     print(rpm.expand("$APPOUTDIR/*$APPARCH.AppImage --appimage-extract '*.desktop'\\n"))
     print(rpm.expand("%{__sed} -i '/.*AppImage.*/d' squashfs-root/*.desktop\\n"))
   if opt.F then
@@ -254,8 +272,8 @@ echo -e \\"Found \\\\\\\\e[32mscalable (SVG)\\\\\\\\e[0m icon.\\" >&2 \\
   end}                                                                                 \
 %{-l:%{expand:BUNDLED_LICENSE_DIR="$PWD/bundled_licenses"
 %{__mkdir} -p $BUNDLED_LICENSE_DIR
-find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t $BUNDLED_LICENSE_DIR {} +}} %{-I:%{expand:
-if [[ "$WEBAPP_BUILD_TOOL" == "electron-builder" ]]; then %{?__electron_icon_install}%{!?__electron_icon_install:%{expand:
+find ./*/ -iname "*LICENSE*" -type f ! -name "*.zip" ! -name "*.js" ! -name "*.cjs" ! -path "./node_modules/*" ! -path "./*/node_modules/*" ! -path "./public/*" ! -name "$BUNDLED_LICENSE_DIR" ! -path "./$BUNDLED_LICENSE_DIR/*" -exec cp -p -t $BUNDLED_LICENSE_DIR {} +}} %{-I:%{expand:
+if [[ "$WEBAPP_BUILD_TOOL" == "Electron Builder" ]]; then %{?__electron_icon_install}%{!?__electron_icon_install:%{expand:
 echo "Installing icons." >&2 %{!?-v:%{expand:
 set +x}}
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
@@ -267,7 +285,7 @@ fi
 done
 done %{!?-v:%{expand:
 set -x}}}}
-elif [[ "$WEBAPP_BUILD_TOOL" == "electron-forge" ]]; then %{?__electron_icon_install}%{!?__electron_icon_install:%{expand:
+elif [[ "$WEBAPP_BUILD_TOOL" == "Electron Forge" ]]; then %{?__electron_icon_install}%{!?__electron_icon_install:%{expand:
 echo "Installing icons." >&2 %{!?-v:%{expand:
 set +x}}
 for size in 8 16 20 22 24 32 36 40 44 48 64 72 96 128 150 192 256 310 512 1024; do
