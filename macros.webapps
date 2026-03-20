@@ -618,3 +618,59 @@ elif [[ "$WEBAPP_BUILD_TOOL" == "Tauri" ]]; then                                
   %{__cargo_parse_opts %{-f:-f%{-f*}}}                                                                                                                              \
   --profile rpm}                                                                                                                                                    \
 fi
+
+%__wails /usr/bin/wails
+
+%wails_build(t) %set_javascript_build_flags %{shrink:\
+%__wails build \
+%{-t:-tags webkit2_41}}
+
+## Build requirements for wails packages
+## Usage if not using Mock with %%generate_buildrequires:
+# BuildRequires: %%{wails_buildrequires}
+# BuildRequires: %%{wails_buildrequires -a}
+# -a: "Additional." Additional build deps that may be needed specifically for a package needs upx or other nodejs packages.
+
+%wails_buildrequires(a) %{shrink:\
+wails \
+gcc \
+gcc-c++ \
+nodejs-npm \
+gtk3-devel \
+webkit2gtk4.1-devel \
+nodejs-npm \
+pkgconf-pkg-config \
+%{-a:upx} \
+%{-a:nodejs} \
+%{-a:nodejs-devel} \
+%{-a:nodejs-full-i18n}}
+
+%__wails3 /usr/bin/wails3
+
+%wails3_build(4) %set_javascript_build_flags %{-4:EXTRA_TAGS=gtk4} %{shrink:\
+%__wails3 build}
+
+## Build requirements for wails-v3 packages
+## Usage if not using Mock with %%generate_buildrequires:
+# BuildRequires: %%{wails3_buildrequires}
+# BuildRequires: %%{wails3_buildrequires -a}
+# BuildRequires: %%{wails3_buildrequires -o}
+# BuildRequires: %%{wails3_buildrequires -ao}
+# -a: "Additional." Additional build deps that may be needed specifically for a package needs upx other nodejs packages.
+# -e: "Experimental." Optional build deps that may be needed for a package that uses experimental gtk4/webkitgtk6.0 features. If your package needs these, it may also need 'EXTRA_TAGS=gtk4' before '%wails3_build}'.
+
+%wails3_buildrequires(ao) %{shrink:\
+wails3 \
+gcc \
+gcc-c++ \
+nodejs-npm \
+gtk3-devel \
+webkit2gtk4.1-devel \
+nodejs-npm \
+pkgconf-pkg-config \
+%{-a:upx} \
+%{-a:nodejs} \
+%{-a:nodejs-devel} \
+%{-a:nodejs-full-i18n} \
+%{-e:webkitgtk6.0-devel} \
+%{-e:gtk4-devel}}
