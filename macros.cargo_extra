@@ -1,7 +1,7 @@
 %terra_rustflags %{build_rustflags} %[%{defined fedora} && %{with mold} ? "-Clink-arg=-fuse-ld=mold" : ""]
 
-%cargo_prep_online \
-%{!?_cargo_home:%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo} \
+%cargo_prep_online %{expand:
+%{!?_cargo_home:%%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo}} \
 (\
 set -eu \
 %{__mkdir} -p target/rpm\
@@ -40,8 +40,8 @@ directory = "%{cargo_registry}"\
 EOF\
 %{__rm} -f Cargo.toml.orig \
 )\
-%global build_rustflags %{terra_rustflags} \
-%{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}
+%{expand:%{!?rhel:%%global build_rustflags %{terra_rustflags}}
+%{!?with_rust_nightly:%%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}}
 
 
 
