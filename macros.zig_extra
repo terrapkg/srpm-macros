@@ -14,9 +14,6 @@
 # There is also ReleaseDebug, but this is almost never a good idea for distributed programs as the build size is large and performance is poor.
 # Reference: https://ziglang.org/documentation/master/#Build-Mode
 
-## "Normalized" Zig macro. Not used here but added for consistency with other program macros.
-%__zig %{?zig}
-
 ## Option reference:
 # -c (with argument): "CPU." Choose a specific CPU (micro)architecture to build for. Can also be used to enable/disable CPU features (example: AVX2)
 # -c (without argument): Fallback to the target architecture set by RPM (generic option, only applicable to arches where RPM and Zig use the same format)
