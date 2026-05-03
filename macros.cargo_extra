@@ -128,7 +128,7 @@ set -euo pipefail\
 # where installing crate source as library is unnecessary, use this macro
 # to install crates that build as single binary
 %crate_install_bin (\
-CRATE_NAME="$(%{__cargo_to_rpm} --path Cargo.toml name)" \
+CRATE_NAME="$(%{__cargo_to_rpm} --path Cargo.toml name 2>/dev/null || echo "%{?crate}")" \
 %{__install} -m 0755 target/rpm/$CRATE_NAME -D %{buildroot}%{_bindir}/$CRATE_NAME \
 )
 
