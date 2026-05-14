@@ -15,14 +15,23 @@
 # Reference: https://ziglang.org/documentation/master/#Build-Mode
 
 ## Option reference:
-# -c (with argument): "CPU." Choose a specific CPU (micro)architecture to build for. Can also be used to enable/disable CPU features (example: AVX2)
-# -c (without argument): Fallback to the target architecture set by RPM (generic option, only applicable to arches where RPM and Zig use the same format)
+# -C (with argument): "CPU." Choose a specific CPU (micro)architecture to build for. Can also be used to enable/disable CPU features (example: AVX2)
+# -C (without argument): Fallback to the target architecture set by RPM (generic option, only applicable to arches where RPM and Zig use the same format)
 # -r: "Release." Choose the build/release mode Zig will use. Note that "safe" is the default set by the Zig macros so it is never necessary to specify this option.
 # -s: "Static." Use when system integration is not possible or the project has no applicatble build dependencies. Dynamic linking for specific packages can still be set via build flags.
-%zig_build_target(c::r:s) %{shrink: \
-   %{-c:%{!?-c*:%global _zig_cpu %{_target_cpu}}} \
-   %{-c*:%global _zig_cpu %{-c*}} \
+%zig_build_target(C::r:s) %{shrink: \
+   %{-C:%{!?-C*:%global _zig_cpu %{_target_cpu}}} \
+   %{-C*:%global _zig_cpu %{-C*}} \
    %{-r:%global _zig_release_mode %{-r*}} \
    %{-s:%undefine _zig_system_integration} \
     %{zig_build} \
+}
+
+# The same as %%zig_build_target but for %%zig_install.
+%zig_install_target(C::r:s) %{shrink: \
+   %{-C:%{!?-C*:%global _zig_cpu %{_target_cpu}}} \
+   %{-C*:%global _zig_cpu %{-C*}} \
+   %{-r:%global _zig_release_mode %{-r*}} \
+   %{-s:%undefine _zig_system_integration} \
+    %{zig_install} \
 }
