@@ -30,7 +30,7 @@
 # The same as %%zig_build_target but for %%zig_install.
 %zig_install_target(C::r:s) %{shrink: \
    %{-C:%{!?-C*:%global _zig_cpu %{_target_cpu}}} \
-   %{-C*:%global _zig_cpu %{-c*}} \
+   %{-C*:%global _zig_cpu %{-C*}} \
    %{-r:%global _zig_release_mode %{-r*}} \
    %{-s:%undefine _zig_system_integration} \
     %{zig_install} \
