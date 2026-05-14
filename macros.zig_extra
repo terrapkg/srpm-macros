@@ -24,7 +24,5 @@
    %{-c*:%global _zig_cpu %{-c*}} \
    %{-r:%global _zig_release_mode %{-r*}} \
    %{-s:%undefine _zig_system_integration} \
-    %zig \
-        build \
-        %{?_zig_build_options} \
+    %{zig_build} \
 }
