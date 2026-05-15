@@ -1,4 +1,4 @@
-# Fetch all build dependencies. Fedora has %%zig_build but this can only be used to fetch individual packages at once.
+# Fetch all build dependencies. Fedora has %%zig_fetch but this can only be used to fetch individual packages at once.
 %zig_build_fetch %{shrink: \
     %{__zig} \
         build \
