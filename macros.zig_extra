@@ -1,3 +1,11 @@
+# Fetch all build dependencies. Fedora has %%zig_fetch but this can only be used to fetch individual packages at once.
+%zig_build_fetch %{shrink: \
+    %{__zig} \
+        build \
+        --fetch \
+        %{?_zig_fetch_options} \
+}
+
 ## Note: Zig microarch support
 # Generally ReleaseFast should be used with microarch builds for optimization.
 # But some packages it may still be desirable to emit extra debug info.
