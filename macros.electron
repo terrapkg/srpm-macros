@@ -35,7 +35,9 @@ AND
 # -a: "All/additional." Additional build deps that may be needed specifically for when building with NPM.
 # -D: "Disable debug." Disable debug packages. Needed for most Electron apps.
 %electronmeta(aD)                                                                                                                  \
-%{-D:%global debug_package %{nil}}                                                                                                 \
+%{-D:%global debug_package %{nil}}%{!?-D:%{expand:
+%global debug_level 1
+%undefine _debugsource_packages}}                                                                                                  \
 %global __provides_exclude  libffmpeg\\.so.*|libEGL\\.so.*|libGLESv2\\.so.*|libvk_swiftshader\\.so.*|libvulkan\\.so.*              \
 %{lua:
   if not macros["_target_cpu"]:find('armv7') then
