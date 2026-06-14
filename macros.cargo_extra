@@ -1,3 +1,6 @@
+# https://github.com/rust-lang/crates.io/discussions/13863#discussioncomment-17255004
+%terra_crates_source https://static.crates.io/crates/%{crate}/%{crate}-%{version}.crate
+
 %terra_rustflags %{build_rustflags} %[%{defined fedora} && %{with mold} ? "-Clink-arg=-fuse-ld=mold" : ""]
 
 %cargo_prep_online %{expand:
