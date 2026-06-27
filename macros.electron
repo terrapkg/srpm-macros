@@ -139,19 +139,14 @@ if [[ "$WEBAPP_BUILD_TOOL" == "Electron Builder" ]]; then                       
   APPOUTDIR="./dist"                                                                   \
   if [[ "%{_electron_cpu}" == "x64" ]]; then                                           \
     OUTDIR="./dist/linux-unpacked"                                                     \
-    APPARCH="x86_64"                                                                   \
   elif [[ "%{_electron_cpu}" == "ia32" ]]; then                                        \
     OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"                                    \
-    APPARCH="i386"                                                                     \
   else                                                                                 \
     OUTDIR="./dist/linux-%{_electron_cpu}-unpacked"                                    \
-    APPARCH="%{_electron_cpu}"                                                         \
   fi                                                                                   \
 elif [[ "$WEBAPP_BUILD_TOOL" == "Electron Forge" ]]; then                              \
-  WEBAPP_BUILD_TOOL="electron-forge"                                                   \
   OUTDIR="./out/*-linux-%{_electron_cpu}"                                              \
   APPOUTDIR="./out/make/%{__electron_target}/%{_electron_cpu}"                         \
-  APPARCH="%{_electron_cpu}"                                                           \
 elif [[ "$WEBAPP_BUILD_TOOL" == "Tauri" ]]; then                                       \
   echo -e '\\e[31mERROR:\\e[0m This is a Tauri package, this macro will not work!' >&2 \
   exit 1                                                                               \
@@ -171,7 +166,7 @@ fi                                                                              
   if opt.D and rpm.expand("%{__electron_target}") ~= 'AppImage' then
     error("Cannot use -D option unless %{__electron_target} is defined as AppImage.")
   elseif opt.D and rpm.expand("%{__electron_target}") == 'AppImage' then
-    print(rpm.expand("$APPOUTDIR/*$APPARCH.AppImage --appimage-extract '*.desktop'\\n"))
+    print(rpm.expand("$APPOUTDIR/*.AppImage --appimage-extract '*.desktop'\\n"))
     print(rpm.expand("%{__sed} -i '/.*AppImage.*/d' squashfs-root/*.desktop\\n"))
   if opt.F then
     function split(arguments, split_pattern)

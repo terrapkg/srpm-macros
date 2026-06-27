@@ -212,6 +212,7 @@ elif cat package.json | grep electron-forge &>/dev/null; then                   
 elif cat package.json | grep tauri &>/dev/null; then                                                                                             \
   WEBAPP_BUILD_TOOL="Tauri"                                                                                                                      \
 fi                                                                                                                                               \
+echo "$WEBAPP_BUILD_TOOL" > %{rpmbuilddir}/webapp-tool.txt                                                                                       \
 %{__npm} %{shrink:                                                                                                                               \
   %{!?-c:install}                                                                                                                                \
   %{-c:ci}                                                                                                                                       \
