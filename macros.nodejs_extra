@@ -18,11 +18,11 @@
 %_nvm_dir %{rpmbuilddir}/.nvm
 
 ## Call NPM with our build env vars
-%__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{__nvm} exec npm --}%{!?with_vendored_nodejs:/usr/bin/npm}
+%__npm /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{__nvm} exec default npm --}%{!?with_vendored_nodejs:/usr/bin/npm}
 
 ## Remotely execute a Node module from the NPM Registry or JavaScript Registry with NPM
 ## NOTE: NPX can escape the variables of the main shell in some situations. It may be necessary to call NPM from NPX with %%npm_config_opts set for consistent behavior.
-%__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{__nvm} exec npx --}%{!?with_vendored_nodejs:/usr/bin/npx}
+%__npx /usr/bin/env %{npm_common_envvars} %{?with_vendored_nodejs:%{__nvm} exec default npx --}%{!?with_vendored_nodejs:/usr/bin/npx}
 
 ## Macro to make sure system installed NVM uses the correct directory when used in %%vendor_nodejs.
 %__nvm /usr/bin/env NVM_DIR=%{_nvm_dir} /usr/bin/nvm
