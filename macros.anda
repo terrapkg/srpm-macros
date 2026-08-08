@@ -34,6 +34,8 @@
 
 %fish_functions_dir %_datadir/fish/vendor_functions.d
 
+%zsh_functions_dir %_datadir/zsh/site-functions
+
 # pkg_completion -Bbefz -n pkgname cmd1 cmd2 ...
 # -B: bash (but the completion file doesn't have `.bash` extension)
 # -b: bash
