@@ -145,14 +145,36 @@ find target/rpm \\\
 %install_cargo_devel_libs() \
 install -Dm755 target/rpm/*.so -t %{buildroot}%{_libdir}
 
-%rustup_nightly \
-%{?_cargo_home:%{error:%%rustup_nightly must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
+# Install a Rustup toolchain into the isolated build directory. Prefer a dated
+# toolchain (for example, nightly-2026-08-12) in package specs: the moving
+# `nightly` channel makes rebuilds non-reproducible and can silently change the
+# required compiler or LLVM version.
+#
+# -t: toolchain name (for example, nightly-2026-08-12)
+# -f: rust-toolchain or rust-toolchain.toml file to read
+# -c: optional component (for example, rust-src)
+%rustup_toolchain(t:f:c:) %{expand:
+%{?_cargo_home:%{error:%%rustup_toolchain must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
+%{!?-t:%{!?-f:%{error:%%rustup_toolchain requires -t <toolchain> or -f <file>}}} \
 %global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo \
-%{__rm} -rf {.cargo/,%{_cargo_home}/} \
+%{__rm} -rf {.cargo/,%{_cargo_home}/} && \
+%{__mkdir} -p %{_cargo_home} && \
 %global _rustup_home %{rpmbuilddir}/.rustup \
 %global __cargo . %{_cargo_home}/env && /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTFLAGS='%{terra_rustflags}' %{_cargo_home}/bin/cargo \
 %global __rustc %{_cargo_home}/bin/rustc \
 %global __rustdoc %{_cargo_home}/bin/rustdoc \
-/usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y -q --no-modify-path \
-. %{_cargo_home}/env \
+/usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain none -y -q --no-modify-path && \
+. %{_cargo_home}/env && \
+toolchain='%{-t*}' && \
+components='%{-c*}' && \
+%{?-f:test -f '%{-f*}' || { echo 'rustup toolchain file not found: %{-f*}' >&2; exit 1; }; toolchain=$(awk -F'"' '/^[[:space:]]*channel[[:space:]]*=/ { print $2; exit }' '%{-f*}'); if test -z "$toolchain"; then toolchain=$(sed -n '1p' '%{-f*}' | tr -d '[:space:]'); fi; file_components=$(awk -F'[][]' '/^[[:space:]]*components[[:space:]]*=/ { print $2; exit }' '%{-f*}' | tr -d '"' | tr ',' ' '); components="$components $file_components"; } \
+test -n "$toolchain" || { echo 'unable to determine Rust toolchain' >&2; exit 1; } && \
+rustup toolchain install "$toolchain" --profile minimal && \
+for component in $components; do rustup component add --toolchain "$toolchain" "$component"; done && \
+rustup default "$toolchain" \
+}
+
+# Backwards-compatible shorthand for packages that intentionally track the
+# moving nightly channel. New packages should use %%rustup_toolchain instead.
+%rustup_nightly %rustup_toolchain -t nightly
 %bcond rust_nightly 1
