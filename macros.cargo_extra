@@ -46,6 +46,27 @@ EOF\
 %{expand:%{!?rhel:%%global build_rustflags %{terra_rustflags}}
 %{!?with_rust_nightly:%%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}}
 
+# Prepare a Cargo project against an already-vendored dependency tree. This
+# must be used instead of %%cargo_prep_online when the build is offline.
+# The vendor directory is expected at the project root and must be generated
+# from the committed Cargo.lock before creating the source archive.
+%cargo_prep_vendor %{expand:
+%cargo_prep_online
+%{__test} -f Cargo.lock || %{error:%%cargo_prep_vendor requires Cargo.lock}
+%{__test} -d vendor || %{error:%%cargo_prep_vendor requires a vendor/ directory}
+cat >> %{_cargo_home}/config.toml << EOF
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "$(pwd)/vendor"
+EOF
+}
+
+# Build using only the locked dependency graph and local sources. Use this
+# with %%cargo_prep_vendor (or another preparation macro that configures a
+# vendored source).
+%cargo_build_offline CARGO_NET_OFFLINE=true %{__cargo} build -j${RPM_BUILD_NCPUS} --offline --locked -Z avoid-dev-deps --profile rpm
 
 
 # cargo_license: print license information for all crate dependencies
