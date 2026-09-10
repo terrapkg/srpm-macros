@@ -46,6 +46,31 @@ EOF\
 %{expand:%{!?rhel:%%global build_rustflags %{terra_rustflags}}
 %{!?with_rust_nightly:%%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo}}
 
+# Prepare a Cargo project against an already-vendored dependency tree. This
+# must be used instead of %%cargo_prep_online when the build is offline.
+# The vendor directory is expected at the project root and must be generated
+# from the committed Cargo.lock before creating the source archive.
+%cargo_prep_vendor %{expand:
+%cargo_prep_online
+test -f Cargo.lock || { echo 'cargo_prep_vendor requires Cargo.lock' >&2; exit 1; }
+test -d vendor || { echo 'cargo_prep_vendor requires a vendor/ directory' >&2; exit 1; }
+cat >> %{_cargo_home}/config.toml << EOF
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "$(pwd)/vendor"
+EOF
+}
+
+# Build using only the locked dependency graph and local sources. Use this
+# with %%cargo_prep_vendor (or another preparation macro that configures a
+# vendored source).
+%cargo_build_offline CARGO_NET_OFFLINE=true %{__cargo} build -j${RPM_BUILD_NCPUS} --offline --locked %{?with_rust_nightly:-Z avoid-dev-deps} --profile rpm
+
+# Resolve the locked dependency graph using only the configured local sources.
+# Run after %%cargo_prep_vendor when a fast pre-build validation is useful.
+%cargo_verify_vendor CARGO_NET_OFFLINE=true %{__cargo} metadata --offline --locked --no-deps >/dev/null
 
 
 # cargo_license: print license information for all crate dependencies
@@ -167,11 +192,27 @@ install -Dm755 target/rpm/*.so -t %{buildroot}%{_libdir}
 . %{_cargo_home}/env && \
 toolchain='%{-t*}' && \
 components='%{-c*}' && \
-%{?-f:test -f '%{-f*}' || { echo 'rustup toolchain file not found: %{-f*}' >&2; exit 1; }; toolchain=$(awk -F'"' '/^[[:space:]]*channel[[:space:]]*=/ { print $2; exit }' '%{-f*}'); if test -z "$toolchain"; then toolchain=$(sed -n '1p' '%{-f*}' | tr -d '[:space:]'); fi; file_components=$(awk -F'[][]' '/^[[:space:]]*components[[:space:]]*=/ { print $2; exit }' '%{-f*}' | tr -d '"' | tr ',' ' '); components="$components $file_components"; } \
+%{?-f:toolchain_file='%{-f*}'; if test "$toolchain_file" = auto; then if test -f rust-toolchain.toml; then toolchain_file=rust-toolchain.toml; else toolchain_file=rust-toolchain; fi; fi; test -f "$toolchain_file" || { echo "rustup toolchain file not found: $toolchain_file" >&2; exit 1; }; toolchain=$(awk -F'"' '/^[[:space:]]*channel[[:space:]]=/ { print $2; exit }' "$toolchain_file"); if test -z "$toolchain"; then toolchain=$(sed -n '1p' "$toolchain_file" | tr -d '[:space:]'); fi; file_components=$(awk -F'[][]' '/^[[:space:]]*components[[:space:]]=/ { print $2; exit }' "$toolchain_file" | tr -d '"' | tr ',' ' '); components="$components $file_components"; } \
+test -n "$toolchain" || { echo 'unable to determine Rust toolchain' >&2; exit 1; } && \
+case "$toolchain" in nightly) echo 'moving nightly channel is not reproducible; use nightly-YYYY-MM-DD' >&2;; esac && \
 test -n "$toolchain" || { echo 'unable to determine Rust toolchain' >&2; exit 1; } && \
 rustup toolchain install "$toolchain" --profile minimal && \
 for component in $components; do rustup component add --toolchain "$toolchain" "$component"; done && \
 rustup default "$toolchain" \
+}
+
+# Discover and install an upstream rust-toolchain file. This is intentionally
+# a shell-time check because the source tree is only available in %%prep.
+%rustup_toolchain_from_file %{rustup_toolchain -f auto}
+
+# Check that the selected compiler is the expected dated toolchain. This is
+# useful immediately after %%rustup_toolchain and before a long build.
+%rustup_verify_toolchain(t:) %{expand:
+%{!?-t:%{error:%%rustup_verify_toolchain requires -t <toolchain>}} \
+test -x %{__rustc} || { echo 'configured rustc is not executable' >&2; exit 1; } && \
+version=$(%{__rustc} --version) && \
+echo "$version" && \
+echo "$version" | grep -F -- '%{-t*}' >/dev/null || { echo "rustc does not match %{-t*}" >&2; exit 1; }
 }
 
 # Backwards-compatible shorthand for packages that intentionally track the
