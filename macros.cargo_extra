@@ -79,6 +79,32 @@ set -euo pipefail\
 }\
 )
 
+# cargo_license_preamble_online: print concatenated license summary for all crate dependencies
+#
+# This macro works in the same way as cargo_license, except that it only prints
+# a list of licenses, and not the complete license information for every crate
+# in the dependency tree. This is useful for determining the correct License
+# tag for packages that contain compiled Rust binaries.
+#
+# The list of licenses are concatenated and can be directly pasted into `License:`.
+%cargo_license_preamble_online(naf:)\
+(\
+set -euo pipefail\
+%{shrink:                                                           \
+    %{__cargo} tree                                                 \
+    -Z avoid-dev-deps                                               \
+    --workspace                                                     \
+    --edges no-build,no-dev,no-proc-macro                           \
+    --no-dedupe                                                     \
+    --target all                                                    \
+    %{__cargo_parse_opts %{-n} %{-a} %{-f:-f%{-f*}}}                \
+    --prefix none                                                   \
+    --format "{l}"                                                  \
+    | sed -E 's@ */ *@ OR @g;/ /s@^.*$@(&)@'                        \
+    | sort -u | sed -z 's/\\\n\\\+\\\([^\\\n]\\\)/ AND \\\1/g'      \
+}\
+)
+
 # cargo_license_summary: print license summary for all crate dependencies
 #
 # This macro works in the same way as cargo_license, except that it only prints
