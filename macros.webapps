@@ -75,7 +75,7 @@
 %vendor_pnpm(v:)                                                 \
 export PNPM_HOME="%{_pnpm_home}"                                 \
 curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
-%{-v:%{_pnpm_home}/pnpm env use --global %{-v*}}                 \
+%{-v:%{_pnpm_home}/bin/pnpm env use --global %{-v*}}             \
 %bcond vendored_pnpm 1
 
 ## Export JavaScript module related build flags globally if necessary for any reason.
