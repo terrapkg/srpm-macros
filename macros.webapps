@@ -72,10 +72,11 @@
 
 ## ONLY use if PNPM is not usable from the repos for some reason
 # -v "Version." Choose a specific version of PNPM to vendor
-%vendor_pnpm(v:)                                                 \
-export PNPM_HOME="%{_pnpm_home}"                                 \
-curl -fsSL https://get.pnpm.io/install.sh | sh - >/dev/null 2>&1 \
-%{-v:%{_pnpm_home}/bin/pnpm runtime set node %{-v*} --global}    \
+# -V: Choose a version of Node.js to vendor if you need to vendor one. SHOULD NOT be used together with %%vendor_nodejs
+%vendor_pnpm(v:V:)                                                                             \
+export PNPM_HOME="%{_pnpm_home}"                                                               \
+curl -fsSL https://get.pnpm.io/install.sh | %{-v:env PNPM_VERSION=%{-v*}} sh - >/dev/null 2>&1 \
+%{-V:%{_pnpm_home}/bin/pnpm runtime set node %{-V*} --global}                                  \
 %bcond vendored_pnpm 1
 
 ## Export JavaScript module related build flags globally if necessary for any reason.
