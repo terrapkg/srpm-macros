@@ -74,7 +74,7 @@
 # -v "Version." Choose a specific version of PNPM to vendor
 # -V: Choose a version of Node.js to vendor if you need to vendor one. SHOULD NOT be used together with %%vendor_nodejs
 %vendor_pnpm(v:V:)                                                                             \
-PNPM_HOME="%{_pnpm_home}" ; export PNPM_HOME                                                   \
+PNPM_HOME="%{_pnpm_home}" ; export PNPM_HOME ;                                                 \
 curl -fsSL https://get.pnpm.io/install.sh | %{-v:env PNPM_VERSION=%{-v*}} sh - >/dev/null 2>&1 \
 %{-V:%{_pnpm_home}/bin/pnpm runtime set node %{-V*} --global}                                  \
 %bcond vendored_pnpm 1
