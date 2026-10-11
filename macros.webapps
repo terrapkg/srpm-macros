@@ -73,10 +73,10 @@
 ## ONLY use if PNPM is not usable from the repos for some reason
 # -v "Version." Choose a specific version of PNPM to vendor
 # -V: Choose a version of Node.js to vendor if you need to vendor one. SHOULD NOT be used together with %%vendor_nodejs
-%vendor_pnpm(v:V:)                                                                                                                                                                                                                                                                \
-mkdir -p %{rpmbuilddir}/unpack_pnpm                                                                                                                                                                                                                                               \
-/usr/bin/curl -fL https://get.pnpm.io/install.sh | sed 's|$tmp_dir|%{rpmbuilddir}/unpack_pnpm|g' | /usr/bin/env PNPM_HOME="%{_pnpm_home}" PNPM_VERSION="%{pnpm_major}" NO_UPDATE_NOTIFIER="1" PATH="%{_pnpm_home}/bin:%{rpmbuilddir}/unpack_pnpm:$PATH" /usr/bin/sh - 1>/dev/null \
-%{-V:%{_pnpm_home}/bin/pnpm runtime set node %{-V*} --global}                                                                                                                                                                                                                     \
+%vendor_pnpm(v:V:)                                                                                                                                                                                                                                                               \
+mkdir -p %{rpmbuilddir}/unpack_pnpm                                                                                                                                                                                                                                              \
+/usr/bin/curl -fL https://get.pnpm.io/install.sh | sed 's|$tmp_dir|%{rpmbuilddir}/unpack_pnpm|g' | /usr/bin/env PNPM_HOME="%{_pnpm_home}" %{-v:PNPM_VERSION="%{-v*}"} NO_UPDATE_NOTIFIER="1" PATH="%{_pnpm_home}/bin:%{rpmbuilddir}/unpack_pnpm:$PATH" /usr/bin/sh - 1>/dev/null \
+%{-V:%{_pnpm_home}/bin/pnpm runtime set node %{-V*} --global}                                                                                                                                                                                                                    \
 %bcond vendored_pnpm 1
 
 ## Export JavaScript module related build flags globally if necessary for any reason.
