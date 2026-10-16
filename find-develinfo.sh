@@ -10,8 +10,8 @@ for f in \
 	$buildroot/$_libdir/*.so \
 	$buildroot/$_libdir/pkgconfig/*.pc \
 	$buildroot//usr/share/gir-1.0/*.gir \
-	$buildroot//usr/share/vala/vapi/*.vapi
-	$buildroot//usr/share/vala/vapi/*.deps
+	$buildroot//usr/share/vala/vapi/*.vapi \
+	$buildroot//usr/share/vala/vapi/*.deps \
 	$buildroot//usr/lib/cmake/** \
 	$buildroot//usr/lib64/cmake/** \
 	$(find $buildroot/usr/share -name "*.cmake" -type f -not -path "$buildroot/usr/share/doc/*" -and -not -path "$buildroot/usr/share/license/*") \
