@@ -3,8 +3,8 @@
 %nim_lflags %?build_ldflags -pie
 
 %nim_prep cat<<EOF >> config.nims\
-when findExe("mold").len > 0 and defined(linux):\
-  switch("passL", "-fuse-ld=mold")\
+when findExe("ld.lld").len > 0 and defined(linux):\
+  switch("passL", "-fuse-ld=lld")\
 EOF\
 nimble setup -y
 

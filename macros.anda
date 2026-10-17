@@ -1,7 +1,7 @@
-# by default, add a bcond_without for a mold linker
+# by default, add a bcond_without for the lld linker
 # https://rpm-software-management.github.io/rpm/manual/conditionalbuilds.html
 # only enable this on fedora
-%with_mold %{defined fedora}
+%with_lld %{defined fedora}
 
 # git_clone [<repo_url>] [<ref>]
 %git_clone(q) %{lua:
