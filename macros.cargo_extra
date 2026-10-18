@@ -1,7 +1,7 @@
 # https://github.com/rust-lang/crates.io/discussions/13863#discussioncomment-17255004
 %terra_crates_source https://static.crates.io/crates/%{crate}/%{crate}-%{version}.crate
 
-%terra_rustflags %{build_rustflags} %[%{defined fedora} && %{with lld} ? "-Clink-arg=-fuse-ld=lld" : ""]
+%terra_rustflags %{build_rustflags} %[0%{?_terra_use_lld} && !0%{?_without_lld} ? "-Clink-arg=-fuse-ld=lld" : ""]
 
 %cargo_prep_online(u) \
 %{!?_cargo_home:%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo} \

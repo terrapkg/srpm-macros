@@ -1,7 +1,6 @@
-# by default, add a bcond_without for the lld linker
-# https://rpm-software-management.github.io/rpm/manual/conditionalbuilds.html
-# only enable this on fedora
-%with_lld %{defined fedora}
+# use the lld linker by default (only on fedora)
+# to opt out, add `%%global _terra_use_lld 0` to the spec or build with `--without lld`
+%_terra_use_lld %{defined fedora}
 
 # git_clone [<repo_url>] [<ref>]
 %git_clone(q) %{lua:
