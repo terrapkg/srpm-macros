@@ -210,6 +210,8 @@
 
 %_dracut_confdir %{_prefix}/lib/dracut/dracut.conf.d
 
+%_xdg_autostartdir %_sysconfdir/xdg/autostart
+
 %__desktop_file_install /usr/bin/desktop-file-install
 
 %__desktop_file_edit /usr/bin/desktop-file-edit
