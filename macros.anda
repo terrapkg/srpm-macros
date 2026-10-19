@@ -214,7 +214,9 @@
 
 %_bootdir /boot
 
-%_grubthemedir %_bootdir/grub2/themes
+%_grubdir %_bootdir/grub2
+
+%_grubthemedir %_grubdir/themes
 
 %__desktop_file_install /usr/bin/desktop-file-install
 
