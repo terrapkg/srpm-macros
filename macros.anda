@@ -212,6 +212,10 @@
 
 %_xdg_autostartdir %_sysconfdir/xdg/autostart
 
+%_bootdir /boot
+
+%_grubthemedir %_bootdir/grub2/themes
+
 %__desktop_file_install /usr/bin/desktop-file-install
 
 %__desktop_file_edit /usr/bin/desktop-file-edit
