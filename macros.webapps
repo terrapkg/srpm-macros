@@ -629,7 +629,7 @@ fi
 ## Usage if not using Mock with %%generate_buildrequires:
 # BuildRequires: %%{wails_buildrequires}
 # BuildRequires: %%{wails_buildrequires -a}
-# -a: "Additional." Additional build deps that may be needed specifically for a package needs upx or other nodejs packages.
+# -a: "Additional." Additional build deps that may be needed specifically for a package that needs upx or other nodejs packages.
 
 %wails_buildrequires(a) %{shrink:\
 wails \
