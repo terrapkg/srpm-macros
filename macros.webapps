@@ -638,7 +638,6 @@ gcc-c++ \
 nodejs-npm \
 gtk3-devel \
 webkit2gtk4.1-devel \
-nodejs-npm \
 pkgconf-pkg-config \
 %{-a:upx} \
 %{-a:nodejs} \
