@@ -621,11 +621,9 @@ fi
 
 %__wails /usr/bin/wails
 
-%wails_build(t) \
+%wails_build(-) \
 %set_javascript_build_flags \
-%{shrink: \
-%__wails build \
-%{-t:-tags webkit2_41}}
+%__wails build %**
 
 ## Build requirements for wails packages
 ## Usage if not using Mock with %%generate_buildrequires:
@@ -649,10 +647,9 @@ pkgconf-pkg-config \
 
 %__wails3 /usr/bin/wails3
 
-%wails3_build(4) \
+%wails3_build(-) \
 %set_javascript_build_flags \
-%{-4:EXTRA_TAGS=gtk4} \
-%__wails3 build
+%__wails3 build %**
 
 ## Build requirements for wails-v3 packages
 ## Usage if not using Mock with %%generate_buildrequires:
