@@ -655,12 +655,12 @@ pkgconf-pkg-config \
 ## Usage if not using Mock with %%generate_buildrequires:
 # BuildRequires: %%{wails3_buildrequires}
 # BuildRequires: %%{wails3_buildrequires -a}
-# BuildRequires: %%{wails3_buildrequires -o}
-# BuildRequires: %%{wails3_buildrequires -ao}
+# BuildRequires: %%{wails3_buildrequires -e}
+# BuildRequires: %%{wails3_buildrequires -ae}
 # -a: "Additional." Additional build deps that may be needed specifically for a package needs upx other nodejs packages.
 # -e: "Experimental." Optional build deps that may be needed for a package that uses experimental gtk4/webkitgtk6.0 features. If your package needs these, it may also need 'EXTRA_TAGS=gtk4' before '%%{wails3_build}'.
 
-%wails3_buildrequires(ao) %{shrink:\
+%wails3_buildrequires(ae) %{shrink:\
 wails3 \
 gcc \
 gcc-c++ \
