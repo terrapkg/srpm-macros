@@ -21,7 +21,7 @@
 ### Definition for "cargo" for install stage to install files into buildroot
 ### Terra does not support %%cargo_install_crate, so we instead use %%crate_install_bin.
 ### %%install -s must be used to install aditional files
-%buildsystem_terra_cargo_install() %install_cargo_bins %{*}
+%buildsystem_terra_cargo_install() %terra_cargo_install %{*}
 
 ### Definition for "cargo" for check stage to run tests
 %buildsystem_terra_cargo_check() %{?with_check:%cargo_test %{*}} %{!?with_check:%{nil}}
