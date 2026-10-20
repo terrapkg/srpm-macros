@@ -175,6 +175,13 @@ find target/rpm \\\
 %install_cargo_devel_libs() \
 install -Dm755 target/rpm/*.so -t %{buildroot}%{_libdir}
 
+# Best used in BuildSystems, but can be called on its own
+%terra_cargo_install() \
+%install_cargo_bins \
+if stat target/rpm/*.so >/dev/null; then \
+install -Dm755 target/rpm/*.so -t %{buildroot}%{_libdir} \
+fi
+
 %rustup_nightly \
 %{?_cargo_home:%{error:%%rustup_nightly must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
 %global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo \
