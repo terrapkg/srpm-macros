@@ -1,6 +1,8 @@
 # use the lld linker by default (only on fedora)
-# to opt out, add `%%global _terra_use_lld 0` to the spec or build with `--without lld`
-%_terra_use_lld %{defined fedora}
+# `--without lld` opts out, `--with lld` opts in on other distros,
+# or override it in the spec with `%%global __terra_use_lld 0` (or `1`)
+# rpmbuild defines `_with_<name>`/`_without_<name>` for these flags even when no bcond is declared
+%__terra_use_lld %[(%{defined fedora} || %{defined _with_lld}) && !%{defined _without_lld}]
 
 # git_clone [<repo_url>] [<ref>]
 %git_clone(q) %{lua:
