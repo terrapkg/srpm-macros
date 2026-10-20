@@ -6,8 +6,7 @@
 ### Definition for "cargo" for prep stage, overriding default prep and using the cargo_prep_online macro
 %buildsystem_terra_cargo_prep() \
 %autosetup -C -p1 \
-%cargo_prep_online -u %{*} \
-%global crate %{name}
+%cargo_prep_online -u %{*}
 
 ### Definition for "cargo" for genbr stage to determine BuildRequires
 ### Terra does not need this as we fetch rust deps online
@@ -22,7 +21,7 @@
 ### Definition for "cargo" for install stage to install files into buildroot
 ### Terra does not support %%cargo_install_crate, so we instead use %%crate_install_bin.
 ### %%install -s must be used to install aditional files
-%buildsystem_terra_cargo_install() %crate_install_bin %{*}
+%buildsystem_terra_cargo_install() %install_cargo_bins %{*}
 
 ### Definition for "cargo" for check stage to run tests
 %buildsystem_terra_cargo_check() %{?with_check:%cargo_test %{*}} %{!?with_check:%{nil}}
