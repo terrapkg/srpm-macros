@@ -3,8 +3,13 @@
 
 %terra_rustflags %{build_rustflags} %[%{__terra_use_lld} ? "-Clink-arg=-fuse-ld=lld" : ""]
 
+# Define the $CARGO_HOME so Crates always download to the same location
+%_cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo
+
+# Fetch Cargo deps
+%cargo_fetch(-) /usr/bin/env CARGO_HOME=%{_cargo_home} RUST_NET_OFFLINE=false %{?with_rust_nightly:PATH="%{_cargo_home}/bin:$PATH" %{_cargo_home}/bin/cargo}%{!?with_rust_nightly:/usr/bin/cargo} fetch --locked
+
 %cargo_prep_online(u) \
-%{!?_cargo_home:%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo} \
 %{!?rhel:%global build_rustflags %{terra_rustflags}} \
 %{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo} \
 (\
@@ -14,7 +19,6 @@ set -eu \
 %{!?with_rust_nightly:%{expand:
 %{__rm} -rf {.cargo/,%{_cargo_home}/}
 %{__mkdir} -p %{_cargo_home}}}\
-%{__cargo} fetch --locked \
 cat > %{_cargo_home}/config.toml << EOF \
 [profile.rpm]\
 inherits = "release"\
@@ -48,9 +52,8 @@ directory = "%{cargo_registry}"\
 \
 EOF\
 %{__rm} -f Cargo.toml.orig \
-)
-
-
+) \
+%cargo_fetch
 
 # cargo_license: print license information for all crate dependencies
 #
@@ -184,7 +187,6 @@ fi
 
 %rustup_nightly \
 %{?_cargo_home:%{error:%%rustup_nightly must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
-%global _cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo \
 %{__rm} -rf {.cargo/,%{_cargo_home}/} \
 %global _rustup_home %{rpmbuilddir}/.rustup \
 %global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} PATH="%{_cargo_home}/bin:$PATH" RUSTFLAGS='%{terra_rustflags}' %{_cargo_home}/bin/cargo \
