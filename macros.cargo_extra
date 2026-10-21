@@ -10,7 +10,7 @@
 %_rustup_home %{rpmbuilddir}/.rustup
 
 # Fetch Cargo deps
-%cargo_fetch(-) /usr/bin/env CARGO_HOME=%{_cargo_home} RUST_NET_OFFLINE=false %{?with_rust_nightly:PATH="%{_cargo_home}/bin:$PATH" %{_cargo_home}/bin/cargo}%{!?with_rust_nightly:/usr/bin/cargo} fetch --locked
+%cargo_fetch(-) /usr/bin/env CARGO_HOME=%{_cargo_home} CARGO_NET_OFFLINE=false %{?with_rust_nightly:PATH="%{_cargo_home}/bin:$PATH" %{_cargo_home}/bin/cargo}%{!?with_rust_nightly:/usr/bin/cargo} fetch --locked
 
 %cargo_prep_online(u) \
 %{!?rhel:%global build_rustflags %{terra_rustflags}} \
