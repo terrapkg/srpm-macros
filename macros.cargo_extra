@@ -6,6 +6,9 @@
 # Define the $CARGO_HOME so Crates always download to the same location
 %_cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo
 
+# Define $RUSTUP_HOME for vendored toolchains
+%_rustup_home %{rpmbuilddir}/.rustup
+
 # Fetch Cargo deps
 %cargo_fetch(-) /usr/bin/env CARGO_HOME=%{_cargo_home} RUST_NET_OFFLINE=false %{?with_rust_nightly:PATH="%{_cargo_home}/bin:$PATH" %{_cargo_home}/bin/cargo}%{!?with_rust_nightly:/usr/bin/cargo} fetch --locked
 
@@ -188,7 +191,6 @@ fi
 %rustup_nightly \
 %{?_cargo_home:%{error:%%rustup_nightly must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
 %{__rm} -rf {.cargo/,%{_cargo_home}/} \
-%global _rustup_home %{rpmbuilddir}/.rustup \
 %global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} PATH="%{_cargo_home}/bin:$PATH" RUSTFLAGS='%{terra_rustflags}' %{_cargo_home}/bin/cargo \
 %global __rustc %{_cargo_home}/bin/rustc \
 %global __rustdoc %{_cargo_home}/bin/rustdoc \
