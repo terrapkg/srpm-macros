@@ -52,28 +52,7 @@ cd $OLDPWD
 %tauri_generate_buildrequires(at)\
 %(echo '"%{tauri_buildrequires %{-a} %{-t}}"' | sed 's/ /" ; echo "/g;s/^"cargo/echo "cargo/g') \
 \
-if cat %{tauri_subdir}/Cargo.lock | grep "glib-sys" &>/dev/null; then \
-  echo "glib2-devel" \
-fi \
-\
-if cat %{tauri_subdir}/Cargo.lock | grep "gdk-sys" &>/dev/null; then \
-  echo "gtk3-devel" \
-fi \
-\
-if cat %{tauri_subdir}/Cargo.lock | grep "gtk4-sys" &>/dev/null; then \
-  echo "gtk4-devel" \
-fi \
-\
-if cat %{tauri_subdir}/Cargo.lock | grep "javascriptcore-rs-sys" &>/dev/null; then \
-  echo "javascriptcoregtk4.1-devel" \
-fi \
-\
-if cat %{tauri_subdir}/Cargo.lock | grep "soup-sys" &>/dev/null; then \
-  echo "libsoup3-devel" \
-fi \
-if cat %{tauri_subdir}/Cargo.lock | grep "onig-sys" &>/dev/null; then \
-  echo "oniguruma-devel" \
-fi
+%terra_cargo_generate_buildrequires
 
 ## Build opts for Tauri.
 ## The macro %%__tauri_bundles may be defined to choose if Tauri builds binaries (in some cases, AppImages may be useful for extracting .desktop files). Defaults to no bundles.

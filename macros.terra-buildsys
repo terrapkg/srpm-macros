@@ -9,8 +9,8 @@
 %cargo_prep_online %{*}
 
 ### Definition for "cargo" for genbr stage to determine BuildRequires
-### Terra grabs rust crates online, and fetching all the system deps from a Cargo.toml is currently not feasible
-%buildsystem_terra_cargo_generate_buildrequires() %{nil}
+### Fetches system deps checked against a database
+%buildsystem_terra_cargo_generate_buildrequires() %terra_cargo_generate_buildrequires %{*}
 
 ### Definition for "cargo" for conf stage, setting as empty due to non-use
 %buildsystem_terra_cargo_conf() %{nil}
