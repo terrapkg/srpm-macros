@@ -3,6 +3,9 @@
 
 %terra_rustflags %{build_rustflags} %[%{__terra_use_lld} ? "-Clink-arg=-fuse-ld=lld" : ""]
 
+# Path to the default cargo4rpm executable
+%global __cargo_for_rpm /usr/bin/cargo4rpm
+
 # Define the $CARGO_HOME so Crates always download to the same location
 %_cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo
 
@@ -205,3 +208,8 @@ fi
 %global __rustdoc %{_cargo_home}/bin/rustdoc \
 /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y -q --no-modify-path \
 %bcond rust_nightly 1
+
+# Generate build requirements from the lockfile.
+# This DOES NOT scan the code for things the end package may link to, this simply looks for known Crates which need system dependencies.
+%terra_cargo_generate_buildrequires() \
+%{__cargo_for_rpm} buildrequires
