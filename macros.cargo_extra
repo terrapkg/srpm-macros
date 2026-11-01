@@ -4,7 +4,7 @@
 %terra_rustflags %{build_rustflags} %[%{__terra_use_lld} ? "-Clink-arg=-fuse-ld=lld" : ""]
 
 # Path to the default cargo4rpm executable
-%global __cargo_for_rpm /usr/bin/cargo4rpm
+__cargo_for_rpm /usr/bin/cargo4rpm
 
 # Define the $CARGO_HOME so Crates always download to the same location
 %_cargo_home %{rpmbuilddir}%{?buildsubdir:/%{buildsubdir}}/.cargo
