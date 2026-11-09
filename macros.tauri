@@ -35,7 +35,15 @@ rust-srpm-macros \
 webkit2gtk4.1-devel \
 wget}
 
-%__tauri /usr/bin/env CARGO_HOME=%{_cargo_home}%{!?with_rust_nightly: RUSTC_BOOTSTRAP=1}%{?with_rust_nightly: RUSTUP_HOME=%{_rustup_home} PATH="%{_cargo_home}/bin:$PATH"} RUSTFLAGS='%{build_rustflags}' /usr/bin/tauri
+%__tauri %{shrink:
+    /usr/bin/env
+    CARGO_HOME=%{_cargo_home}
+    %{!?with_rust_nightly:RUSTC_BOOTSTRAP=1}
+    %{?with_vendored_rust:RUSTUP_HOME=%{_rustup_home}
+    PATH="%{_cargo_home}/bin:$PATH"}
+    RUSTFLAGS='%{build_rustflags}'
+    /usr/bin/tauri
+}
 
 ## Preps a Tauri build.
 ## Mostly a wrapper for %%cargo_prep_online that also sets the Tauri subdir but also changes directory to it before running %%cargo_prep_online as a test that the directory is correct.
@@ -57,12 +65,12 @@ cd $OLDPWD
 ## Build opts for Tauri.
 ## The macro %%__tauri_bundles may be defined to choose if Tauri builds binaries (in some cases, AppImages may be useful for extracting .desktop files). Defaults to no bundles.
 ## --ci is passed so these opts are also compatible with Tauri JS without setting the JavaScript build env to CI entirely.
-%__tauri_common_opts %{shrink:                            \
-  --verbose                                               \
-  --ci                                                    \
-  %{?with_rust_nightly:--runner %{_cargo_home}/bin/cargo} \
-  %{!?__tauri_bundles:--no-bundle}                        \
-  %{?__tauri_bundles:--bundles %{__tauri_bundles}}        \
+%__tauri_common_opts %{shrink:                             \
+  --verbose                                                \
+  --ci                                                     \
+  %{?with_vendored_rust:--runner %{_cargo_home}/bin/cargo} \
+  %{!?__tauri_bundles:--no-bundle}                         \
+  %{?__tauri_bundles:--bundles %{__tauri_bundles}}         \
 }
 
 ## Build with Tauri.

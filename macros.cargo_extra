@@ -21,21 +21,21 @@
   /usr/bin/env \
   CARGO_HOME=%{_cargo_home} \
   CARGO_NET_OFFLINE=false \
-  %{?with_rust_nightly:PATH="%{_cargo_home}/bin:$PATH" \
+  %{?with_vendored_rust:PATH="%{_cargo_home}/bin:$PATH" \
   %{_cargo_home}/bin/cargo} \
-  %{!?with_rust_nightly:/usr/bin/cargo} \
+  %{!?with_vendored_rust:/usr/bin/cargo} \
   fetch \
   --locked \
 }
 
 %cargo_prep_online(u) \
 %{!?rhel:%global build_rustflags %{terra_rustflags}} \
-%{!?with_rust_nightly:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo} \
+%{!?with_vendored_rust:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo} \
 (\
 set -eu \
 %{__mkdir} -p target/rpm\
 %{__ln_s} rpm target/release\
-%{!?with_rust_nightly:%{expand:
+%{!?with_vendored_rust:%{expand:
 %{__rm} -rf {.cargo/,%{_cargo_home}/}
 %{__mkdir} -p %{_cargo_home}}}\
 cat > %{_cargo_home}/config.toml << EOF \
@@ -204,14 +204,48 @@ if stat target/rpm/*.so &>/dev/null; then \
 install -Dm755 target/rpm/*.so -t %{buildroot}%{_libdir} \
 fi
 
-%rustup_nightly \
-%{?_cargo_home:%{error:%%rustup_nightly must be run BEFORE %%cargo_prep or %%cargo_prep_online!}} \
+# Vendor a rust toolchain
+# Limitation: -f* cannot properly set the nightly bcond as there is no way to set a macro from a runtime check
+# -c: Set components to install. Comma separated.
+# -t: Toolchain to install.
+# -f: File to get toolchain from.
+%vendor_rust(c:f:t:) \
+%{!?-f*:%{!?-t*:%{error:-f or -t MUST be passed to this macro!}}} \
+%{-f:%{-t:%{error:Cannot use both -f and -t!}}} \
+%{-t:%{-f:%{error:Cannot use both -f and -t!}}} \
+if [[ cat %{_cargo_home}/config.toml | grep '%{build_rustflags}' ]]; then \
+echo -e '\\e[31mERROR:\\e[0m %%vendor_rust must be used BEFORE %%cargo_prep or %%cargo_prep_onine!' >&2 \
+exit 1 \
+fi \
 %{__rm} -rf {.cargo/,%{_cargo_home}/} \
-%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} PATH="%{_cargo_home}/bin:$PATH" RUSTFLAGS='%{terra_rustflags}' %{_cargo_home}/bin/cargo \
+%{shrink:
+  /usr/bin/env
+  CARGO_HOME=%{_cargo_home}
+  RUSTUP_HOME=%{_rustup_home}
+  RUSTUP_INIT_SKIP_PATH_CHECK=yes
+  /usr/bin/rustup-init
+  %{-f*:--default-toolchain $(toml get toolchain.channel --toml-path %{-f*})}
+  %{-t*:--default-toolchain %{-t*}}
+  %{-c*:--component %{-c*}}
+  -y
+  --no-modify-path
+} \
+%bcond vendored_rust 1 \
+%bcond rust_nightly %{lua:if rpm.isdefined("-t*") and macros["-t*"]:find("nightly") then print("1") else print("0") end} \
+%global __cargo %{shrink:
+  /usr/bin/env
+  CARGO_HOME=%{_cargo_home}
+  RUSTUP_HOME=%{_rustup_home}
+  PATH="%{_cargo_home}/bin:$PATH"
+  %{!?with_rust_nightly:RUSTC_BOOTSTRAP=1}
+  RUSTFLAGS='%{terra_rustflags}'
+  %{_cargo_home}/bin/cargo
+} \
 %global __rustc %{_cargo_home}/bin/rustc \
-%global __rustdoc %{_cargo_home}/bin/rustdoc \
-/usr/bin/env CARGO_HOME=%{_cargo_home} RUSTUP_HOME=%{_rustup_home} RUSTUP_INIT_SKIP_PATH_CHECK=yes rustup-init --default-toolchain nightly -y -q --no-modify-path \
-%bcond rust_nightly 1
+%global __rustdoc %{_cargo_home}/bin/rustdoc
+
+%rustup_nightly \
+%{vendor_rust -t nightly}
 
 # Generate build requirements from the lockfile.
 # This DOES NOT scan the code for things the end package may link to, this simply looks for known Crates which need system dependencies.
