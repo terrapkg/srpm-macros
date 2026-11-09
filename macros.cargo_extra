@@ -224,7 +224,7 @@ fi \
   RUSTUP_HOME=%{_rustup_home}
   RUSTUP_INIT_SKIP_PATH_CHECK=yes
   /usr/bin/rustup-init
-  %{-f*:--default-toolchain $(cat %{-f*} | grep -oP 'channel = "(\K\w+)')}
+  %{-f*:--default-toolchain $(toml get toolchain.channel --toml-path %{-f*})}
   %{-t*:--default-toolchain %{-t*}}
   %{-c*:--component %{-c*}}
   -y
