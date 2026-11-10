@@ -22,7 +22,7 @@
   CARGO_HOME=%{_cargo_home} \
   CARGO_NET_OFFLINE=false \
   %{?with_vendored_rust:PATH="%{_cargo_home}/bin:$PATH" \
-  RUSTUP_HOME=%{_rustup_home}
+  RUSTUP_HOME=%{_rustup_home} \
   %{_cargo_home}/bin/cargo} \
   %{!?with_vendored_rust:/usr/bin/cargo} \
   fetch \
