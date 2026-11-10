@@ -230,8 +230,14 @@ fi \
   -y
   --no-modify-path
 } \
+%{lua:
+  if rpm.isdefined("-t*") and macros["-t*"]:find("nightly") then 
+    rpm.define("__use_rust_nightly 1")
+  else
+    rpm.define("__use_rust_nightly 0")
+  end} \
 %bcond vendored_rust 1 \
-%bcond rust_nightly %{lua:if rpm.isdefined("-t*") and macros["-t*"]:find("nightly") then print("1") else print("0") end} \
+%bcond rust_nightly %{__use_rust_nightly} \
 %global __cargo %{shrink:
   /usr/bin/env
   CARGO_HOME=%{_cargo_home}
