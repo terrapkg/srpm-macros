@@ -213,7 +213,7 @@ fi
 %{!?-f*:%{!?-t*:%{error:-f or -t MUST be passed to this macro!}}} \
 %{-f:%{-t:%{error:Cannot use both -f and -t!}}} \
 %{-t:%{-f:%{error:Cannot use both -f and -t!}}} \
-if [[ cat %{_cargo_home}/config.toml | grep '%{build_rustflags}' ]]; then \
+if cat %{_cargo_home}/config.toml | grep '%{build_rustflags}' &>dev/null; then \
 echo -e '\\e[31mERROR:\\e[0m %%vendor_rust must be used BEFORE %%cargo_prep or %%cargo_prep_onine!' >&2 \
 exit 1 \
 fi \
