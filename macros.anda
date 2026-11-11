@@ -125,10 +125,14 @@
 # pkg_devel -n %name-devel -N %name
 # -n <pkgname>: name of the devel package
 # -N <mainpkg>: name of the main package
-%pkg_devel_files(n:N:) %{lua:
+# -r: do not require the base package (should not be used unless necessary)
+%pkg_devel_files(n:N:r) %{lua:
   local main = rpm.expand("%{?-N:%{-N*}}%{!?-N:%name}")
   local name = rpm.expand("%{?-n:%{-n*}}%{!?-n:%name-devel}")
   print("Summary: Development files for "..main.."\\n\\n")
+  if not opt.r then
+    print(rpm.expand("Requires: "..main.."%{?_isa} = %{evr}").."\\n")
+  end
   print("%description -n "..name.."\\n")
   print("The "..name.." package contains libraries and header files for\\n")
   print("developing applications that use "..main..".\\n\\n")
@@ -151,10 +155,14 @@
 # pkg_static -n %name-static -N %name
 # -n <pkgname>: name of the static package
 # -N <mainpkg>: name of the main package
-%pkg_static_files(n:N:) %{lua:
+# -r: do not require the -devel package
+%pkg_static_files(n:N:r) %{lua:
   local main = rpm.expand("%{?-N:%{-N*}}%{!?-N:%name}")
   local name = rpm.expand("%{?-n:%{-n*}}%{!?-n:%name-static}")
   print("Summary: Static libraries for "..main.."\\n\\n")
+  if not opt.r then
+    print(rpm.expand("Requires: "..main.."-devel%{?_isa} = %{evr}").."\\n")
+  end
   print("%description -n "..name.."\\n")
   print("Static library files for "..name..".\\n\\n")
   print("%files -n "..name.." -f anda-staticfiles.list\\n")
