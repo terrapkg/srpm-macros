@@ -28,3 +28,24 @@ echo "Printing license summary for License field..." \
 ### Definition for "cargo" for check stage to run tests
 %buildsystem_terra_cargo_check() %{?with_check:%cargo_test %{*}} %{!?with_check:%{nil}}
 
+## Nimble
+
+### Definition for "nimble" for prep stage, overriding default prep and using the nimble_prep macro
+%buildsystem_nimble_prep() \
+%autosetup -C -p1 \
+%nimble_prep
+
+### Definition for "nimble" for genbr stage to determine BuildRequires, setting as empty due to non-use
+%buildsystem_nimble_generate_buildrequires() %{nil}
+
+### Definition for "nimble" for conf stage, setting as empty due to non-use
+%buildsystem_nimble_conf() %{nil}
+
+### Definition for "cargo" for build stage for compiling with cargo
+%buildsystem_nimble_build() %nimble_build %{*}
+
+### Definition for "nimble" for install stage to install files into buildroot
+%buildrequires_nimble_install() %nimble_install %{*}
+
+### Definition for "nimble" for check stage to run tests, setting as empty due to non-use
+%buildsystem_nimble_check() %{nil}
