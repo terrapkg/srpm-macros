@@ -224,6 +224,7 @@ fi \
   CARGO_HOME=%{_cargo_home}
   RUSTUP_HOME=%{_rustup_home}
   RUSTUP_INIT_SKIP_PATH_CHECK=yes
+  RUSTUP_TERM_PROGRESS_WHEN=never
   /usr/bin/rustup-init
   %{-f*:--default-toolchain $(toml get toolchain.channel --toml-path %{-f*})}
   %{-t*:--default-toolchain %{-t*}}
