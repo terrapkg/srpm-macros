@@ -1,6 +1,6 @@
-%nim_tflags %(echo "%?build_cflags -fPIE" | sed "s/-O2/-Ofast/g" | sed "s/-Wall//g")
+%nim_tflags %?build_cflags
 
-%nim_lflags %?build_ldflags -pie
+%nim_lflags %?build_ldflags %[%__terra_use_lld ? "-fuse-ld=lld" : ""]
 
 %nim_prep cat<<EOF >> config.nims\
 when findExe("ld.lld").len > 0 and defined(linux):\
@@ -10,3 +10,22 @@ nimble setup -y
 
 %nim_c nim c -d:release -t:"%nim_tflags" -l:"%nim_lflags"
 %nim_build %nim_c
+
+#__nimble_dir %rpmbuilddir%{?buildsubdir:/%buildsubdir}/terra-nimbleDir/
+%__nimble /usr/bin/nimble --verbose
+
+%nimble_prep %__nimble setup -y
+
+%nimble_build %__nimble --passC:%{shescape:%{shescape:%nim_tflags}} --passL:%{shescape:%{shescape:%nim_lflags}} --debugger:native build
+
+%nimble_install (%{shrink:
+  cd ./$(
+    %__nimble dump --ini
+      | sed -nE 's/^binDir: "(.*)"$/\\\1/p'
+  ) &&
+  install -Dm755 -t %buildroot%_bindir $(
+    %__nimble dump --ini
+      | sed -nE 's/^bin: "(.*)"$/\\\1/p'
+      | sed 's/,//g'
+  )
+})
