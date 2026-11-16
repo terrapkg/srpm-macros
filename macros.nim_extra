@@ -12,11 +12,12 @@ nimble setup -y
 %nim_build %nim_c
 
 #__nimble_dir %rpmbuilddir%{?buildsubdir:/%buildsubdir}/terra-nimbleDir/
+%__nimble_buildflags --passC:%{shescape:%{shescape:%nim_tflags}} --passL:%{shescape:%{shescape:%nim_lflags}} --debugger:native
 %__nimble /usr/bin/nimble --verbose
 
 %nimble_prep %__nimble setup -y
 
-%nimble_build %__nimble --passC:%{shescape:%{shescape:%nim_tflags}} --passL:%{shescape:%{shescape:%nim_lflags}} --debugger:native build
+%nimble_build %__nimble %__nimble_buildflags build
 
 %nimble_install (%{shrink:
   cd ./$(
