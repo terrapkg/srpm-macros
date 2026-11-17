@@ -21,7 +21,7 @@ echo "Printing license summary for License field..." \
 %buildsystem_terra_cargo_build() %cargo_build_crate %{*}
 
 ### Definition for "cargo" for install stage to install files into buildroot
-### Terra does not support %%cargo_install_crate, so we instead use %%crate_install_bin.
+### Terra does not support %%cargo_install_crate, so we instead use %%terra_cargo_install.
 ### %%install -s must be used to install aditional files
 %buildsystem_terra_cargo_install() %terra_cargo_install %{*}
 
