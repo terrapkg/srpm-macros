@@ -45,7 +45,7 @@ echo "Printing license summary for License field..." \
 %buildsystem_nimble_build() %nimble_build %{*}
 
 ### Definition for "nimble" for install stage to install files into buildroot
-%buildrequires_nimble_install() %nimble_install %{*}
+%buildsystem_nimble_install() %nimble_install %{*}
 
 ### Definition for "nimble" for check stage to run tests, setting as empty due to non-use
 %buildsystem_nimble_check() %{nil}
