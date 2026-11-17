@@ -196,14 +196,14 @@ find target/rpm \\\
 
 # Install all found Cargo devel libs
 %install_cargo_devel_libs() \
-install -Dm755 target/rpm/*.so -t %{buildroot}%{_libdir}
+find target/rpm \\\
+    -maxdepth 1 -type f -executable -name '*.so' \\\
+    -exec install -Dm755 -t %{buildroot}%{_libdir} {} +
 
 # Best used in BuildSystems, but can be called on its own
 %terra_cargo_install() \
 %install_cargo_bins \
-if stat target/rpm/*.so &>/dev/null; then \
-install -Dm755 target/rpm/*.so -t %{buildroot}%{_libdir} \
-fi
+%install_cargo_devel_libs
 
 # Vendor a rust toolchain
 # Limitation: -f* cannot properly set the nightly bcond as there is no way to set a macro from a runtime check
