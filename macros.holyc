@@ -1,0 +1,9 @@
+%__build_flags_lang_hc %{shrink:
+    -O
+    -Werror=format-security
+    -fPIC
+    --target="%{_target_cpu}-unknown-linux-gnu"
+    --install-dir="%{_prefix}"
+}
+
+%build_hcflags %{__build_flags_lang_c} %{?_distro_extra_hcflags} %{?_pkg_extra_hcflags}
