@@ -1,0 +1,11 @@
+# HCC does not support specific optimization levels or -fPIE as an option, but does support position independent code through -fPIC
+# It also has a specific list of target triples it recognizes, so currently we can't use %%{_target_platform}
+%__build_flags_lang_hc %{shrink:
+    -O
+    -Werror=format-security
+    -fPIC
+    --target="%{_target_cpu}-unknown-linux-gnu"
+    --install-dir="%{_prefix}"
+}
+
+%build_hcflags %{__build_flags_lang_c} %{?_distro_extra_hcflags} %{?_pkg_extra_hcflags}
