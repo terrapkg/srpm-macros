@@ -1,11 +1,21 @@
+# Install prefix for projects compiled with HCC, defaults to /usr unless in a Flatpak build
+%__hcc_install_prefix %{_prefix}
+
+# Default HCC build target, may need to be changed on certain architectures or if using cross-compilation
+# HCC also has a specific list of target triples it recognizes, so currently we can't use %%{_target_platform} as the default
+%__hcc_target_platform %{_target_cpu}-unknown-linux-gnu
+
 # HCC does not support specific optimization levels or -fPIE as an option, but does support position independent code through -fPIC
-# It also has a specific list of target triples it recognizes, so currently we can't use %%{_target_platform}
 %__build_flags_lang_hc %{shrink:
     -O
     -Werror=format-security
     -fPIC
-    --target="%{_target_cpu}-unknown-linux-gnu"
-    --install-dir="%{_prefix}"
+    --target="%{__hcc_target_platform}"
+    --install-dir="%{__hcc_install_prefix}"
 }
 
-%build_hcflags %{__build_flags_lang_c} %{?_distro_extra_hcflags} %{?_pkg_extra_hcflags}
+%build_hcflags %{__build_flags_lang_hc} %{?_distro_extra_hcflags} %{?_pkg_extra_hcflags}
+
+# Turns %%{build_hcflags} into an env var that can be called, ideally this would be part of the RPM build env flags but we can't override that easily
+%set_hc_build_flags \
+HCFLAGS="${HCFLAGS:-%{build_hcflags}}" ; export HCFLAGS
