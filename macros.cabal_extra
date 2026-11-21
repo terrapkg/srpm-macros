@@ -1,0 +1,112 @@
+# online Cabal builds, the Haskell counterpart to %%cargo_prep_online
+# deps come from Hackage and link statically, so Fedora's ghc-*-devel ABI hashes don't matter
+
+%cabal_ghc_version 9.12
+%cabal_ghc ghc-%{cabal_ghc_version}
+%cabal_ghc_pkg ghc-pkg-%{cabal_ghc_version}
+%cabal_buildrequires cabal-install ghc%{cabal_ghc_version} jq tar
+%cabal_home %{rpmbuilddir}/.cabal-home
+%cabal_targets exes
+
+%__cabal_online %{shrink:
+  /usr/bin/env
+  CABAL_DIR=%{cabal_home}
+  LANG=C.UTF-8
+  /usr/bin/cabal
+}
+
+%cabal_ghc_options %{lua:
+  local opts = {}
+  if rpm.vercmp(macros.cabal_ghc_version, "9.12") >= 0 then
+    table.insert(opts, "-fobject-determinism")
+  end
+  local keep_debug_flags = rpm.isdefined("cabal_debuginfo")
+  for flag in rpm.expand("%{build_cflags}"):gmatch("%S+") do
+    if keep_debug_flags or not flag:match("^%-g") then
+      table.insert(opts, "-optc" .. flag)
+    end
+  end
+  for flag in rpm.expand("%{build_ldflags}"):gmatch("%S+") do
+    table.insert(opts, "-optl" .. flag)
+  end
+  if rpm.expand("%{__terra_use_lld}") == "1" then
+    table.insert(opts, "-optl-fuse-ld=lld")
+  end
+  table.insert(opts, rpm.expand("%{?cabal_extra_ghc_options}"))
+  print(table.concat(opts, " "))
+}
+
+%__cabal_set_build_flags \
+%{!?cabal_debuginfo:%global debug_package %{nil}} \
+%global _lto_cflags %{nil} \
+%global __brp_strip_lto %{nil} \
+%global _hardened_ldflags %{nil} \
+%undefine _package_note_flags \
+%undefine _annotated_build
+
+%__cabal_write_config \
+%{__rm} -rf %{cabal_home} \
+%{__mkdir_p} %{cabal_home} \
+cat > %{cabal_home}/config <<'EOF'\
+repository hackage.haskell.org\
+  url: https://hackage.haskell.org/\
+\
+install-dirs user\
+  prefix: %{_prefix}\
+EOF
+
+# required, pins the Hackage snapshot the solver sees
+#   %%global cabal_index_state 2026-11-20T00:00:00Z
+%cabal_prep_online(f:u) \
+%{!?cabal_index_state:%{error:%%cabal_index_state must be set}} \
+%{-f:%{-u:%{error:%%cabal_prep_online: -f and -u are mutually exclusive}}} \
+%__cabal_set_build_flags \
+%__cabal_write_config\
+%__cabal_online update 'hackage.haskell.org,%{cabal_index_state}' \
+[ -f cabal.project ] || echo 'packages: .' > cabal.project \
+%{-f:%{__install} -pm644 %{-f*} cabal.project.freeze} \
+%{-u:%{__rm} -f cabal.project.freeze} \
+cat >> cabal.project.local <<'EOF'\
+index-state: hackage.haskell.org %{cabal_index_state}\
+with-compiler: %{cabal_ghc}\
+with-hc-pkg: %{cabal_ghc_pkg}\
+jobs: %{_smp_build_ncpus}\
+tests: False\
+benchmarks: False\
+documentation: False\
+executable-stripping: False\
+library-stripping: False\
+%{?cabal_project_extra}\
+\
+package *\
+  ghc-options: %{cabal_ghc_options}\
+EOF\
+if [ ! -f cabal.project.freeze ]; then \
+  %__cabal_online freeze \
+  echo 'generated cabal.project.freeze, ship it as a Source and pass it with -f to pin the plan:' >&2 \
+  cat cabal.project.freeze >&2 \
+fi \
+echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
+%__cabal_online build --only-download %{cabal_targets}
+
+%cabal_build_online(-) %__cabal_online build %* %{cabal_targets}
+
+%__cabal_plan dist-newstyle/cache/plan.json
+
+%cabal_install_bin_online() %{lua:
+  for i = 1, tonumber(rpm.expand("%#")) do
+    local bin = macros[tostring(i)]
+    print(rpm.expand('%{__install} -Dpm755 "$(%{__cabal_online} list-bin ' .. bin .. ')" %{buildroot}%{_bindir}/' .. bin .. '\\n'))
+  end
+}
+
+%cabal_install_bins_online() \
+jq -r '."install-plan"[] | select(.style == "local" and has("bin-file")) | ."bin-file"' %{__cabal_plan} | while read -r bin; do \
+  if [ -x "$bin" ]; then %{__install} -Dpm755 -t %{buildroot}%{_bindir} "$bin"; fi \
+done
+
+%cabal_license_summary_online() \
+jq -r '."install-plan"[] | select(."pkg-src".type == "repo-tar") | [."pkg-name", ."pkg-version"] | @tsv' %{__cabal_plan} | sort -u | while read -r pkg ver; do \
+  tar -xzOf %{cabal_home}/packages/hackage.haskell.org/$pkg/$ver/$pkg-$ver.tar.gz $pkg-$ver/$pkg.cabal | \
+    sed -nE '/^license[[:space:]]*:/I{s/^[^:]*:[[:space:]]*//;p}' \
+done | sort -u
