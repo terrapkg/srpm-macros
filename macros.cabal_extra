@@ -55,19 +55,54 @@ install-dirs user\
   prefix: %{_prefix}\
 EOF
 
-# required, pins the Hackage snapshot the solver sees
+%__cabal_freeze_index_state %{shrink:
+  sed -nE 's/^index-state:[[:space:]]*(hackage[.]haskell[.]org[[:space:]]+)?([^,[:space:]]+).*/\\\2/p'
+  cabal.project.freeze
+}
+
+%__cabal_resolve_index_state \
+freeze_index_state= \
+if [ -f cabal.project.freeze ]; then \
+  freeze_index_state="$(%{__cabal_freeze_index_state})" \
+fi \
+spec_index_state='%{?cabal_regenerate_freeze}%{!?cabal_regenerate_freeze:%{?cabal_index_state}}' \
+if [ -n "$freeze_index_state" ] && [ -n "$spec_index_state" ]; then \
+  echo "warning: ignoring %%cabal_index_state ($spec_index_state), cabal.project.freeze pins $freeze_index_state" >&2 \
+fi \
+index_state="${freeze_index_state:-$spec_index_state}" \
+if [ -z "$index_state" ]; then \
+  echo 'error: set %%cabal_index_state or pass a cabal.project.freeze that has an index-state' >&2 \
+  exit 1 \
+fi
+
+%__cabal_unpin_ghc_shipped_packages \
+for pkg_id in $(%{cabal_ghc_pkg} list --global --simple-output); do \
+  pkg_name="${pkg_id%%-*}" \
+  pkg_ver="${pkg_id##*-}" \
+  sed -i -E "s/any[.]$pkg_name ==$pkg_ver(,|$)/any.$pkg_name installed\\\1/" cabal.project.freeze \
+done
+
+# the freeze file pins everything, including the index-state.
+# %%cabal_index_state is only needed when there's no freeze yet:
 #   %%global cabal_index_state 2026-11-20T00:00:00Z
+# %%cabal_regenerate_freeze <index-state or HEAD> ignores the shipped freeze and makes a new one,
+# see cabal::freeze in terrapkg/packages andax/cabal.rhai
 %cabal_prep_online(f:u) \
-%{!?cabal_index_state:%{error:%%cabal_index_state must be set}} \
 %{-f:%{-u:%{error:%%cabal_prep_online: -f and -u are mutually exclusive}}} \
 %__cabal_set_build_flags \
 %__cabal_write_config\
-%__cabal_online update 'hackage.haskell.org,%{cabal_index_state}' \
 [ -f cabal.project ] || echo 'packages: .' > cabal.project \
 %{-f:%{__install} -pm644 %{-f*} cabal.project.freeze} \
 %{-u:%{__rm} -f cabal.project.freeze} \
+%{?cabal_regenerate_freeze:%{__rm} -f cabal.project.freeze} \
+%__cabal_resolve_index_state\
+if [ "$index_state" = HEAD ]; then \
+  %__cabal_online update hackage.haskell.org \
+else \
+  %__cabal_online update "hackage.haskell.org,$index_state" \
+  echo "index-state: hackage.haskell.org $index_state" >> cabal.project.local \
+fi \
 cat >> cabal.project.local <<'EOF'\
-index-state: hackage.haskell.org %{cabal_index_state}\
 with-compiler: %{cabal_ghc}\
 with-hc-pkg: %{cabal_ghc_pkg}\
 jobs: %{_smp_build_ncpus}\
@@ -83,6 +118,7 @@ package *\
 EOF\
 if [ ! -f cabal.project.freeze ]; then \
   %__cabal_online freeze \
+  %__cabal_unpin_ghc_shipped_packages\
   echo 'generated cabal.project.freeze, ship it as a Source and pass it with -f to pin the plan:' >&2 \
   cat cabal.project.freeze >&2 \
 fi \
