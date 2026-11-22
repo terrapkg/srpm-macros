@@ -347,13 +347,13 @@ end}
 
 # submodule_setup [-s <source number>] <path>
 %submodule_setup(s:) %{lua:
-  local path = args[1]
+  local path = arg[1]
   if not path then error("usage: %submodule_setup [-s <source number>] <path>") end
   local source = macros["-s*"]
   if source then
     local n = source
-    source = rpm.expand("%{?SOURCE" .. n .. "}")
-    if source == "" then error("Source" .. n .. " is not defined") end
+    if not rpm.isdefined("SOURCE" .. n) then error("Source" .. n .. " is not defined") end
+    source = macros["SOURCE" .. n]
   else
     local global = "submodule_" .. path:gsub("[^%w]", "_")
     local commit = macros[global]
