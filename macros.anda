@@ -347,7 +347,7 @@ end}
 
 # submodule_setup [-s <source number>] <path>
 %submodule_setup(s:) %{lua:
-  local path = macros["1"]
+  local path = args[1]
   if not path then error("usage: %submodule_setup [-s <source number>] <path>") end
   local source = macros["-s*"]
   if source then
