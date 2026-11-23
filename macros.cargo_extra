@@ -32,7 +32,9 @@
 %cargo_prep_online(u) \
 %{!?rhel:%global build_rustflags %{terra_rustflags}} \
 %{!?with_vendored_rust:%global __cargo /usr/bin/env CARGO_HOME=%{_cargo_home} RUSTC_BOOTSTRAP=1 RUSTFLAGS='%{build_rustflags}' /usr/bin/cargo} \
-%{!?rhel:%{-u:%global __cargo_common_opts %{__cargo_common_opts} --locked}%{!?-u:%global __cargo_common_opts %{__cargo_common_opts} --frozen}} \
+%{!?-u:%global __terra_extra_opts --frozen} \
+%{-u:%global __terra_extra_opts --locked} \
+%{!?rhel:%global __cargo_common_opts %{__cargo_common_opts} %{_cargo_extra_opts}} \
 (\
 set -eu \
 %{__mkdir} -p target/rpm\
