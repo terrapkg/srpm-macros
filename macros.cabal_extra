@@ -1,5 +1,6 @@
-# online Cabal builds, the Haskell counterpart to %%cargo_prep_online
+# online Cabal builds, the Haskell equivalent to %%cargo_prep_online
 # deps come from Hackage and link statically, so Fedora's ghc-*-devel ABI hashes don't matter
+# we want proper build reproducability
 
 %cabal_ghc_version 9.12
 %cabal_ghc ghc-%{cabal_ghc_version}
@@ -83,7 +84,7 @@ for pkg_id in $(%{cabal_ghc_pkg} list --global --simple-output); do \
 done
 
 # the freeze file pins everything, including the index-state.
-# %%cabal_index_state is only needed when there's no freeze yet:
+# %%cabal_index_state is only needed when there's no freeze yet. for example:
 #   %%global cabal_index_state 2026-11-20T00:00:00Z
 # %%cabal_regenerate_freeze <index-state or HEAD> ignores the shipped freeze and makes a new one,
 # see cabal::freeze in terrapkg/packages andax/cabal.rhai
