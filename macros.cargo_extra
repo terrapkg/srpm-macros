@@ -189,7 +189,7 @@ CRATE_NAME="$(%{__cargo_to_rpm} --path Cargo.toml name 2>/dev/null || echo "%{?c
 # Install all found Cargo binaries
 %install_cargo_bins() %{shrink:
     find target/rpm
-    -maxdepth 1 -type f -executable ! -name '*.so'
+    -maxdepth 1 -type f -executable ! -name '*.so' ! -name 'xtask'
     -exec install -Dm755 -t %{buildroot}%{_bindir} {} +
 }
 
