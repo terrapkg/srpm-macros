@@ -46,9 +46,9 @@
 %undefine _annotated_build
 
 %__cabal_write_config \
-%{__rm} -rf %{cabal_home} \
-%{__mkdir_p} %{cabal_home} \
-cat > %{cabal_home}/config <<'EOF'\
+%{__rm} -rf %{_cabal_home} \
+%{__mkdir_p} %{_cabal_home} \
+cat > %{_cabal_home}/config <<'EOF'\
 repository hackage.haskell.org\
   url: https://hackage.haskell.org/\
 \
@@ -138,12 +138,12 @@ echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
 }
 
 %cabal_install_bins_online() \
-jq -r '."install-plan"[] | select(.style == "local" and has("bin-file")) | ."bin-file"' %{__cabal_plan} | while read -r bin; do \
-  if [ -x "$bin" ]; then %{__install} -Dpm755 -t %{buildroot}%{_bindir} "$bin"; fi \
-done
+jq -r '."install-plan"[] | select(.style == "local" and has("bin-file")) | ."bin-file"' %{__cabal_plan} | \
+  xargs -r -d '\\n' -I{} find {} -maxdepth 0 -type f -executable 2>/dev/null | \
+  xargs -r -d '\\n' %{__install} -Dpm755 -t %{buildroot}%{_bindir}
 
 %cabal_license_summary_online() \
-jq -r '."install-plan"[] | select(."pkg-src".type == "repo-tar") | [."pkg-name", ."pkg-version"] | @tsv' %{__cabal_plan} | sort -u | while read -r pkg ver; do \
-  tar -xzOf %{cabal_home}/packages/hackage.haskell.org/$pkg/$ver/$pkg-$ver.tar.gz $pkg-$ver/$pkg.cabal | \
-    sed -nE '/^license[[:space:]]*:/I{s/^[^:]*:[[:space:]]*//;p}' \
-done | sort -u
+jq -r --arg pkgs '%{_cabal_home}/packages/hackage.haskell.org' \\\
+  '."install-plan"[] | select(."pkg-src".type == "repo-tar") | (."pkg-name" + "-" + ."pkg-version") as $id | [$pkgs + "/" + ."pkg-name" + "/" + ."pkg-version" + "/" + $id + ".tar.gz", $id + "/" + ."pkg-name" + ".cabal"] | @tsv' \\\
+  %{__cabal_plan} | sort -u | xargs -r -n2 tar -xzOf | \
+  sed -nE '/^license[[:space:]]*:/I{s/^[^:]*:[[:space:]]*//;s/[[:space:]]+$//;p}' | sort -u
