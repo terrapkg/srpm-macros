@@ -6,12 +6,12 @@
 %cabal_ghc ghc-%{cabal_ghc_version}
 %cabal_ghc_pkg ghc-pkg-%{cabal_ghc_version}
 %cabal_buildrequires cabal-install ghc%{cabal_ghc_version} jq tar
-%cabal_home %{rpmbuilddir}/.cabal-home
+%_cabal_home %{rpmbuilddir}/.cabal-home
 %cabal_targets exes
 
 %__cabal_online %{shrink:
   /usr/bin/env
-  CABAL_DIR=%{cabal_home}
+  CABAL_DIR=%{_cabal_home}
   LANG=C.UTF-8
   /usr/bin/cabal
 }
