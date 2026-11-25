@@ -1,3 +1,6 @@
+# Architectures supported by HolyC
+%holyc_arches x86_64 aarch64
+
 # Install prefix for projects compiled with HCC, defaults to /usr unless in a Flatpak build
 %__hcc_install_prefix %{_prefix}
 
