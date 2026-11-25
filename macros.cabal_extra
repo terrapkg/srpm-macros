@@ -9,7 +9,7 @@
 %_cabal_home %{rpmbuilddir}/.cabal-home
 %cabal_targets exes
 
-%__cabal_online %{shrink:
+%__cabal %{shrink:
   /usr/bin/env
   CABAL_DIR=%{_cabal_home}
   LANG=C.UTF-8
@@ -98,9 +98,9 @@ done
 %{?cabal_regenerate_freeze:%{__rm} -f cabal.project.freeze} \
 %__cabal_resolve_index_state\
 if [ "$index_state" = HEAD ]; then \
-  %__cabal_online update hackage.haskell.org \
+  %__cabal update hackage.haskell.org \
 else \
-  %__cabal_online update "hackage.haskell.org,$index_state" \
+  %__cabal update "hackage.haskell.org,$index_state" \
   echo "index-state: hackage.haskell.org $index_state" >> cabal.project.local \
 fi \
 cat >> cabal.project.local <<'EOF'\
@@ -118,22 +118,22 @@ package *\
   ghc-options: %{cabal_ghc_options}\
 EOF\
 if [ ! -f cabal.project.freeze ]; then \
-  %__cabal_online freeze \
+  %__cabal freeze \
   %__cabal_unpin_ghc_shipped_packages\
   echo 'generated cabal.project.freeze, ship it as a Source and pass it with -f to pin the plan:' >&2 \
   cat cabal.project.freeze >&2 \
 fi \
 echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
-%__cabal_online build --only-download %{cabal_targets}
+%__cabal build --only-download %{cabal_targets}
 
-%cabal_build_online(-) %__cabal_online build %* %{cabal_targets}
+%cabal_build_online(-) %__cabal build %* %{cabal_targets}
 
 %__cabal_plan dist-newstyle/cache/plan.json
 
 %cabal_install_bin_online() %{lua:
   for i = 1, tonumber(rpm.expand("%#")) do
     local bin = macros[tostring(i)]
-    print(rpm.expand('%{__install} -Dpm755 "$(%{__cabal_online} list-bin ' .. bin .. ')" %{buildroot}%{_bindir}/' .. bin .. '\\n'))
+    print(rpm.expand('%{__install} -Dpm755 "$(%{__cabal} list-bin ' .. bin .. ')" %{buildroot}%{_bindir}/' .. bin .. '\\n'))
   end
 }
 
