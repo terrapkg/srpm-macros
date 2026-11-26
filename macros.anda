@@ -5,7 +5,7 @@
 %__terra_use_lld %[(%{defined fedora} || %{defined _with_lld}) && !%{defined _without_lld}]
 
 # git_clone [<repo_url>] [<ref>]
-%git_clone(q) %{lua:
+%git_clone(qS) %{lua:
   local url = macros["1"] or macros.url
   if not url then error("%url is not defined") end
   local ref = macros["2"] or macros.commit or macros.version
@@ -14,7 +14,7 @@
     error("Please provide the full commit sha")
   end
   local dir = (url:gsub("/(%.git)?$", "")):gsub("^.+/", ""):gsub("%.git", "")
-  local command = 'git clone -c advice.detachedHead=false --recurse-submodules --shallow-submodules' .. rpm.expand("%{-q: -q} ") .. '-j${RPM_BUILD_NCPUS} ' .. url
+  local command = 'git clone -c advice.detachedHead=false --recurse-submodules ' .. rpm.expand("%{!?-S: --shallow-submodules}%{-q: -q} ") .. '-j${RPM_BUILD_NCPUS} ' .. url
   if (ref:len() == 40) and not(ref:find("%X")) then
     command = command .. ' --depth 1 --revision ' .. ref
   else
