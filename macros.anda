@@ -344,3 +344,28 @@ end}
 
 # A post/postun script, probably not needed but in case some cursed package needs it...
 %update_desktop_database() %{__update_desktop_database} --quiet || :
+
+# submodule_setup [-s <source number>] <path>
+%submodule_setup(s:) %{lua:
+  local path = arg[1]
+  if not path then error("usage: %submodule_setup [-s <source number>] <path>") end
+  local source = macros["-s*"]
+  if source then
+    local n = source
+    if not rpm.isdefined("SOURCE" .. n) then error("Source" .. n .. " is not defined") end
+    source = macros["SOURCE" .. n]
+  else
+    local global = "submodule_" .. path:gsub("[^%w]", "_")
+    local commit = macros[global]
+    if not commit then error("%" .. global .. " is not defined, add it or pass -s <source number>") end
+    for _, s in ipairs(sources) do
+      if s:find(commit, 1, true) then
+        if source then error("more than one Source has " .. commit .. " in its name, pass -s <source number>") end
+        source = s
+      end
+    end
+    if not source then error("no Source has %" .. global .. " (" .. commit .. ") in its name, pass -s <source number>") end
+  end
+  local dir = rpm.expand("%{shescape:" .. path .. "}")
+  print("mkdir -p " .. dir .. " && " .. rpm.expand("%{uncompress:" .. source .. "}") .. " | " .. rpm.expand("%{__tar}") .. " -xof - -C " .. dir .. " --strip-components=1")
+}
