@@ -49,3 +49,27 @@ echo "Printing license summary for License field..." \
 
 ### Definition for "nimble" for check stage to run tests, setting as empty due to non-use
 %buildsystem_nimble_check() %{nil}
+
+## Cabal
+
+### prep: unpack, freeze and fetch deps, then print dep licenses for License:
+%buildsystem_terra_cabal_prep(-) \
+%autosetup -C -p1 \
+%cabal_prep_online %{*} \
+echo "Printing license summary for License field..." \
+%cabal_license_preamble_online
+
+### genbr: unused
+%buildsystem_terra_cabal_generate_buildrequires() %{nil}
+
+### conf: unused
+%buildsystem_terra_cabal_conf() %{nil}
+
+### build: BuildOption(build) args go straight to cabal build
+%buildsystem_terra_cabal_build(-) %cabal_build_online %{*}
+
+### install: every built executable goes to %%{_bindir}
+%buildsystem_terra_cabal_install() %cabal_install_bins_online %{*}
+
+### check: unused, since tests would need their own freeze
+%buildsystem_terra_cabal_check() %{nil}

@@ -1,0 +1,175 @@
+# online Cabal builds, the Haskell equivalent to %%cargo_prep_online
+# deps come from Hackage and link statically, so Fedora's ghc-*-devel ABI hashes don't matter
+# we want proper build reproducibility
+
+%cabal_ghc_version 9.12
+%cabal_ghc ghc-%{cabal_ghc_version}
+%cabal_ghc_pkg ghc-pkg-%{cabal_ghc_version}
+%cabal_buildrequires cabal-install ghc%{cabal_ghc_version} jq tavro
+%_cabal_home %{rpmbuilddir}/.cabal-home
+%cabal_targets exes
+%cabal_semaphore 1
+
+%__cabal %{shrink:
+  /usr/bin/env
+  CABAL_DIR=%{_cabal_home}
+  LANG=C.UTF-8
+  /usr/bin/cabal
+}
+
+%cabal_ghc_options %{lua:
+  local opts = {}
+  if rpm.vercmp(macros.cabal_ghc_version, "9.12") >= 0 then
+    table.insert(opts, "-fobject-determinism")
+  end
+  local keep_debug_flags = rpm.isdefined("cabal_debuginfo")
+  for flag in rpm.expand("%{build_cflags}"):gmatch("%S+") do
+    if keep_debug_flags or not flag:match("^%-g") then
+      table.insert(opts, "-optc" .. flag)
+    end
+  end
+  for flag in rpm.expand("%{build_ldflags}"):gmatch("%S+") do
+    table.insert(opts, "-optl" .. flag)
+  end
+  table.insert(opts, "-optl-Wl,-z,now")
+  if rpm.expand("%{__terra_use_lld}") == "1" then
+    table.insert(opts, "-optl-fuse-ld=lld")
+  end
+  table.insert(opts, rpm.expand("%{?cabal_extra_ghc_options}"))
+  print(table.concat(opts, " "))
+}
+
+%__cabal_set_build_flags \
+%{!?cabal_debuginfo:%global debug_package %{nil}} \
+%global _lto_cflags %{nil} \
+%global __brp_strip_lto %{nil} \
+%global _hardened_ldflags %{nil} \
+%undefine _package_note_flags \
+%undefine _annotated_build
+
+%__cabal_write_config \
+%{__rm} -rf %{_cabal_home} \
+%{__mkdir_p} %{_cabal_home} \
+cat > %{_cabal_home}/config <<'EOF'\
+repository hackage.haskell.org\
+  url: https://hackage.haskell.org/\
+\
+install-dirs user\
+  prefix: %{_prefix}\
+EOF
+
+%__cabal_freeze_index_state %{shrink:
+  sed -nE 's/^index-state:[[:space:]]*(hackage[.]haskell[.]org[[:space:]]+)?([^,[:space:]]+).*/\\\2/p'
+  cabal.project.freeze
+}
+
+%__cabal_resolve_index_state \
+freeze_index_state= \
+if [ -f cabal.project.freeze ]; then \
+  freeze_index_state="$(%{__cabal_freeze_index_state})" \
+fi \
+spec_index_state='%{?cabal_regenerate_freeze}%{!?cabal_regenerate_freeze:%{?cabal_index_state}}' \
+if [ -n "$freeze_index_state" ] && [ -n "$spec_index_state" ]; then \
+  echo "warning: ignoring %%cabal_index_state ($spec_index_state), cabal.project.freeze pins $freeze_index_state" >&2 \
+fi \
+index_state="${freeze_index_state:-$spec_index_state}" \
+if [ -z "$index_state" ]; then \
+  echo 'error: set %%cabal_index_state or pass a cabal.project.freeze that has an index-state' >&2 \
+  exit 1 \
+fi
+
+%__cabal_unpin_ghc_shipped_packages \
+for pkg_id in $(%{cabal_ghc_pkg} list --global --simple-output); do \
+  pkg_name="${pkg_id%%-*}" \
+  pkg_ver="${pkg_id##*-}" \
+  sed -i -E "s/any[.]$pkg_name ==$pkg_ver(,|$)/any.$pkg_name installed\\\1/" cabal.project.freeze \
+done
+
+%__cabal_enable_semaphore \
+cabal_version="$(%__cabal --numeric-version)" \
+if [ "$(printf '%%s\\n' 3.12 "$cabal_version" | sort -V | head -n1)" = 3.12 ]; then \
+  echo 'semaphore: True' >> cabal.project.local \
+else \
+  echo "warning: cabal $cabal_version can't share a job semaphore with GHC (needs 3.12), so modules build one at a time" >&2 \
+fi
+
+# the freeze file pins everything, including the index-state.
+# %%cabal_index_state is only needed when there's no freeze yet. for example:
+#   %%global cabal_index_state 2026-11-20T00:00:00Z
+# %%cabal_regenerate_freeze <index-state or HEAD> ignores the shipped freeze and makes a new one,
+# see cabal::freeze in terrapkg/packages andax/cabal.rhai
+%cabal_prep_online(f:u) \
+%{-f:%{-u:%{error:%%cabal_prep_online: -f and -u are mutually exclusive}}} \
+%__cabal_set_build_flags \
+%__cabal_write_config\
+[ -f cabal.project ] || echo 'packages: .' > cabal.project \
+%{-f:%{__install} -pm644 %{-f*} cabal.project.freeze} \
+%{-u:%{__rm} -f cabal.project.freeze} \
+%{?cabal_regenerate_freeze:%{__rm} -f cabal.project.freeze} \
+%__cabal_resolve_index_state\
+update_log="$(%__cabal update hackage.haskell.org)" \
+echo "$update_log" \
+latest_index_state="$(echo "$update_log" | sed -nE 's/^The index-state is set to ([^ ]+)[.]$/\\1/p')" \
+if [ "$index_state" != HEAD ]; then \
+  if [ -n "$latest_index_state" ] && [ "$(printf '%%s\\n' "$index_state" "$latest_index_state" | sort | tail -n1)" != "$latest_index_state" ]; then \
+    echo "warning: %%cabal_index_state $index_state is newer than Hackage's latest index-state, using $latest_index_state" >&2 \
+    index_state="$latest_index_state" \
+  fi \
+  echo "index-state: hackage.haskell.org $index_state" >> cabal.project.local \
+fi \
+cat >> cabal.project.local <<'EOF'\
+with-compiler: %{cabal_ghc}\
+with-hc-pkg: %{cabal_ghc_pkg}\
+jobs: %{_smp_build_ncpus}\
+tests: False\
+benchmarks: False\
+documentation: False\
+executable-stripping: False\
+library-stripping: False\
+%{?cabal_project_extra}\
+\
+package *\
+  ghc-options: %{cabal_ghc_options}\
+EOF\
+if [ ! -f cabal.project.freeze ]; then \
+  %__cabal freeze \
+  %__cabal_unpin_ghc_shipped_packages\
+  echo "generated $PWD/cabal.project.freeze, ship it as a Source and pass it with -f to pin the plan:" >&2 \
+  cat cabal.project.freeze >&2 \
+fi \
+echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
+%{expand:%[0%{?cabal_semaphore} ? "%%{__cabal_enable_semaphore}" : ""]}\
+%__cabal build --only-download %{cabal_targets}
+
+%cabal_build_online(-) %__cabal build --offline %* %{cabal_targets}
+
+%__cabal_plan dist-newstyle/cache/plan.json
+
+%cabal_install_bin_online() %{lua:
+  for _, bin in ipairs(arg) do
+    print(rpm.expand('%{__install} -Dpm755 "$(%{__cabal} list-bin ' .. bin .. ')" %{buildroot}%{_bindir}/' .. bin .. '\\n'))
+  end
+}
+
+%cabal_install_bins_online() %{shrink:
+  jq -r '."install-plan"[] | select(.style == "local" and has("bin-file")) | ."bin-file"' %{__cabal_plan} |
+  xargs -r -d '\\n' -I{} find {} -maxdepth 0 -type f -executable 2>/dev/null |
+  xargs -r -d '\\n' %{__install} -Dpm755 -t %{buildroot}%{_bindir}
+}
+
+%__tavro_bin /usr/bin/tavro
+
+%__tavro %{shrink:
+  /usr/bin/env
+  CABAL_DIR=%{_cabal_home}
+  LANG=C.UTF-8
+  %{__tavro_bin}
+}
+
+# licenses come from tavro, which reads %%{__cabal_plan} and only counts packages linked into the executables.
+# -c NAME looks at one component, like exe:foo, instead of every executable
+%cabal_license_online(c:) %{__tavro} --cabal %{-c:--component %{-c*}} . %*
+
+%cabal_license_summary_online(c:) %{__tavro} --cabal --summary %{-c:--component %{-c*}} . %*
+
+%cabal_license_preamble_online(c:) %{__tavro} --cabal --preamble %{-c:--component %{-c*}} . %*
