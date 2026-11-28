@@ -83,6 +83,14 @@ for pkg_id in $(%{cabal_ghc_pkg} list --global --simple-output); do \
   sed -i -E "s/any[.]$pkg_name ==$pkg_ver(,|$)/any.$pkg_name installed\\\1/" cabal.project.freeze \
 done
 
+%__cabal_enable_semaphore \
+cabal_version="$(%__cabal --numeric-version)" \
+if [ "$(printf '%%s\\n' 3.12 "$cabal_version" | sort -V | head -n1)" = 3.12 ]; then \
+  echo 'semaphore: True' >> cabal.project.local \
+else \
+  echo "warning: cabal $cabal_version can't share a job semaphore with GHC (needs 3.12), so modules build one at a time" >&2 \
+fi
+
 # the freeze file pins everything, including the index-state.
 # %%cabal_index_state is only needed when there's no freeze yet. for example:
 #   %%global cabal_index_state 2026-11-20T00:00:00Z
@@ -124,6 +132,7 @@ if [ ! -f cabal.project.freeze ]; then \
   cat cabal.project.freeze >&2 \
 fi \
 echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
+%{?with_cabal_semaphore:%__cabal_enable_semaphore}\
 %__cabal build --only-download %{cabal_targets}
 
 %cabal_build_online(-) %__cabal build %* %{cabal_targets}
