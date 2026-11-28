@@ -130,7 +130,7 @@ EOF\
 if [ ! -f cabal.project.freeze ]; then \
   %__cabal freeze \
   %__cabal_unpin_ghc_shipped_packages\
-  echo 'generated cabal.project.freeze, ship it as a Source and pass it with -f to pin the plan:' >&2 \
+  echo "generated $PWD/cabal.project.freeze, ship it as a Source and pass it with -f to pin the plan:" >&2 \
   cat cabal.project.freeze >&2 \
 fi \
 echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
