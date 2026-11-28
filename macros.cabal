@@ -143,11 +143,13 @@ echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
   xargs -r -d '\\n' %{__install} -Dpm755 -t %{buildroot}%{_bindir}
 }
 
+%__tavro_bin /usr/bin/tavro
+
 %__tavro %{shrink:
   /usr/bin/env
   CABAL_DIR=%{_cabal_home}
   LANG=C.UTF-8
-  /usr/bin/tavro
+  %{__tavro_bin}
 }
 
 # licenses come from tavro, which reads %%{__cabal_plan} and only counts packages linked into the executables.
