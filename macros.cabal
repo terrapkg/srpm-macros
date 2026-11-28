@@ -1,6 +1,6 @@
 # online Cabal builds, the Haskell equivalent to %%cargo_prep_online
 # deps come from Hackage and link statically, so Fedora's ghc-*-devel ABI hashes don't matter
-# we want proper build reproducability
+# we want proper build reproducibility
 
 %cabal_ghc_version 9.12
 %cabal_ghc ghc-%{cabal_ghc_version}
@@ -8,6 +8,7 @@
 %cabal_buildrequires cabal-install ghc%{cabal_ghc_version} jq tavro
 %_cabal_home %{rpmbuilddir}/.cabal-home
 %cabal_targets exes
+%cabal_semaphore 1
 
 %__cabal %{shrink:
   /usr/bin/env
@@ -30,6 +31,7 @@
   for flag in rpm.expand("%{build_ldflags}"):gmatch("%S+") do
     table.insert(opts, "-optl" .. flag)
   end
+  table.insert(opts, "-optl-Wl,-z,now")
   if rpm.expand("%{__terra_use_lld}") == "1" then
     table.insert(opts, "-optl-fuse-ld=lld")
   end
@@ -105,7 +107,9 @@ fi
 %{-u:%{__rm} -f cabal.project.freeze} \
 %{?cabal_regenerate_freeze:%{__rm} -f cabal.project.freeze} \
 %__cabal_resolve_index_state\
-latest_index_state="$(%__cabal update hackage.haskell.org | sed -nE 's/^The index-state is set to ([^ ]+)[.]$/\\1/p')" \
+update_log="$(%__cabal update hackage.haskell.org)" \
+echo "$update_log" \
+latest_index_state="$(echo "$update_log" | sed -nE 's/^The index-state is set to ([^ ]+)[.]$/\\1/p')" \
 if [ "$index_state" != HEAD ]; then \
   if [ -n "$latest_index_state" ] && [ "$(printf '%%s\\n' "$index_state" "$latest_index_state" | sort | tail -n1)" != "$latest_index_state" ]; then \
     echo "warning: %%cabal_index_state $index_state is newer than Hackage's latest index-state, using $latest_index_state" >&2 \
@@ -134,16 +138,15 @@ if [ ! -f cabal.project.freeze ]; then \
   cat cabal.project.freeze >&2 \
 fi \
 echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
-%{?with_cabal_semaphore:%__cabal_enable_semaphore}\
+%{expand:%[0%{?cabal_semaphore} ? "%%{__cabal_enable_semaphore}" : ""]}\
 %__cabal build --only-download %{cabal_targets}
 
-%cabal_build_online(-) %__cabal build %* %{cabal_targets}
+%cabal_build_online(-) %__cabal build --offline %* %{cabal_targets}
 
 %__cabal_plan dist-newstyle/cache/plan.json
 
 %cabal_install_bin_online() %{lua:
-  for i = 1, tonumber(rpm.expand("%#")) do
-    local bin = macros[tostring(i)]
+  for _, bin in ipairs(arg) do
     print(rpm.expand('%{__install} -Dpm755 "$(%{__cabal} list-bin ' .. bin .. ')" %{buildroot}%{_bindir}/' .. bin .. '\\n'))
   end
 }

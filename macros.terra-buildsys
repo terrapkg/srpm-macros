@@ -53,7 +53,7 @@ echo "Printing license summary for License field..." \
 ## Cabal
 
 ### prep: unpack, freeze and fetch deps, then print dep licenses for License:
-%buildsystem_terra_cabal_prep() \
+%buildsystem_terra_cabal_prep(-) \
 %autosetup -C -p1 \
 %cabal_prep_online %{*} \
 echo "Printing license summary for License field..." \
@@ -66,7 +66,7 @@ echo "Printing license summary for License field..." \
 %buildsystem_terra_cabal_conf() %{nil}
 
 ### build: BuildOption(build) args go straight to cabal build
-%buildsystem_terra_cabal_build() %cabal_build_online %{*}
+%buildsystem_terra_cabal_build(-) %cabal_build_online %{*}
 
 ### install: every built executable goes to %%{_bindir}
 %buildsystem_terra_cabal_install() %cabal_install_bins_online %{*}
