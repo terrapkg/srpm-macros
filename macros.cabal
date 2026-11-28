@@ -152,8 +152,8 @@ echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
 
 # licenses come from tavro, which reads %%{__cabal_plan} and only counts packages linked into the executables.
 # -c NAME looks at one component, like exe:foo, instead of every executable
-%cabal_license_online(c:) %{__tavro} --cabal %{-c:--component %{-c*}} .
+%cabal_license_online(c:) %{__tavro} --cabal %{-c:--component %{-c*}} . %*
 
-%cabal_license_summary_online(c:) %{__tavro} --cabal --summary %{-c:--component %{-c*}} .
+%cabal_license_summary_online(c:) %{__tavro} --cabal --summary %{-c:--component %{-c*}} . %*
 
-%cabal_license_preamble_online(c:) %{__tavro} --cabal --preamble %{-c:--component %{-c*}} .
+%cabal_license_preamble_online(c:) %{__tavro} --cabal --preamble %{-c:--component %{-c*}} . %*
