@@ -105,10 +105,12 @@ fi
 %{-u:%{__rm} -f cabal.project.freeze} \
 %{?cabal_regenerate_freeze:%{__rm} -f cabal.project.freeze} \
 %__cabal_resolve_index_state\
-if [ "$index_state" = HEAD ]; then \
-  %__cabal update hackage.haskell.org \
-else \
-  %__cabal update "hackage.haskell.org,$index_state" \
+latest_index_state="$(%__cabal update hackage.haskell.org | sed -nE 's/^The index-state is set to ([^ ]+)[.]$/\\1/p')" \
+if [ "$index_state" != HEAD ]; then \
+  if [ -n "$latest_index_state" ] && [ "$(printf '%%s\\n' "$index_state" "$latest_index_state" | sort | tail -n1)" != "$latest_index_state" ]; then \
+    echo "warning: %%cabal_index_state $index_state is newer than Hackage's latest index-state, using $latest_index_state" >&2 \
+    index_state="$latest_index_state" \
+  fi \
   echo "index-state: hackage.haskell.org $index_state" >> cabal.project.local \
 fi \
 cat >> cabal.project.local <<'EOF'\
