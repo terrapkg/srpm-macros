@@ -5,7 +5,7 @@
 %cabal_ghc_version 9.12
 %cabal_ghc ghc-%{cabal_ghc_version}
 %cabal_ghc_pkg ghc-pkg-%{cabal_ghc_version}
-%cabal_buildrequires cabal-install ghc%{cabal_ghc_version} jq tar
+%cabal_buildrequires cabal-install ghc%{cabal_ghc_version} jq tavro
 %_cabal_home %{rpmbuilddir}/.cabal-home
 %cabal_targets exes
 
@@ -143,12 +143,17 @@ echo 'reject-unconstrained-dependencies: all' >> cabal.project.local \
   xargs -r -d '\\n' %{__install} -Dpm755 -t %{buildroot}%{_bindir}
 }
 
-%cabal_license_summary_online() %{shrink:
-  jq -r --arg pkgs '%{_cabal_home}/packages/hackage.haskell.org'
-    '."install-plan"[] | select(."pkg-src".type == "repo-tar") | (."pkg-name" + "-" + ."pkg-version") as $id | [$pkgs + "/" + ."pkg-name" + "/" + ."pkg-version" + "/" + $id + ".tar.gz", $id + "/" + ."pkg-name" + ".cabal"] | @tsv'
-    %{__cabal_plan} |
-  sort -u |
-  xargs -r -n2 tar -xzOf |
-  sed -nE '/^license[[:space:]]*:/I{s/^[^:]*:[[:space:]]*//;s/[[:space:]]+$//;p}' |
-  sort -u
+%__tavro %{shrink:
+  /usr/bin/env
+  CABAL_DIR=%{_cabal_home}
+  LANG=C.UTF-8
+  /usr/bin/tavro
 }
+
+# licenses come from tavro, which reads %%{__cabal_plan} and only counts packages linked into the executables.
+# -c NAME looks at one component, like exe:foo, instead of every executable
+%cabal_license_online(c:) %{__tavro} --cabal %{-c:--component %{-c*}} .
+
+%cabal_license_summary_online(c:) %{__tavro} --cabal --summary %{-c:--component %{-c*}} .
+
+%cabal_license_preamble_online(c:) %{__tavro} --cabal --preamble %{-c:--component %{-c*}} .

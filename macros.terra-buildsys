@@ -57,7 +57,7 @@ echo "Printing license summary for License field..." \
 %autosetup -C -p1 \
 %cabal_prep_online %{*} \
 echo "Printing license summary for License field..." \
-%cabal_license_summary_online
+%cabal_license_preamble_online
 
 ### genbr: unused
 %buildsystem_terra_cabal_generate_buildrequires() %{nil}
